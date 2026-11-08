@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: marketpredict-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 1 --timeout 120
+    healthCheckPath: /
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_TOKEN
+        sync: false        # se define en el panel de Render
+      - key: DATABASE_URL
+        sync: false        # cadena de conexión de Supabase (pooler)
+      - key: USE_DEMO
+        value: "false"

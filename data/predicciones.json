@@ -1,0 +1,34 @@
+[
+  {
+    "symbol": "^IBEX",
+    "fecha": "2026-09-26",
+    "horizonte": "1 día(s)",
+    "prediccion": 19615.37,
+    "modelo": "Regresión lineal",
+    "version": "ML-Linear-1.0"
+  },
+  {
+    "symbol": "SOLARA.NS",
+    "fecha": "2026-09-26",
+    "horizonte": "1 día(s)",
+    "prediccion": 776.43,
+    "modelo": "Regresión lineal",
+    "version": "ML-Linear-1.0"
+  },
+  {
+    "symbol": "^IBEX",
+    "fecha": "2026-09-26",
+    "horizonte": "1 día(s)",
+    "prediccion": 19615.37,
+    "modelo": "Regresión lineal",
+    "version": "ML-Linear-1.0"
+  },
+  {
+    "symbol": "^IBEX",
+    "fecha": "2026-09-26",
+    "horizonte": "1 día(s)",
+    "prediccion": 19615.37,
+    "modelo": "Regresión lineal",
+    "version": "ML-Linear-1.0"
+  }
+]

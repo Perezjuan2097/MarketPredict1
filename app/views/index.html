@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>MarketPredict</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar-left">
+        <a href="/" class="brand"><span class="brand-mark">M</span><span>MarketPredict</span></a>
+        <nav class="main-nav">
+            <a href="#productos" data-i18n="products">Productos</a>
+            <a href="#comunidad" data-i18n="community">Comunidad</a>
+            <a href="#mercados" data-i18n="markets">Mercados</a>
+            <a href="#brokers" data-i18n="brokers">Brókers</a>
+            <a href="#mas" data-i18n="more">Más</a>
+        </nav>
+    </div>
+    <div class="topbar-center">
+        <div class="global-search search-shell">
+            <span class="search-icon">⌕</span>
+            <input id="globalSearch" type="text" placeholder="Buscar activos, símbolos o mercados" data-i18n-placeholder="searchPlaceholder" autocomplete="off">
+            <span class="shortcut">Ctrl K</span>
+            <div id="searchSuggestions" class="search-suggestions hidden"></div>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <button class="language" id="languageToggle" type="button">ES <span>⌄</span></button>
+        <button class="profile-button" id="themeToggle" type="button" aria-label="Cambiar tema">◯</button>
+        <a href="#analizar" class="start-button" data-i18n="start">Empiece</a>
+    </div>
+</header>
+
+<main>
+    <section class="asset-header">
+        <div class="asset-identity">
+            <div class="asset-badge" id="assetBadge">A</div>
+            <div class="asset-info">
+                <div class="asset-title-row">
+                    <h1 id="assetTitle">Apple Inc.</h1>
+                    <span class="ticker" id="assetTicker">AAPL</span>
+                </div>
+                <div class="asset-meta">
+                    <span id="provider">Yahoo Finance</span><span class="dot">•</span>
+                    <span id="intervalLabel">Diario</span><span class="interval" id="intervalCode">D</span>
+                </div>
+            </div>
+        </div>
+        <div class="asset-price">
+            <div class="price-main"><span id="currentPrice">—</span><span class="price-unit" id="priceUnit">USD</span></div>
+            <div class="price-change" id="priceChange"><span id="changeAbsolute">—</span><span id="changePercent">—</span></div>
+            <div class="market-status" id="marketStatus">Consultando datos...</div>
+        </div>
+    </section>
+
+    <section class="context-tabs" role="tablist">
+        <button class="context-tab active" type="button" data-tab="summary" data-i18n="summary">Resumen</button>
+        <button class="context-tab" type="button" data-tab="news" data-i18n="news">Noticias</button>
+        <button class="context-tab" type="button" data-tab="community" data-i18n="community">Comunidad</button>
+        <button class="context-tab" type="button" data-tab="technical" data-i18n="technical">Datos técnicos</button>
+        <button class="context-tab" type="button" data-tab="seasonal" data-i18n="seasonal">Estacionales</button>
+        <button class="context-tab" type="button" data-tab="components" data-i18n="components">Componentes</button>
+        <button class="context-tab" type="button" data-tab="options" data-i18n="options">Opciones</button>
+    </section>
+
+    <section class="analysis-toolbar" id="analizar">
+        <div><span class="eyebrow">MARKETPREDICT · ANÁLISIS</span><h2 data-i18n="analyzeTitle">Analiza el comportamiento de un activo</h2></div>
+        <form id="form" class="analyze-form">
+            <div class="symbol-input"><span>$</span><input id="symbol" value="AAPL" maxlength="40" aria-label="Activo" placeholder="Ej. Repsol, Apple, IBEX 35"></div>
+            <button type="submit" class="analyze-button"><span data-i18n="analyze">Analizar</span><span>→</span></button>
+        </form>
+    </section>
+
+    <div id="status" class="status"></div>
+
+    <section id="tabSummary" class="tab-panel active-panel">
+        <section id="results">
+            <section class="metric-grid" id="cards"></section>
+
+            <section class="chart-panel">
+                <div class="chart-header">
+                    <div>
+                        <div class="chart-title-row"><h2 data-i18n="historical">Comportamiento histórico</h2><span class="trend-badge" id="trend">Tendencia: —</span></div>
+                        <p class="chart-subtitle" id="chartSubtitle">Datos consultados desde Yahoo Finance.</p>
+                    </div>
+                    <div class="chart-actions">
+                        <button id="captureChart" type="button" title="Capturar gráfico">▣</button>
+                        <button id="embedChart" type="button" title="Obtener código de inserción">&lt;/&gt;</button>
+                        <button id="fullscreenChart" type="button" title="Gráfico completo">⛶</button>
+                    </div>
+                </div>
+                <div class="chart-wrapper" id="chartWrapper">
+                    <div class="chart-watermark">MARKETPREDICT</div>
+                    <canvas id="chart"></canvas>
+                    <div class="previous-close" id="previousClose">Cierre anterior <strong>—</strong></div>
+                </div>
+                <div class="period-selector">
+                    <button class="period active" data-period="1D" type="button">1D</button>
+                    <button class="period" data-period="5D" type="button">5D</button>
+                    <button class="period" data-period="1M" type="button">1M</button>
+                    <button class="period" data-period="6M" type="button">6M</button>
+                    <button class="period" data-period="YTD" type="button">YTD</button>
+                    <button class="period" data-period="1A" type="button">1A</button>
+                    <button class="period" data-period="5A" type="button">5A</button>
+                    <button class="period" data-period="10A" type="button">10A</button>
+                    <button class="period" data-period="Todo" type="button">Todo</button>
+                </div>
+                <div class="period-performance" id="periodPerformance"></div>
+            </section>
+
+            <section class="dashboard-grid">
+                <div class="dashboard-panel">
+                    <div class="panel-heading"><div><span class="panel-kicker">MODELO</span><h2 data-i18n="predictions">Predicciones</h2></div><span class="model-version" id="modelVersion">—</span></div>
+                    <div id="predictions"><div class="empty-state">Ejecuta un análisis para generar predicciones.</div></div>
+                </div>
+                <div class="dashboard-panel">
+                    <div class="panel-heading"><div><span class="panel-kicker">SEÑAL</span><h2 data-i18n="sellAlert">Alerta de venta</h2></div></div>
+                    <div id="alert"><div class="empty-state">Ejecuta un análisis para consultar la señal.</div></div>
+                    <p class="note" data-i18n="alertNote">La alerta es una señal de análisis, no una orden financiera.</p>
+                </div>
+            </section>
+
+            <section class="dashboard-panel tracking-panel">
+                <div class="panel-heading">
+                    <div><span class="panel-kicker">REGISTRO</span><h2 data-i18n="tracking">Seguimiento</h2><p class="panel-description" data-i18n="trackingDesc">Guarda y consulta las predicciones generadas por el sistema.</p></div>
+                    <div class="tracking-actions"><button id="save" class="secondary-button" type="button" data-i18n="save">Guardar predicción</button><button id="report" class="primary-button" type="button" data-i18n="report">Generar informe</button></div>
+                </div>
+                <div id="history"></div>
+            </section>
+        </section>
+    </section>
+
+    <section id="tabNews" class="tab-panel">
+        <div class="dashboard-panel">
+            <div class="panel-heading"><div><span class="panel-kicker">YAHOO FINANCE</span><h2>Noticias</h2></div></div>
+            <div id="newsContent" class="news-list"></div>
+        </div>
+    </section>
+
+    <section id="tabCommunity" class="tab-panel">
+        <div class="community-grid">
+            <div class="dashboard-panel">
+                <div class="panel-heading"><div><span class="panel-kicker">COMUNIDAD</span><h2>Sentimiento</h2></div></div>
+                <div class="sentiment-score"><strong id="bullishPercent">50%</strong><span>Alcista</span><strong id="bearishPercent">50%</strong><span>Bajista</span></div>
+                <div class="sentiment-bar"><span id="bullishBar"></span></div>
+                <div class="vote-actions"><button id="voteBullish" class="primary-button" type="button">▲ Alcista</button><button id="voteBearish" class="secondary-button" type="button">▼ Bajista</button></div>
+                <p id="voteCount" class="panel-description">0 votos</p>
+            </div>
+            <div class="dashboard-panel">
+                <div class="panel-heading"><div><span class="panel-kicker">FORO</span><h2>Comentarios</h2></div></div>
+                <form id="communityForm" class="community-form">
+                    <input id="communityAuthor" maxlength="40" placeholder="Tu nombre">
+                    <textarea id="communityText" maxlength="500" rows="3" placeholder="Comparte tu análisis sobre el activo..."></textarea>
+                    <button class="primary-button" type="submit">Publicar comentario</button>
+                </form>
+                <div id="communityPosts" class="community-posts"></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="tabTechnical" class="tab-panel">
+        <div class="dashboard-panel">
+            <div class="panel-heading"><div><span class="panel-kicker">YAHOO FINANCE</span><h2>Datos técnicos</h2></div></div>
+            <div id="technicalContent"></div>
+        </div>
+    </section>
+
+    <section id="tabSeasonal" class="tab-panel">
+        <div class="dashboard-panel">
+            <div class="panel-heading"><div><span class="panel-kicker">HISTÓRICO</span><h2>Estacionales</h2><p class="panel-description">Rendimiento mensual promedio calculado sobre hasta 10 años de histórico.</p></div></div>
+            <canvas id="seasonalChart" height="110"></canvas>
+            <div id="seasonalTable"></div>
+        </div>
+    </section>
+
+    <section id="tabComponents" class="tab-panel">
+        <div class="dashboard-panel">
+            <div class="panel-heading"><div><span class="panel-kicker">COMPOSICIÓN</span><h2>Componentes / comparables</h2><p id="componentsDescription" class="panel-description"></p></div></div>
+            <div id="componentsContent"></div>
+        </div>
+    </section>
+
+    <section id="tabOptions" class="tab-panel">
+        <div class="dashboard-panel options-placeholder">
+            <span class="panel-kicker">OPCIONES</span>
+            <h2>Opciones</h2>
+            <p>Este módulo queda preparado para una futura integración de cadenas de opciones. La información disponible dependerá de la cobertura que Yahoo Finance entregue para el activo seleccionado.</p>
+        </div>
+    </section>
+</main>
+
+<footer><div class="footer-brand"><span class="brand-mark small">M</span><strong>MarketPredict</strong></div><span data-i18n="footer">Proyecto académico · Las predicciones son estimaciones, no garantías.</span></footer>
+
+<script src="/static/js/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+# Netlify sirve el dominio y los archivos estáticos; el backend Flask corre en Render.
+# Sustituya TU-BACKEND por el nombre del servicio creado en Render.
+[build]
+  publish = "app/static"
+
+# El proxy mantiene un solo origen (cookies de sesión y CSRF sin configuración CORS).
+[[redirects]]
+  from = "/api/*"
+  to = "https://TU-BACKEND.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/admin/*"
+  to = "https://TU-BACKEND.onrender.com/admin/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/static/*"
+  to = "https://TU-BACKEND.onrender.com/static/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "https://TU-BACKEND.onrender.com/:splat"
+  status = 200

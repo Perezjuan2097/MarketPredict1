@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Administración · MarketPredict</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar-left"><a href="/" class="brand"><span class="brand-mark">M</span><span>MarketPredict</span></a></div>
+    <div class="topbar-right">
+        {% if view == "panel" %}
+        <form method="post" action="{{ url_for('admin.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-button" type="submit">Cerrar sesión</button></form>
+        {% endif %}
+    </div>
+</header>
+<main>
+    <section class="dashboard-panel" style="max-width:640px;margin:32px auto">
+        <div class="panel-heading"><div><span class="panel-kicker">ADMINISTRACIÓN</span><h2>{{ "Acceso" if view == "login" else "Parámetros del modelo" }}</h2></div></div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}<div class="status {{ category }}">{{ message }}</div>{% endfor %}
+        {% endwith %}
+        {% if view == "login" %}
+            {% if not configured %}
+            <div class="empty-state">El acceso administrativo está desactivado. Defina la variable de entorno <code>ADMIN_TOKEN</code> para habilitarlo.</div>
+            {% else %}
+            <form method="post" class="community-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="password" name="token" placeholder="Token de administrador" autocomplete="current-password" required>
+                <button class="primary-button" type="submit">Entrar</button>
+            </form>
+            {% endif %}
+        {% else %}
+            <form method="post" action="{{ url_for('admin.config') }}" class="community-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label>Ventana de entrenamiento (5–250)<input type="number" name="window" value="{{ cfg.window }}" min="5" max="250" required></label>
+                <label>Horizonte en días (1–30)<input type="number" name="horizon" value="{{ cfg.horizon }}" min="1" max="30" required></label>
+                <label>Umbral de alerta % (0–50)<input type="number" step="0.1" name="alert_drop" value="{{ cfg.alert_drop }}" min="0.1" max="50" required></label>
+                <label>Versión del modelo<input name="version" value="{{ cfg.model_version }}" maxlength="40" required></label>
+                <button class="primary-button" type="submit">Guardar configuración</button>
+            </form>
+            <p class="note">Los usuarios, la moderación, el estado de las APIs y las ejecuciones de modelos se añadirán en las fases 4 a 6.</p>
+        {% endif %}
+    </section>
+</main>
+</body>
+</html>
