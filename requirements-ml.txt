@@ -1,0 +1,3 @@
+# Modelos opcionales: ARIMA/SARIMA y XGBoost. Instalar DESPUÉS de verificar el núcleo.
+statsmodels>=0.14
+xgboost-cpu>=2.1     # si su plataforma no lo encuentra, use: xgboost>=2.0

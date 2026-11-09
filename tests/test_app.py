@@ -129,3 +129,83 @@ class TestConfig(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestNuevosEndpoints(BaseCase):
+    def test_models_demo(self):
+        r = self.c.get("/api/models/AAPL?horizon=5")
+        self.assertEqual(r.status_code, 200, r.get_data(as_text=True)[:200])
+        j = r.get_json()
+        self.assertEqual(j["data_source"], "demo")
+        self.assertEqual(j["horizon_days"], 5)
+        self.assertIn("consensus", j)
+
+    def test_models_validaciones(self):
+        self.assertEqual(self.c.get("/api/models/AAPL?horizon=abc").status_code, 400)
+        self.assertEqual(self.c.get("/api/models/AAPL?horizon=99").status_code, 422)
+        self.assertEqual(self.c.get("/api/models/%3Cx%3E").status_code, 400)
+
+    def test_markets_sin_proveedor_no_revienta(self):
+        r = self.c.get("/api/markets")
+        self.assertIn(r.status_code, (200, 422))
+        self.assertNotIn("Traceback", r.get_data(as_text=True))
+
+    def test_index_tiene_navegacion_funcional(self):
+        html = self.c.get("/").get_data(as_text=True)
+        for key in ("productos", "community", "mercados", "brokers", "mas"):
+            self.assertIn(f'data-nav="{key}"', html)
+        for panel in ("tabProductos", "tabMercados", "tabBrokers", "tabMas", "modelsPanel"):
+            self.assertIn(f'id="{panel}"', html)
+
+
+class TestNoticias(unittest.TestCase):
+    def _svc(self, fake):
+        from unittest.mock import patch
+        from app.services.data_service import APIFinanciera
+        p1 = patch.object(APIFinanciera, "resolve_ticker", classmethod(lambda cls, q: {"symbol": q}))
+        p2 = patch.object(APIFinanciera, "_ticker", staticmethod(lambda s: fake))
+        p1.start(); p2.start()
+        self.addCleanup(p1.stop); self.addCleanup(p2.stop)
+        return APIFinanciera()
+
+    def test_formato_nuevo_yfinance(self):
+        class T:
+            news = [{"id": "1", "content": {"title": "Titular", "provider": {"displayName": "Reuters"},
+                                            "canonicalUrl": {"url": "https://x.test/a"}, "pubDate": "2026-11-06T10:00:00Z"}}]
+        out = self._svc(T()).get_news("AAPL")
+        self.assertEqual(out["news"][0]["title"], "Titular")
+        self.assertEqual(out["news"][0]["source"], "Reuters")
+        self.assertNotIn("warning", out)
+
+    def test_fallback_get_news_y_formato_antiguo(self):
+        class T:
+            news = []
+            def get_news(self, count=10):
+                return [{"title": "Viejo", "publisher": "AP", "link": "https://x.test/b", "providerPublishTime": 1762400000}]
+        out = self._svc(T()).get_news("AAPL")
+        self.assertEqual(out["news"][0]["title"], "Viejo")
+
+    def test_error_se_informa_no_se_silencia(self):
+        class T:
+            @property
+            def news(self):
+                raise ConnectionError("bloqueado")
+            def get_news(self, count=10):
+                raise ConnectionError("bloqueado")
+        out = self._svc(T()).get_news("AAPL")
+        self.assertEqual(out["news"], [])
+        self.assertIn("no respondió", out["warning"])
+
+
+class TestSalud(BaseCase):
+    def test_health_sin_bd(self):
+        old = os.environ.pop("DATABASE_URL", None)
+        try:
+            j = self.c.get("/api/health").get_json()
+        finally:
+            if old is not None:
+                os.environ["DATABASE_URL"] = old
+        self.assertEqual(j["status"], "ok")
+        self.assertEqual(j["db"]["status"], "no_configurada")
+        self.assertIn("xgboost", j["optional_models"])
+        self.assertNotIn("postgresql://", json.dumps(j))

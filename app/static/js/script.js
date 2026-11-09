@@ -241,7 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch(`/api/news/${encodeURIComponent(ticker)}`);
             const data = await response.json();
             if (!response.ok) throw new Error(data.error);
-            box.innerHTML = data.news.length ? data.news.map((item) => `<article class="news-item"><div><span class="news-source">${escapeHTML(item.source)}</span><h3>${escapeHTML(item.title)}</h3><small>${formatDateTime(item.date)}</small></div>${item.url ? `<a href="${escapeHTML(item.url)}" target="_blank" rel="noopener noreferrer">Abrir ↗</a>` : ""}</article>`).join("") : `<div class="empty-state">Yahoo Finance no devolvió noticias para este activo.</div>`;
+            box.innerHTML = data.news.length ? data.news.map((item) => `<article class="news-item"><div><span class="news-source">${escapeHTML(item.source)}</span><h3>${escapeHTML(item.title)}</h3><small>${formatDateTime(item.date)}</small></div>${item.url ? `<a href="${escapeHTML(item.url)}" target="_blank" rel="noopener noreferrer">Abrir ↗</a>` : ""}</article>`).join("") : `<div class="empty-state">${escapeHTML(data.warning || "Yahoo Finance no devolvió noticias para este activo.")}</div>`;
         } catch (error) { box.innerHTML = `<div class="empty-state">${escapeHTML(error.message || "No fue posible cargar las noticias.")}</div>`; }
     }
 
@@ -309,7 +309,10 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) { $("#communityPosts").innerHTML = `<div class="empty-state">${escapeHTML(error.message || "No fue posible cargar la comunidad.")}</div>`; }
     }
 
+    const NAV_KEYS = ["productos", "community", "mercados", "brokers", "mas"];
+
     async function loadTab(tab) {
+        if (tab === "mercados") return loadMarkets();
         if (!activeTicker) return;
         if (tab === "news") return loadNews(activeTicker);
         if (tab === "technical") return loadTechnical(activeTicker);
@@ -323,6 +326,7 @@ document.addEventListener("DOMContentLoaded", () => {
         $$(".tab-panel").forEach((panel) => panel.classList.remove("active-panel"));
         const panel = tab === "summary" ? $("#tabSummary") : $(`#tab${tab.charAt(0).toUpperCase()}${tab.slice(1)}`);
         if (panel) panel.classList.add("active-panel");
+        setNavActive(NAV_KEYS.includes(tab) ? tab : null);
         loadTab(tab);
     }
 
@@ -348,6 +352,75 @@ document.addEventListener("DOMContentLoaded", () => {
         $("#globalSearch").value = symbol;
         $("#symbol").value = symbol;
         try { await analyzeAsset(symbol); } catch (error) { setStatus(error.message); }
+    }
+
+
+    function pctText(v, d = 2) { return v == null || !isFinite(v) ? "N/D" : `${v > 0 ? "+" : ""}${Number(v).toFixed(d)}%`; }
+    function numText(v, d = 2) { return v == null || !isFinite(v) ? "N/D" : Number(v).toLocaleString("es-ES", { maximumFractionDigits: d }); }
+
+    async function loadMarkets() {
+        const box = $("#marketsContent");
+        if (!box) return;
+        box.innerHTML = `<div class="loading">Cargando mercados...</div>`;
+        try {
+            const response = await fetch("/api/markets");
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error);
+            box.innerHTML = `<table class="table"><thead><tr><th>Activo</th><th>Símbolo</th><th>Último cierre</th><th>Variación diaria</th><th>Fecha del dato</th></tr></thead><tbody>${data.markets.map((m) => `<tr><td>${escapeHTML(m.name)}</td><td><button type="button" class="suggestion" data-market="${escapeHTML(m.symbol)}"><strong>${escapeHTML(m.symbol)}</strong></button></td><td>${m.price == null ? escapeHTML(m.error || "N/D") : numText(m.price, 4)}</td><td class="${Number(m.change_percent) >= 0 ? "positive-text" : "negative-text"}">${m.change_percent == null ? "N/D" : pctText(m.change_percent, 2)}</td><td>${m.as_of ? formatDateTime(m.as_of) : "N/D"}</td></tr>`).join("")}</tbody></table>`;
+            $$("[data-market]").forEach((b) => b.addEventListener("click", async () => {
+                activateTab("summary");
+                $("#symbol").value = b.dataset.market;
+                try { await analyzeAsset(b.dataset.market); } catch (error) { setStatus(error.message); }
+            }));
+        } catch (error) { box.innerHTML = `<div class="empty-state">${escapeHTML(error.message || "No fue posible cargar los mercados.")}</div>`; }
+    }
+
+    function renderModels(d) {
+        const c = d.consensus || {};
+        const cur = marketData?.currency;
+        let summary;
+        if (c.status === "ok") {
+            summary = `<section class="metric-grid">
+                <article class="card"><small>Consenso ponderado</small><strong>${escapeHTML(c.direction)}</strong><small>${c.n_models} modelos · acuerdo ${(c.agreement_share * 100).toFixed(0)}%</small></article>
+                <article class="card"><small>Retorno central (${d.horizon_days} ses.)</small><strong>${pctText(c.weighted_return_pct)}</strong><small>Precio estimado ${formatMoney(c.estimated_price, cur)}</small></article>
+                <article class="card"><small>Intervalo ~90%</small><strong>${formatMoney(c.interval.low_price, cur)} – ${formatMoney(c.interval.high_price, cur)}</strong><small>Basado en el error fuera de muestra</small></article>
+                <article class="card"><small>Incertidumbre</small><strong>${escapeHTML(c.uncertainty_level)}</strong><small>Dispersión entre modelos ${numText(c.dispersion_std_pct)} pp</small></article>
+            </section>`;
+        } else {
+            summary = `<div class="empty-state"><strong>Sin valor predictivo demostrado.</strong> ${escapeHTML(c.message || "")} La mediana simple de los modelos (${pctText(c.simple_median_return_pct)}) se muestra solo como referencia.</div>`;
+        }
+        const w = c.weights || {};
+        const rows = d.models.map((m) => {
+            const h = m.historical_metrics || {};
+            const iv = m.interval ? `${formatMoney(m.interval.low_price, cur)} – ${formatMoney(m.interval.high_price, cur)}` : "N/D";
+            return `<tr><td><strong>${escapeHTML(m.name)}</strong><br><small>v${escapeHTML(m.version)}</small></td><td>${m.status === "ok" ? pctText(m.estimated_return_pct) : escapeHTML(m.message || "Error")}</td><td>${iv}</td><td>${numText(h.rmse_return * 100, 3)}%</td><td class="${(h.skill_vs_baseline ?? -1) > 0 ? "positive-text" : "negative-text"}">${h.skill_vs_baseline == null ? "N/D" : pctText(h.skill_vs_baseline * 100, 1)}</td><td>${h.directional_accuracy == null ? "N/D" : (h.directional_accuracy * 100).toFixed(1) + "%"}</td><td>${((w[m.model_id] || 0) * 100).toFixed(0)}%</td></tr>`;
+        }).join("");
+        const base = d.baselines.map((m) => { const h = m.historical_metrics; return `<tr><td>${escapeHTML(m.name)}</td><td>${pctText(m.estimated_return_pct)}</td><td>—</td><td>${numText(h.rmse_return * 100, 3)}%</td><td>—</td><td>${h.directional_accuracy == null ? "N/D" : (h.directional_accuracy * 100).toFixed(1) + "%"}</td><td>—</td></tr>`; }).join("");
+        const mc = d.monte_carlo || {};
+        const pc = mc.percentiles_price || {};
+        const cal = mc.calibration || {};
+        const mcHtml = `<h3 style="margin-top:22px">Escenarios Monte Carlo</h3><p class="panel-description">${escapeHTML(mc.method || "")}. Percentiles del precio a ${d.horizon_days} sesiones: P5 ${formatMoney(pc.p5, cur)} · P25 ${formatMoney(pc.p25, cur)} · P50 ${formatMoney(pc.p50, cur)} · P75 ${formatMoney(pc.p75, cur)} · P95 ${formatMoney(pc.p95, cur)}. Probabilidad simulada de ganancia: ${((mc.prob_gain || 0) * 100).toFixed(0)}%. ${cal.empirical_coverage != null ? `Calibración fuera de muestra: el intervalo del ${(cal.nominal_level * 100).toFixed(0)}% cubrió el ${(cal.empirical_coverage * 100).toFixed(0)}% de los casos (${cal.n_origins} orígenes).` : escapeHTML(cal.message || "")}</p>`;
+        $("#modelsContent").innerHTML = `<p class="panel-description">Datos al ${escapeHTML(d.as_of)} (${escapeHTML(d.data_source)}) · ${d.data_points} sesiones · ${d.oos_points} puntos fuera de muestra · objetivo aprox. ${escapeHTML(d.target_date_approx)}${d.data_source === "demo" ? " · <strong>DATOS DEMO SINTÉTICOS</strong>" : ""}</p>${summary}
+            <div style="overflow-x:auto"><table class="table"><thead><tr><th>Modelo</th><th>Retorno estimado</th><th>Intervalo ~90%</th><th>RMSE fuera de muestra</th><th>Mejora vs mejor referencia</th><th>Acierto direccional</th><th>Peso</th></tr></thead><tbody>${rows}${base}</tbody></table></div>${mcHtml}
+            <ul class="note">${d.notes.map((n) => `<li>${escapeHTML(n)}</li>`).join("")}</ul>`;
+    }
+
+    async function runModels() {
+        const box = $("#modelsContent");
+        const horizon = $("#modelsHorizon")?.value || "5";
+        box.innerHTML = `<div class="loading">Entrenando y validando modelos...</div>`;
+        $("#runModels").disabled = true;
+        try {
+            const response = await fetch(`/api/models/${encodeURIComponent(activeTicker)}?horizon=${encodeURIComponent(horizon)}`);
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "No fue posible ejecutar los modelos.");
+            renderModels(data);
+        } catch (error) { box.innerHTML = `<div class="empty-state">${escapeHTML(error.message)}</div>`; }
+        finally { $("#runModels").disabled = false; }
+    }
+
+    function setNavActive(key) {
+        $$(".main-nav a[data-nav]").forEach((a) => a.classList.toggle("active", a.dataset.nav === key));
     }
 
     function bindEvents() {
@@ -393,6 +466,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (exists("#themeToggle")) $("#themeToggle").addEventListener("click", toggleTheme);
 
         $$(".context-tab").forEach((tab) => tab.addEventListener("click", () => activateTab(tab.dataset.tab)));
+        $$(".main-nav a[data-nav]").forEach((link) => link.addEventListener("click", (event) => {
+            event.preventDefault();
+            activateTab(link.dataset.nav);
+            history.replaceState(null, "", `#${link.getAttribute("href").slice(1)}`);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }));
+        $$("[data-goto]").forEach((btn) => btn.addEventListener("click", () => {
+            activateTab(btn.dataset.goto);
+            if (btn.dataset.focus) $(btn.dataset.focus)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }));
+        if (exists("#runModels")) $("#runModels").addEventListener("click", runModels);
+        const initial = $$(".main-nav a[data-nav]").find((a) => a.getAttribute("href") === location.hash);
+        if (initial) activateTab(initial.dataset.nav);
 
         $$(".period").forEach((button) => button.addEventListener("click", async () => {
             if (!marketData) return;

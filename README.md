@@ -7,7 +7,13 @@ Plataforma académica de análisis y predicción de activos financieros (Flask, 
 |---|---|
 | 0 Auditoría | Hecha (ver `docs/DIAGNOSTICO.md`) |
 | 1 Estabilización | **Base hecha**: fábrica de app única, configuración por entorno, admin protegido, validación, límites, cabeceras, pruebas. Pendiente: BD Supabase |
-| 2–8 | Pendientes |
+| 3 Predicción | **Parcial**: Ridge, Random Forest, referencias, Monte Carlo, consenso, walk-forward (ver `docs/MODELOS.md`). XGBoost, ARIMA y SARIMA están escritos pero **sin verificar** (requieren `requirements-ml.txt`); pendiente LSTM y la evaluación automática |
+| Navegación | Menú superior funcional (Productos, Comunidad, Mercados, Brókers, Más) |
+| 2, 4–8 | Pendientes |
+
+## Instalación rápida y verificación
+`scripts\instalar_local.bat` (Windows) o `bash scripts/instalar_local.sh` instala todo y ejecuta `scripts/verify_install.py`.
+Guías: `docs/INSTALACION.md`, `docs/BASE_DE_DATOS.md`, `docs/MODELOS.md`. Estado en vivo: `/api/health`.
 
 ## Ejecución local
 ```
@@ -31,4 +37,5 @@ Ver `.env.example`. En producción (`APP_ENV=production`) `SECRET_KEY` es obliga
 ## Limitaciones actuales
 - El historial y la comunidad siguen en JSON local hasta migrar a Supabase.
 - Los votos de la comunidad aún no controlan duplicados (requiere usuarios autenticados, Fase 4).
-- No se ha podido probar aquí la conexión real con Yahoo Finance ni con Supabase (entorno sin red).
+- No se ha podido probar la conexión real con Yahoo Finance ni con Supabase, ni XGBoost/ARIMA/SARIMA (el entorno de desarrollo no tenía red). Usa `scripts/verify_install.py` para verificarlos en tu equipo.
+- La app aún no escribe en la base de datos (esquema y migraciones preparados, pendientes de verificar).

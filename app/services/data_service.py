@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 import os
 import random
@@ -7,6 +8,8 @@ import urllib.request
 from datetime import date, timedelta
 
 from app.models.domain import DatosMercado
+
+log = logging.getLogger("marketpredict")
 
 try:
     import yfinance as yf
@@ -233,10 +236,19 @@ class APIFinanciera(FuenteDatos):
     def get_news(self, simbolo, limit=10):
         resolved = self.resolve_ticker(simbolo)
         ticker = self._ticker(resolved["symbol"])
+        news, warning = [], None
         try:
             news = ticker.news or []
-        except Exception:
-            news = []
+        except Exception as exc:
+            log.warning("ticker.news falló para %s: %s", resolved["symbol"], exc)
+            warning = "Yahoo Finance no respondió al solicitar las noticias."
+        if not news and hasattr(ticker, "get_news"):
+            try:
+                news = ticker.get_news(count=limit) or []
+                warning = None if news else warning
+            except Exception as exc:
+                log.warning("ticker.get_news falló para %s: %s", resolved["symbol"], exc)
+                warning = warning or "Yahoo Finance no respondió al solicitar las noticias."
         result = []
         for item in news[:limit]:
             content = item.get("content", item) if isinstance(item, dict) else {}
@@ -253,7 +265,35 @@ class APIFinanciera(FuenteDatos):
                 timestamp = datetime.fromtimestamp(timestamp, timezone.utc).isoformat()
             if title:
                 result.append({"title": title, "source": publisher, "date": timestamp, "url": link})
-        return {"symbol": resolved["symbol"], "news": result}
+        out = {"symbol": resolved["symbol"], "news": result, "provider": "Yahoo Finance"}
+        if warning and not result:
+            out["warning"] = warning
+        return out
+
+    MARKETS = [
+        ("^GSPC", "S&P 500"), ("^IXIC", "Nasdaq Composite"), ("^DJI", "Dow Jones"), ("^IBEX", "IBEX 35"),
+        ("^FTSE", "FTSE 100"), ("^GDAXI", "DAX"), ("BTC-USD", "Bitcoin"), ("ETH-USD", "Ethereum"),
+        ("EURUSD=X", "EUR/USD"),
+    ]
+
+    def get_markets(self):
+        """Resumen de mercados: último cierre y variación diaria. Cada fila falla de forma independiente."""
+        rows = []
+        for symbol, name in self.MARKETS:
+            row = {"symbol": symbol, "name": name, "price": None, "change_percent": None, "as_of": None, "error": None}
+            try:
+                frame = self._ticker(symbol).history(period="5d", interval="1d", auto_adjust=False, actions=False, prepost=False)
+                closes = frame["Close"].dropna()
+                if len(closes) >= 1:
+                    row["price"] = round(float(closes.iloc[-1]), 4)
+                    row["as_of"] = self._timestamp(closes.index[-1])
+                if len(closes) >= 2:
+                    row["change_percent"] = round(float((closes.iloc[-1] / closes.iloc[-2] - 1) * 100), 3)
+            except Exception as exc:
+                log.warning("mercado %s no disponible: %s", symbol, exc)
+                row["error"] = "No disponible"
+            rows.append(row)
+        return {"provider": "Yahoo Finance", "markets": rows}
 
     def get_technical(self, simbolo):
         resolved = self.resolve_ticker(simbolo)

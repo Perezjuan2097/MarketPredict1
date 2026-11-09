@@ -12,11 +12,11 @@
     <div class="topbar-left">
         <a href="/" class="brand"><span class="brand-mark">M</span><span>MarketPredict</span></a>
         <nav class="main-nav">
-            <a href="#productos" data-i18n="products">Productos</a>
-            <a href="#comunidad" data-i18n="community">Comunidad</a>
-            <a href="#mercados" data-i18n="markets">Mercados</a>
-            <a href="#brokers" data-i18n="brokers">Brókers</a>
-            <a href="#mas" data-i18n="more">Más</a>
+            <a href="#productos" data-nav="productos" data-i18n="products">Productos</a>
+            <a href="#comunidad" data-nav="community" data-i18n="community">Comunidad</a>
+            <a href="#mercados" data-nav="mercados" data-i18n="markets">Mercados</a>
+            <a href="#brokers" data-nav="brokers" data-i18n="brokers">Brókers</a>
+            <a href="#mas" data-nav="mas" data-i18n="more">Más</a>
         </nav>
     </div>
     <div class="topbar-center">
@@ -123,6 +123,19 @@
                 </div>
             </section>
 
+
+            <section class="dashboard-panel" id="modelsPanel">
+                <div class="panel-heading">
+                    <div><span class="panel-kicker">MULTIMODELO</span><h2>Consenso de modelos</h2>
+                    <p class="panel-description">Compara modelos validados cronológicamente (walk-forward) contra referencias simples. Estimaciones estadísticas, no certezas.</p></div>
+                    <div class="tracking-actions">
+                        <select id="modelsHorizon" aria-label="Horizonte en sesiones"><option value="1">1 sesión</option><option value="5" selected>5 sesiones</option><option value="10">10 sesiones</option><option value="20">20 sesiones</option></select>
+                        <button id="runModels" class="primary-button" type="button">Ejecutar modelos</button>
+                    </div>
+                </div>
+                <div id="modelsContent"><div class="empty-state">Pulsa “Ejecutar modelos” para calcular el consenso del activo (puede tardar unos segundos).</div></div>
+            </section>
+
             <section class="dashboard-panel tracking-panel">
                 <div class="panel-heading">
                     <div><span class="panel-kicker">REGISTRO</span><h2 data-i18n="tracking">Seguimiento</h2><p class="panel-description" data-i18n="trackingDesc">Guarda y consulta las predicciones generadas por el sistema.</p></div>
@@ -180,6 +193,49 @@
         <div class="dashboard-panel">
             <div class="panel-heading"><div><span class="panel-kicker">COMPOSICIÓN</span><h2>Componentes / comparables</h2><p id="componentsDescription" class="panel-description"></p></div></div>
             <div id="componentsContent"></div>
+        </div>
+    </section>
+
+
+    <section id="tabProductos" class="tab-panel">
+        <div class="dashboard-panel">
+            <div class="panel-heading"><div><span class="panel-kicker">PLATAFORMA</span><h2>Productos y módulos</h2><p class="panel-description">Estado real de cada módulo de MarketPredict.</p></div></div>
+            <table class="table"><thead><tr><th>Módulo</th><th>Estado</th><th>Descripción</th></tr></thead><tbody>
+                <tr><td><strong>Análisis y gráficos</strong></td><td><span class="pill">Disponible</span></td><td>Histórico, indicadores, tendencia, estacionalidad y componentes.</td></tr>
+                <tr><td><strong>Consenso multimodelo</strong></td><td><span class="pill">Disponible</span></td><td>Regresión lineal y Random Forest con validación walk-forward, referencias simples y Monte Carlo. Se ejecuta desde la pestaña Resumen.</td></tr>
+                <tr><td><strong>Informes</strong></td><td><span class="pill">Disponible</span></td><td>Informe HTML por activo (PDF/Excel: pendiente).</td></tr>
+                <tr><td><strong>Comunidad</strong></td><td><span class="pill">Parcial</span></td><td>Comentarios y votos provisionales; usuarios, rankings y predicciones públicas: pendiente.</td></tr>
+                <tr><td><strong>ARIMA, SARIMA, XGBoost, LSTM</strong></td><td><span class="pill">Pendiente</span></td><td>Planificados; requieren dependencias adicionales.</td></tr>
+                <tr><td><strong>Simulador, riesgo, alertas</strong></td><td><span class="pill">Pendiente</span></td><td>Planificados en las siguientes fases.</td></tr>
+            </tbody></table>
+            <div class="vote-actions" style="margin-top:16px"><button class="primary-button" type="button" data-goto="summary">Ir al análisis</button></div>
+        </div>
+    </section>
+
+    <section id="tabMercados" class="tab-panel">
+        <div class="dashboard-panel">
+            <div class="panel-heading"><div><span class="panel-kicker">YAHOO FINANCE</span><h2>Mercados</h2><p class="panel-description">Último cierre diario y variación frente a la sesión anterior. Pulsa un activo para analizarlo.</p></div></div>
+            <div id="marketsContent"></div>
+        </div>
+    </section>
+
+    <section id="tabBrokers" class="tab-panel">
+        <div class="dashboard-panel">
+            <div class="panel-heading"><div><span class="panel-kicker">BRÓKERS</span><h2>Brókers</h2></div></div>
+            <p>MarketPredict <strong>no está conectado a ningún bróker</strong> y no ejecuta operaciones con dinero real. Es una herramienta de análisis y simulación con fines académicos.</p>
+            <p class="panel-description">Cuando exista el simulador de inversiones, las operaciones serán virtuales. Antes de operar en un mercado real, consulta con un bróker regulado en tu país; nada de lo mostrado aquí es una recomendación de inversión.</p>
+        </div>
+    </section>
+
+    <section id="tabMas" class="tab-panel">
+        <div class="dashboard-panel">
+            <div class="panel-heading"><div><span class="panel-kicker">MÁS</span><h2>Más opciones</h2></div></div>
+            <div class="vote-actions">
+                <button class="primary-button" type="button" data-goto="summary" data-focus="#report">Generar informe del activo</button>
+                <button class="secondary-button" type="button" data-goto="community">Ir a la comunidad</button>
+                <a class="secondary-button" href="/admin/login" style="text-decoration:none">Panel de administración</a>
+            </div>
+            <p class="panel-description" style="margin-top:16px">Las predicciones son estimaciones estadísticas y no constituyen asesoría financiera.</p>
         </div>
     </section>
 

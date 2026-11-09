@@ -9,6 +9,9 @@ from app.services.report_service import InformeEmpresarial
 from app.services.storage_service import Storage
 from app.services.community_service import CommunityStorage
 from app.models.config import ModelConfig
+import time
+from ml_engine.engine import run_all
+from app.services.data_service import DemoFuente
 from app.security import api_error, clean_symbol
 
 main_bp = Blueprint("main", __name__)
@@ -194,3 +197,63 @@ def save():
 @main_bp.get("/api/history")
 def history():
     return jsonify(Storage(current_app.config["PROJECT_ROOT"]).all())
+
+
+_CACHE = {}
+
+
+def _cached(key, ttl, fn):
+    hit = _CACHE.get(key)
+    if hit and time.monotonic() - hit[0] < ttl:
+        return hit[1]
+    value = fn()
+    _CACHE[key] = (time.monotonic(), value)
+    return value
+
+
+@main_bp.get("/api/markets")
+def markets():
+    try:
+        hit = _CACHE.get("markets")
+        if hit and time.monotonic() - hit[0] < 60:
+            return jsonify(hit[1])
+        data = APIFinanciera().get_markets()
+        if any(m["price"] is not None for m in data["markets"]):  # no se cachean fallos totales
+            _CACHE["markets"] = (time.monotonic(), data)
+        return jsonify(data)
+    except Exception as e:
+        return api_error(e)
+
+
+@main_bp.get("/api/models/<path:ticker>")
+def models(ticker):
+    ticker = clean_symbol(ticker)
+    try:
+        horizon = int(request.args.get("horizon", "5"))
+    except ValueError:
+        return jsonify(error="Horizonte no válido."), 400
+    demo = os.getenv("USE_DEMO", "false").lower() == "true"
+
+    def compute():
+        if demo:
+            data, name = DemoFuente().obtener(ticker, 600), ticker.upper()
+        else:
+            res = APIFinanciera().obtener_periodo(ticker, "2y", "1d")
+            data, name = res["data"], res["symbol"]
+        out = run_all(data, name, horizon)
+        out["data_source"] = "demo" if demo else "Yahoo Finance"
+        return out
+
+    try:
+        return jsonify(_cached(("models", ticker.upper(), horizon, demo), 900, compute))
+    except Exception as e:
+        return api_error(e)
+
+
+@main_bp.get("/api/health")
+def health():
+    """Estado del despliegue: base de datos y librerías opcionales (para verificar la instalación)."""
+    from app.db import check_db
+    from ml_engine.model_registry import registry
+    return jsonify(status="ok", db=check_db(), optional_models=registry.optional_status(),
+                   demo_mode=os.getenv("USE_DEMO", "false").lower() == "true")

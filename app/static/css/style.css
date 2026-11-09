@@ -1149,3 +1149,9 @@ body.dark-mode .panel-heading h2 { color: var(--text); }
     .chart-header { flex-direction: column; align-items: flex-start; }
     .news-item { flex-direction: column; }
 }
+
+/* Navegación superior funcional y panel multimodelo */
+.main-nav a.active { color: var(--text, #172033); font-weight: 700; border-bottom: 2px solid var(--green, #1f9d6a); }
+#modelsPanel select { padding: 9px 12px; border: 1px solid var(--border, #dfe5ec); border-radius: 10px; background: transparent; color: inherit; }
+#modelsContent .note { padding-left: 18px; }
+#modelsContent h3 { font-size: 15px; }
