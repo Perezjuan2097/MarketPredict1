@@ -10,6 +10,17 @@ def database_url():
     url = os.getenv("DATABASE_URL", "").strip()
     if url.startswith("postgres://"):  # formato antiguo
         url = "postgresql://" + url[len("postgres://"):]
+    # SQLAlchemy 2.1 cambió el driver por defecto de "postgresql://" a psycopg (v3), que no está
+    # instalado: se fija el driver instalado (psycopg2-binary) salvo que la cadena ya indique otro
+    # que sí esté disponible.
+    import importlib.util
+    for prefix in ("postgresql://", "postgresql+psycopg://", "postgresql+asyncpg://"):
+        if url.startswith(prefix):
+            driver = prefix[len("postgresql+"):-3] if "+" in prefix else None
+            if driver and importlib.util.find_spec(driver) is not None and driver != "asyncpg":
+                break
+            url = "postgresql+psycopg2://" + url[len(prefix):]
+            break
     return url
 
 
@@ -51,6 +62,7 @@ def check_db():
     except RuntimeError as exc:
         return {"status": "error", "detail": str(exc)}
     except Exception as exc:  # el mensaje original puede contener host/usuario: solo al log
-        log.error("Fallo de conexión a la base de datos: %s", type(exc).__name__)
+        detail = f" ({exc.name})" if isinstance(exc, ModuleNotFoundError) else ""
+        log.error("Fallo de conexión a la base de datos: %s%s", type(exc).__name__, detail)
         log.debug("Detalle", exc_info=True)
         return {"status": "error", "detail": "No fue posible conectar. Revise DATABASE_URL (use la cadena Session pooler de Supabase) y los logs."}

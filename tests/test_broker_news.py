@@ -78,3 +78,13 @@ class TestBroker(unittest.TestCase):
         with mock.patch.dict(os.environ, {"ALPACA_API_KEY": ""}):
             j = self.c.get("/api/broker/status").get_json()
         self.assertFalse(j["configured"])
+
+
+class TestDatabaseUrl(unittest.TestCase):
+    def test_fuerza_psycopg2(self):
+        from app.db import database_url
+        for raw in ("postgres://u:p@h:5432/db", "postgresql://u:p@h:5432/db", "postgresql+asyncpg://u:p@h:5432/db"):
+            with mock.patch.dict(os.environ, {"DATABASE_URL": raw}):
+                self.assertEqual(database_url(), "postgresql+psycopg2://u:p@h:5432/db")
+        with mock.patch.dict(os.environ, {"DATABASE_URL": "sqlite:///x.db"}):
+            self.assertEqual(database_url(), "sqlite:///x.db")

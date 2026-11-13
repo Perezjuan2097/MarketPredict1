@@ -36,7 +36,8 @@ def get_repo(app):
                 enable_rls(engine)
             repo = SQLRepository(engine)
         except Exception as exc:
-            log.error("No se pudo inicializar el repositorio SQL: %s", type(exc).__name__)
+            detail = f" ({exc.name})" if isinstance(exc, ModuleNotFoundError) else ""
+            log.error("No se pudo inicializar el repositorio SQL: %s%s", type(exc).__name__, detail)
             repo = None
     if repo is None and os.getenv("USE_MEMORY_DB", "false").lower() == "true":
         from app.repositories.memory import MemoryRepository
