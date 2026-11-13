@@ -15,6 +15,7 @@
             <a href="#productos" data-nav="productos" data-i18n="products">Productos</a>
             <a href="#comunidad" data-nav="community" data-i18n="community">Comunidad</a>
             <a href="#mercados" data-nav="mercados" data-i18n="markets">Mercados</a>
+            <a href="#resultados" data-nav="resultados" data-i18n="results">Resultados</a>
             <a href="#brokers" data-nav="brokers" data-i18n="brokers">Brókers</a>
             <a href="#mas" data-nav="mas" data-i18n="more">Más</a>
         </nav>
@@ -203,13 +204,34 @@
             <div class="panel-heading"><div><span class="panel-kicker">PLATAFORMA</span><h2>Productos y módulos</h2><p class="panel-description">Estado real de cada módulo de MarketPredict.</p></div></div>
             <table class="table"><thead><tr><th>Módulo</th><th>Estado</th><th>Descripción</th></tr></thead><tbody>
                 <tr><td><strong>Análisis y gráficos</strong></td><td><span class="pill">Disponible</span></td><td>Histórico, indicadores, tendencia, estacionalidad y componentes.</td></tr>
-                <tr><td><strong>Consenso multimodelo</strong></td><td><span class="pill">Disponible</span></td><td>Regresión lineal y Random Forest con validación walk-forward, referencias simples y Monte Carlo. Se ejecuta desde la pestaña Resumen.</td></tr>
+                <tr><td><strong>Resumen para todos</strong></td><td><span class="pill">Disponible</span></td><td>Explicación en lenguaje sencillo de cada análisis, con su nivel de confiabilidad y un glosario.</td></tr>
+                <tr><td><strong>Probabilidad de subida</strong></td><td><span class="pill">Disponible</span></td><td>Regresión logística y bosque aleatorio de clasificación, calibrados fuera de muestra contra la frecuencia histórica.</td></tr>
+                <tr><td><strong>Modelo de riesgo</strong></td><td><span class="pill">Disponible</span></td><td>Pronóstico de volatilidad (HAR + VIX) con rango de precio del 90 % y su acierto histórico.</td></tr>
+                <tr><td><strong>Contexto de mercado</strong></td><td><span class="pill">Disponible</span></td><td>VIX, S&amp;P 500, tasa a 10 años y dólar como variables de los modelos.</td></tr>
+                <tr><td><strong>Consenso de precio</strong></td><td><span class="pill">Disponible</span></td><td>Ridge, Random Forest y XGBoost con validación walk-forward, referencias simples y Monte Carlo.</td></tr>
+                <tr><td><strong>Pulso de noticias</strong></td><td><span class="pill">Disponible</span></td><td>Tono de los titulares recientes. Informativo: no validado como predictor.</td></tr>
+                <tr><td><strong>Resultados de validación</strong></td><td><span class="pill">Disponible</span></td><td>Prueba del motor en 11 activos de distintos mercados (pestaña Resultados).</td></tr>
+                <tr><td><strong>Bróker (Alpaca paper)</strong></td><td><span class="pill">Disponible</span></td><td>Cuenta simulada, posiciones y órdenes; solo lectura.</td></tr>
                 <tr><td><strong>Informes</strong></td><td><span class="pill">Disponible</span></td><td>Informe HTML por activo (PDF/Excel: pendiente).</td></tr>
                 <tr><td><strong>Comunidad</strong></td><td><span class="pill">Parcial</span></td><td>Comentarios y votos provisionales; usuarios, rankings y predicciones públicas: pendiente.</td></tr>
-                <tr><td><strong>ARIMA, SARIMA, XGBoost, LSTM</strong></td><td><span class="pill">Pendiente</span></td><td>Planificados; requieren dependencias adicionales.</td></tr>
-                <tr><td><strong>Simulador, riesgo, alertas</strong></td><td><span class="pill">Pendiente</span></td><td>Planificados en las siguientes fases.</td></tr>
+                <tr><td><strong>ARIMA, SARIMA</strong></td><td><span class="pill">Opcional</span></td><td>Instalados; se activan con ENABLE_TS_MODELS=true (más lentos).</td></tr>
+                <tr><td><strong>LSTM, alertas por correo</strong></td><td><span class="pill">Pendiente</span></td><td>Solo se añadirán si superan a modelos más simples.</td></tr>
             </tbody></table>
             <div class="vote-actions" style="margin-top:16px"><button class="primary-button" type="button" data-goto="summary">Ir al análisis</button></div>
+        </div>
+    </section>
+
+    <section id="tabResultados" class="tab-panel">
+        <div class="dashboard-panel">
+            <div class="panel-heading"><div><span class="panel-kicker">VALIDACIÓN</span><h2>¿Funcionan los modelos?</h2>
+            <p class="panel-description">Ejecuta todo el motor sobre activos de distintos mercados (acciones, índices, divisas, oro y criptomonedas) y muestra, sin maquillaje, dónde los modelos le ganan a una regla simple y dónde no. Cada activo se entrena y prueba con datos que el modelo no vio.</p></div>
+                <div class="tracking-actions">
+                    <select id="resultsHorizon" aria-label="Horizonte"><option value="1">1 sesión</option><option value="5" selected>5 sesiones</option><option value="20">20 sesiones</option></select>
+                    <button id="runResults" class="primary-button" type="button">Calcular resultados</button>
+                </div>
+            </div>
+            <div id="resultsSummary"></div>
+            <div id="resultsContent"><div class="empty-state">Pulsa “Calcular resultados”. La primera vez tarda unos minutos (se entrenan decenas de modelos); después queda en caché 30 minutos.</div></div>
         </div>
     </section>
 

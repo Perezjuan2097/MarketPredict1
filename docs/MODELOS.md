@@ -14,6 +14,24 @@ Retorno logarítmico a *h* sesiones bursátiles: `log(cierre[t+h] / cierre[t])`.
 | ARIMA(1,0,1), SARIMA(1,0,1)(1,0,1,5) | Escritos, **sin verificar** | Requieren `statsmodels` y `ENABLE_TS_MODELS=true`. Modelan retornos diarios; sin fuga de datos (prueba incluida). |
 | LSTM, Prophet | **Pendiente** | Requieren TensorFlow/PyTorch o prophet; solo se añadirán si superan a modelos más simples. |
 
+## Módulos de decisión (v3)
+| Módulo | Qué responde | Referencia que debe superar |
+|---|---|---|
+| Probabilidad de subida (`ml_engine/probability.py`) | ¿Qué probabilidad hay de que el precio esté más alto en *h* sesiones? | Frecuencia histórica de subidas (Brier score) |
+| Riesgo (`ml_engine/risk.py`) | ¿Cuánto se puede mover? Rango del 90 % | "La volatilidad será la del último mes" |
+| Contexto (`features/builder.py`) | VIX, S&P 500, tasa a 10 años y dólar como variables | — (entran a todos los modelos) |
+| Pulso de noticias (`app/services/news_pulse.py`) | Tono de los titulares recientes | **No validado** (no hay histórico de titulares): se muestra aparte |
+| Explicación (`ml_engine/explain.py`) | Resumen en lenguaje sencillo + glosario | Nunca afirma certeza |
+
+**Significancia.** Un modelo (de precio o de probabilidad) solo se usa si su mejora sobre la referencia supera la
+prueba de Diebold-Mariano con varianza Newey-West (t > 1,96). En 12 paseos aleatorios simulados (ruido puro) el sistema
+declaró ventaja 0 veces; en datos con señal la detecta. Así se evita "encontrar" patrones que son suerte.
+
+**Sin volumen.** Índices y divisas no publican volumen: el volumen relativo queda neutro (1,0) en vez de anular el activo.
+
+**Resultados.** La pestaña *Resultados* ejecuta el motor completo sobre 11 activos (acciones, ETF, IBEX, EUR/USD,
+oro, BTC, ETH) y resume dónde hay ventaja y dónde no.
+
 ## Validación
 Walk-forward expansivo, cronológico, con purga del horizonte (el entrenamiento solo incluye filas cuyo objetivo ya era conocido en la fecha de predicción). Métricas: MAE, MSE, RMSE, MAPE (excluye denominadores ≈ 0), acierto direccional, Sharpe y máximo drawdown de una estrategia simulada con operaciones no solapadas y sin costes.
 

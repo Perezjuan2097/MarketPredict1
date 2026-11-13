@@ -93,7 +93,10 @@ def market_data(ticker):
 def news(ticker):
     ticker = clean_symbol(ticker)
     try:
-        return jsonify(APIFinanciera().get_news(ticker))
+        from app.services.news_pulse import pulse
+        data = APIFinanciera().get_news(ticker)
+        data["pulse"] = pulse(data.get("news", []))
+        return jsonify(data)
     except Exception as e:
         return api_error(e)
 
@@ -227,6 +230,21 @@ def markets():
         return api_error(e)
 
 
+def market_context():
+    """Series de contexto (VIX, S&P 500, tasa a 10 años, dólar), en caché 1 hora. Si una falla, se omite."""
+    from ml_engine.features.builder import CONTEXT_SERIES
+
+    def fetch():
+        out = {}
+        for sym in CONTEXT_SERIES:
+            try:
+                out[sym] = APIFinanciera().obtener_periodo(sym, "2y", "1d")["data"]
+            except Exception as exc:
+                current_app.logger.warning("Contexto %s no disponible: %s", sym, exc)
+        return out
+    return _cached(("context",), 3600, fetch)
+
+
 def model_result(ticker, horizon):
     """Resultado del motor de modelos (con caché de 15 min). Lo usan /api/models y el guardado de predicciones."""
     ticker = clean_symbol(ticker)
@@ -235,14 +253,16 @@ def model_result(ticker, horizon):
     def compute():
         if demo:
             data, name = DemoFuente().obtener(ticker, 600), ticker.upper()
+            context = None
         else:
             res = APIFinanciera().obtener_periodo(ticker, "2y", "1d")
             data, name = res["data"], res["symbol"]
-        out = run_all(data, name, horizon)
+            context = market_context()
+        out = run_all(data, name, horizon, context=context)
         out["data_source"] = "demo" if demo else "Yahoo Finance"
         return out
 
-    return _cached(("models", ticker.upper(), int(horizon), demo), 900, compute)
+    return _cached(("models", ticker.upper(), int(horizon), demo), 1800, compute)
 
 
 @main_bp.get("/api/models/<path:ticker>")

@@ -6,6 +6,7 @@ import logging
 import numpy as np
 import pandas as pd
 
+from ml_engine import explain, probability, risk
 from ml_engine.ensemble import consensus
 from ml_engine.evaluation import backtest as bt
 from ml_engine.features import builder
@@ -19,7 +20,7 @@ MIN_ROWS = 250
 BASELINES = ["baseline_last_price", "baseline_mean_return"]
 
 
-def run_all(data, symbol, horizon=5, seed=0, n_splits=5):
+def run_all(data, symbol, horizon=5, seed=0, n_splits=5, context=None):
     if not 1 <= int(horizon) <= 30:
         raise ValueError("El horizonte debe estar entre 1 y 30 sesiones.")
     horizon = int(horizon)
@@ -27,7 +28,9 @@ def run_all(data, symbol, horizon=5, seed=0, n_splits=5):
     if len(df) < MIN_ROWS:
         raise ValueError(f"Datos insuficientes: se requieren al menos {MIN_ROWS} sesiones diarias (hay {len(df)}).")
 
-    X_all, y_all = builder.build(df, horizon)
+    X_all, y_all = builder.build(df, horizon, context)
+    # Una variable de contexto sin dato hoy (p. ej. serie que dejó de publicarse) se descarta entera.
+    X_all = X_all.drop(columns=[c for c in X_all.columns if c not in builder.FEATURES and pd.isna(X_all[c].iloc[-1])])
     labeled = X_all.notna().all(axis=1) & y_all.notna()
     X, y = X_all[labeled].reset_index(drop=True), y_all[labeled].reset_index(drop=True)
     close_lab = df["cierre"][labeled].reset_index(drop=True)
@@ -58,18 +61,20 @@ def run_all(data, symbol, horizon=5, seed=0, n_splits=5):
 
     # 1) Validación walk-forward de todos los modelos (incluidas referencias). Un modelo opcional que
     #    falle se informa con estado "error" y no tumba al resto.
-    scores, errors = {}, {}
+    scores, errors, oos = {}, {}, {}
     for mid in active + BASELINES:
         try:
             Xm, _ = inputs(mid)
             idx, pred = bt.walk_forward(lambda m=mid: make(m), Xm, y, horizon, n_splits=n_splits)
             scores[mid] = bt.score(idx, pred, y, close_lab, horizon)
+            oos[mid] = (pred - y.iloc[idx].to_numpy()) ** 2
         except Exception as exc:
             if mid in BASELINES or mid in ("linear_regression", "random_forest"):
                 raise
             log.warning("Modelo %s falló en la validación: %s", mid, exc)
             errors[mid] = str(exc)
     base_rmse = [scores[b]["rmse_return"] for b in BASELINES]
+    best_base = min(BASELINES, key=lambda b: scores[b]["rmse_return"])
 
     # 2) Ajuste final con todas las filas etiquetadas y predicción para hoy
     results = []
@@ -84,7 +89,11 @@ def run_all(data, symbol, horizon=5, seed=0, n_splits=5):
         if mid in active:
             sk = bt.skill_vs_baseline(metrics["rmse_return"], base_rmse)
             metrics["skill_vs_baseline"] = sk
-            metrics["adds_value_indication"] = bool(sk is not None and sk > 0.01 and (metrics["directional_accuracy"] or 0) > 0.5)
+            t_stat, p_value = bt.M.diebold_mariano(oos[mid], oos[best_base], lag=horizon)
+            metrics["dm_t"], metrics["p_value"] = t_stat, p_value
+            metrics["significant"] = bool(t_stat is not None and t_stat > bt.M.SIGNIFICANT_T)
+            metrics["adds_value_indication"] = bool(sk is not None and sk > 0.01 and metrics["significant"]
+                                                    and (metrics["directional_accuracy"] or 0) > 0.5)
         try:
             Xm, xn = inputs(mid)
             model.fit(Xm, y)
@@ -117,13 +126,30 @@ def run_all(data, symbol, horizon=5, seed=0, n_splits=5):
         cons["interval"] = {"level": 0.90, "low_price": round(reference * float(np.exp(c - z * r)), 6),
                             "high_price": round(reference * float(np.exp(c + z * r)), 6)}
 
+    # 4) Probabilidad de subida (calibrada) y riesgo (volatilidad): lo más útil para decidir
+    try:
+        prob = probability.run(X, y, x_now, horizon, seed=seed, n_splits=n_splits)
+    except Exception as exc:
+        log.warning("Modelo de probabilidad falló: %s", exc)
+        prob = {"error": str(exc)}
+    try:
+        vix = (X_all["vix_nivel"] * 100).to_numpy() if "vix_nivel" in X_all else None
+        rsk = risk.run(df, horizon, vix=vix, n_splits=n_splits)
+    except Exception as exc:
+        log.warning("Modelo de riesgo falló: %s", exc)
+        rsk = {"error": str(exc)}
+    context_used = [builder.CONTEXT_LABELS.get(c.split("_")[0], c) for c in X.columns if c not in builder.FEATURES]
+    context_used = list(dict.fromkeys(context_used))
+
     target_date = (last_date + pd.tseries.offsets.BDay(horizon)).date().isoformat()  # aproximado: no conoce festivos
-    return {
+    out = {
         "asset": symbol, "as_of": last_date.date().isoformat(), "target_date_approx": target_date,
         "horizon_days": horizon, "horizon_unit": "sesiones bursátiles", "reference_price": round(reference, 6),
         "data_points": int(len(df)), "labeled_points": int(len(X)), "oos_points": scores["linear_regression"]["n_oos"],
         "models": [r for r in results if not r["is_baseline"]], "models_active": active, "baselines": [r for r in results if r["is_baseline"]],
         "monte_carlo": mc, "consensus": cons,
+        "probability": prob if "error" not in prob else None, "risk": rsk if "error" not in rsk else None,
+        "context_used": context_used,
         "fibonacci_reference": ta.fibonacci_levels(df),
         "notes": [
             "Estimaciones estadísticas con error medido fuera de muestra; no son certezas ni recomendaciones de inversión.",
@@ -133,3 +159,6 @@ def run_all(data, symbol, horizon=5, seed=0, n_splits=5):
             "Modelos opcionales: " + ", ".join(f"{k} ({'activo' if v['enabled'] else 'inactivo: ' + v['requires']})" for k, v in registry.optional_status().items()) + ". Pendientes: " + ", ".join(registry.PENDING) + ".",
         ],
     }
+    out["explanation"] = explain.build(out)
+    out["glossary"] = explain.GLOSSARY
+    return out

@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const translations = {
         es: {
-            products: "Productos", community: "Comunidad", markets: "Mercados", brokers: "Brókers", more: "Más",
+            products: "Productos", community: "Comunidad", markets: "Mercados", results: "Resultados", brokers: "Brókers", more: "Más",
             searchPlaceholder: "Buscar activos, símbolos o mercados", start: "Empiece", summary: "Resumen", news: "Noticias",
             technical: "Datos técnicos", seasonal: "Estacionales", components: "Componentes", options: "Opciones",
             analyzeTitle: "Analiza el comportamiento de un activo", analyze: "Analizar", historical: "Comportamiento histórico",
@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
             report: "Generar informe", footer: "Proyecto académico · Las predicciones son estimaciones, no garantías."
         },
         en: {
-            products: "Products", community: "Community", markets: "Markets", brokers: "Brokers", more: "More",
+            products: "Products", community: "Community", markets: "Markets", results: "Results", brokers: "Brokers", more: "More",
             searchPlaceholder: "Search assets, symbols or markets", start: "Get started", summary: "Summary", news: "News",
             technical: "Technical data", seasonal: "Seasonal", components: "Components", options: "Options",
             analyzeTitle: "Analyze an asset's behavior", analyze: "Analyze", historical: "Historical performance",
@@ -246,7 +246,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch(`/api/news/${encodeURIComponent(ticker)}`);
             const data = await response.json();
             if (!response.ok) throw new Error(data.error);
-            box.innerHTML = data.news.length ? data.news.map((item) => `<article class="news-item"><div><span class="news-source">${escapeHTML(item.source)}</span><h3>${escapeHTML(item.title)}</h3><small>${formatDateTime(item.date)}</small></div>${item.url ? `<a href="${escapeHTML(item.url)}" target="_blank" rel="noopener noreferrer">Abrir ↗</a>` : ""}</article>`).join("") : `<div class="empty-state">${escapeHTML(data.warning || "Yahoo Finance no devolvió noticias para este activo.")}</div>`;
+            const p = data.pulse;
+            const head = p && p.headlines ? `<div class="alert ${p.score >= 0.15 ? "BAJA" : p.score <= -0.15 ? "ALTA" : "NEUTRA"}" style="margin-bottom:12px"><span class="pill">PULSO DE NOTICIAS: ${escapeHTML(p.label.toUpperCase())}</span><p>${p.counts.positivo} titulares positivos, ${p.counts.neutral} neutrales y ${p.counts.negativo} negativos (fuente: ${escapeHTML(data.provider || "")}). ${escapeHTML(p.note)}</p></div>` : "";
+            const tones = Object.fromEntries((p?.items || []).map((i) => [i.title, i.tone]));
+            box.innerHTML = head + (data.news.length ? data.news.map((item) => `<article class="news-item"><div><span class="news-source">${escapeHTML(item.source)}${tones[item.title] && tones[item.title] !== "neutral" ? ` · <span class="${tones[item.title] === "positivo" ? "positive-text" : "negative-text"}">${tones[item.title]}</span>` : ""}</span><h3>${escapeHTML(item.title)}</h3><small>${formatDateTime(item.date)}</small></div>${item.url ? `<a href="${escapeHTML(item.url)}" target="_blank" rel="noopener noreferrer">Abrir ↗</a>` : ""}</article>`).join("") : `<div class="empty-state">${escapeHTML(data.warning || "Yahoo Finance no devolvió noticias para este activo.")}</div>`);
         } catch (error) { box.innerHTML = `<div class="empty-state">${escapeHTML(error.message || "No fue posible cargar las noticias.")}</div>`; }
     }
 
@@ -314,7 +317,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) { $("#communityPosts").innerHTML = `<div class="empty-state">${escapeHTML(error.message || "No fue posible cargar la comunidad.")}</div>`; }
     }
 
-    const NAV_KEYS = ["productos", "community", "mercados", "brokers", "mas"];
+    const NAV_KEYS = ["productos", "community", "mercados", "resultados", "brokers", "mas"];
 
     async function loadTab(tab) {
         if (tab === "mercados") return loadMarkets();
@@ -365,6 +368,49 @@ document.addEventListener("DOMContentLoaded", () => {
     function pctText(v, d = 2) { return v == null || !isFinite(v) ? "N/D" : `${v > 0 ? "+" : ""}${Number(v).toFixed(d)}%`; }
     function numText(v, d = 2) { return v == null || !isFinite(v) ? "N/D" : Number(v).toLocaleString("es-ES", { maximumFractionDigits: d }); }
 
+    const RESULT_ASSETS = [["AAPL", "Apple"], ["MSFT", "Microsoft"], ["NVDA", "Nvidia"], ["TSLA", "Tesla"], ["SPY", "S&P 500 (ETF)"],
+        ["QQQ", "Nasdaq 100 (ETF)"], ["^IBEX", "IBEX 35"], ["EURUSD=X", "Euro/Dólar"], ["GC=F", "Oro"], ["BTC-USD", "Bitcoin"], ["ETH-USD", "Ethereum"]];
+    let resultsRunning = false;
+
+    async function runResults() {
+        if (resultsRunning) return;
+        resultsRunning = true;
+        $("#runResults").disabled = true;
+        const horizon = $("#resultsHorizon").value;
+        const rows = [];
+        const box = $("#resultsContent");
+        const head = `<div style="overflow-x:auto"><table class="table"><thead><tr><th>Activo</th><th>Dirección del precio<br><small>mejor modelo vs regla simple</small></th><th>Probabilidad de subir<br><small>mejora del Brier</small></th><th>Riesgo (volatilidad)<br><small>mejora vs último mes</small></th><th>Rango 90%<br><small>acierto real</small></th><th>Veredicto</th></tr></thead><tbody>`;
+        const cell = (v, good) => v == null ? "<td>—</td>" : `<td class="${good ? "positive-text" : "negative-text"}">${pctText(v * 100, 1)}</td>`;
+        for (const [sym, name] of RESULT_ASSETS) {
+            box.innerHTML = head + rows.join("") + `<tr><td colspan="6"><div class="loading">Entrenando y validando ${escapeHTML(name)}... (${rows.length + 1}/${RESULT_ASSETS.length})</div></td></tr></tbody></table></div>`;
+            try {
+                const r = await fetch(`/api/models/${encodeURIComponent(sym)}?horizon=${horizon}`);
+                const d = await r.json();
+                if (!r.ok) throw new Error(d.error || "Error");
+                const best = Math.max(...d.models.filter((m) => m.historical_metrics?.skill_vs_baseline != null).map((m) => m.historical_metrics.skill_vs_baseline));
+                const pr = d.probability, rk = d.risk;
+                const pbest = pr ? Math.max(...pr.models.filter((m) => m.brier_skill != null).map((m) => m.brier_skill)) : null;
+                const cov = rk ? rk.range_90.historical_coverage : null;
+                const edges = [best > 0.01, pr?.has_edge, rk?.beats_reference].filter(Boolean).length;
+                const verdict = (best > 0.01 || pr?.has_edge) ? "Ventaja en dirección" : rk?.beats_reference ? "Solo riesgo es predecible" : "Sin ventaja";
+                rows.push(`<tr data-edges="${edges}"><td><strong>${escapeHTML(name)}</strong><br><small>${escapeHTML(sym)}</small></td>${cell(isFinite(best) ? best : null, best > 0.01)}${cell(isFinite(pbest) ? pbest : null, pr?.has_edge)}${cell(rk?.skill_vs_reference, rk?.beats_reference)}<td>${cov == null ? "—" : (cov * 100).toFixed(0) + "%"}</td><td>${escapeHTML(verdict)}</td></tr>`);
+                rows[rows.length - 1] = rows[rows.length - 1].replace("<tr ", `<tr data-dir="${(best > 0.01 || pr?.has_edge) ? 1 : 0}" data-risk="${rk?.beats_reference ? 1 : 0}" data-cov="${cov ?? ""}" `);
+            } catch (error) {
+                rows.push(`<tr><td><strong>${escapeHTML(name)}</strong><br><small>${escapeHTML(sym)}</small></td><td colspan="5">${escapeHTML(error.message)}</td></tr>`);
+            }
+        }
+        box.innerHTML = head + rows.join("") + "</tbody></table></div>";
+        const trs = $$("#resultsContent tr[data-dir]");
+        const n = trs.length, dir = trs.filter((t) => t.dataset.dir === "1").length, risk = trs.filter((t) => t.dataset.risk === "1").length;
+        const covs = trs.map((t) => parseFloat(t.dataset.cov)).filter((x) => isFinite(x));
+        const avgCov = covs.length ? covs.reduce((a, b) => a + b, 0) / covs.length : null;
+        $("#resultsSummary").innerHTML = `<div class="alert NEUTRA" style="margin-bottom:14px"><span class="pill">CONCLUSIÓN EN LENGUAJE SENCILLO</span>
+            <p><strong>Dirección del precio:</strong> los modelos le ganaron a la regla simple en ${dir} de ${n} activos. ${dir <= n / 3 ? "Adivinar si un precio sube o baja es casi imposible de forma consistente; desconfía de quien prometa lo contrario." : "Hay activos con cierta ventaja, pero pequeña: úsala como una pista, no como una certeza."}</p>
+            <p><strong>Riesgo:</strong> el modelo de volatilidad mejoró a la referencia en ${risk} de ${n} activos${avgCov != null ? ` y su rango del 90% acertó en promedio el ${(avgCov * 100).toFixed(0)}% de las veces` : ""}. Saber cuánto se puede mover un precio es lo más útil y fiable para decidir cuánto arriesgar.</p></div>`;
+        resultsRunning = false;
+        $("#runResults").disabled = false;
+    }
+
     async function loadBroker() {
         const box = $("#brokerContent");
         if (!box) return;
@@ -409,9 +455,29 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) { box.innerHTML = `<div class="empty-state">${escapeHTML(error.message || "No fue posible cargar los mercados.")}</div>`; }
     }
 
-    function renderModels(d) {
+    function pulseHtml(p) {
+        if (!p || !p.headlines) return "";
+        const cls = p.score >= 0.15 ? "positive-text" : p.score <= -0.15 ? "negative-text" : "";
+        return `<article class="card"><small>Pulso de noticias (${p.headlines} titulares)</small><strong class="${cls}">${escapeHTML(p.label)}</strong><small>${p.counts.positivo} positivos · ${p.counts.neutral} neutrales · ${p.counts.negativo} negativos. No validado: ambiente informativo, no predicción.</small></article>`;
+    }
+
+    function renderModels(d, pulse) {
         const c = d.consensus || {};
         const cur = marketData?.currency;
+        const ex = d.explanation || {};
+        const pr = d.probability || null;
+        const rk = d.risk || null;
+        const tone = ex.verdict === "favorable" ? "BAJA" : ex.verdict === "desfavorable" ? "ALTA" : "NEUTRA";
+        const simple = `<div class="alert ${tone}" style="margin-bottom:16px"><span class="pill">RESUMEN PARA TODOS</span>
+            <h3 style="margin:8px 0 6px">${escapeHTML(ex.headline || "Resultado del análisis")}</h3>
+            <ul style="margin:0 0 8px 18px;padding:0">${(ex.points || []).map((x) => `<li style="margin-bottom:4px">${escapeHTML(x)}</li>`).join("")}</ul>
+            <p><strong>Confiabilidad:</strong> ${escapeHTML(ex.reliability || "—")}. ${escapeHTML(ex.what_to_do || "")}</p></div>`;
+        const cards = `<section class="metric-grid">
+            ${pr ? `<article class="card"><small>Probabilidad de subir (${d.horizon_days} ses.)</small><strong>${(pr.prob_up * 100).toFixed(0)}%</strong><small>${escapeHTML(pr.source)}${pr.has_edge ? " · validado" : " · sin ventaja sobre la estadística básica"}</small></article>` : ""}
+            ${rk ? `<article class="card"><small>Movimiento típico (${d.horizon_days} ses.)</small><strong>±${numText(rk.expected_move_pct, 1)}%</strong><small>Riesgo ${escapeHTML(rk.risk_level.toLowerCase())} · volatilidad anual ${numText(rk.annual_vol_pct, 1)}%</small></article>
+            <article class="card"><small>Rango probable (90%)</small><strong>${formatMoney(rk.range_90.low_price, cur)} – ${formatMoney(rk.range_90.high_price, cur)}</strong><small>Acertó ${(rk.range_90.historical_coverage * 100).toFixed(0)}% de las veces en pruebas</small></article>` : ""}
+            ${pulseHtml(pulse)}
+        </section>`;
         let summary;
         if (c.status === "ok") {
             summary = `<section class="metric-grid">
@@ -421,22 +487,28 @@ document.addEventListener("DOMContentLoaded", () => {
                 <article class="card"><small>Incertidumbre</small><strong>${escapeHTML(c.uncertainty_level)}</strong><small>Dispersión entre modelos ${numText(c.dispersion_std_pct)} pp</small></article>
             </section>`;
         } else {
-            summary = `<div class="empty-state"><strong>Sin valor predictivo demostrado.</strong> ${escapeHTML(c.message || "")} La mediana simple de los modelos (${pctText(c.simple_median_return_pct)}) se muestra solo como referencia.</div>`;
+            summary = `<div class="empty-state"><strong>Sin valor predictivo demostrado en el precio.</strong> ${escapeHTML(c.message || "")} La mediana simple de los modelos (${pctText(c.simple_median_return_pct)}) se muestra solo como referencia.</div>`;
         }
         const w = c.weights || {};
         const rows = d.models.map((m) => {
             const h = m.historical_metrics || {};
             const iv = m.interval ? `${formatMoney(m.interval.low_price, cur)} – ${formatMoney(m.interval.high_price, cur)}` : "N/D";
-            return `<tr><td><strong>${escapeHTML(m.name)}</strong><br><small>v${escapeHTML(m.version)}</small></td><td>${m.status === "ok" ? pctText(m.estimated_return_pct) : escapeHTML(m.message || "Error")}</td><td>${iv}</td><td>${numText(h.rmse_return * 100, 3)}%</td><td class="${(h.skill_vs_baseline ?? -1) > 0 ? "positive-text" : "negative-text"}">${h.skill_vs_baseline == null ? "N/D" : pctText(h.skill_vs_baseline * 100, 1)}</td><td>${h.directional_accuracy == null ? "N/D" : (h.directional_accuracy * 100).toFixed(1) + "%"}</td><td>${((w[m.model_id] || 0) * 100).toFixed(0)}%</td></tr>`;
+            return `<tr><td><strong>${escapeHTML(m.name)}</strong><br><small>v${escapeHTML(m.version)}</small></td><td>${m.status === "ok" ? pctText(m.estimated_return_pct) : escapeHTML(m.message || "Error")}</td><td>${iv}</td><td>${h.rmse_return == null ? "N/D" : numText(h.rmse_return * 100, 3) + "%"}</td><td class="${(h.skill_vs_baseline ?? -1) > 0 ? "positive-text" : "negative-text"}">${h.skill_vs_baseline == null ? "N/D" : pctText(h.skill_vs_baseline * 100, 1)}</td><td>${h.directional_accuracy == null ? "N/D" : (h.directional_accuracy * 100).toFixed(1) + "%"}</td><td>${((w[m.model_id] || 0) * 100).toFixed(0)}%</td></tr>`;
         }).join("");
         const base = d.baselines.map((m) => { const h = m.historical_metrics; return `<tr><td>${escapeHTML(m.name)}</td><td>${pctText(m.estimated_return_pct)}</td><td>—</td><td>${numText(h.rmse_return * 100, 3)}%</td><td>—</td><td>${h.directional_accuracy == null ? "N/D" : (h.directional_accuracy * 100).toFixed(1) + "%"}</td><td>—</td></tr>`; }).join("");
+        const probTable = pr ? `<h3 style="margin-top:22px">Modelos de probabilidad</h3><p class="panel-description">Referencia: frecuencia histórica de subidas (${(pr.base_rate * 100).toFixed(0)}%), Brier ${numText(pr.brier_reference, 4)}. Un modelo solo se usa si mejora ese Brier fuera de muestra (${pr.n_oos} casos).</p>
+            <div style="overflow-x:auto"><table class="table"><thead><tr><th>Modelo</th><th>Mejora del Brier</th><th>Acierto</th><th>Acierto cuando está "seguro" (≥60% o ≤40%)</th><th>Calibración: cuando dijo… subió…</th></tr></thead><tbody>${pr.models.map((m) => m.error ? `<tr><td>${escapeHTML(m.name)}</td><td colspan="4">${escapeHTML(m.error)}</td></tr>` : `<tr><td>${escapeHTML(m.name)}</td><td class="${m.brier_skill > 0 ? "positive-text" : "negative-text"}">${pctText(m.brier_skill * 100, 1)}</td><td>${(m.accuracy * 100).toFixed(1)}%</td><td>${m.confident_accuracy == null ? "—" : (m.confident_accuracy * 100).toFixed(1) + "% (" + m.confident_cases + " casos)"}</td><td><small>${m.calibration.map((b) => `${escapeHTML(b.rango)} → ${(b.frecuencia_real * 100).toFixed(0)}% (${b.casos})`).join(" · ")}</small></td></tr>`).join("")}</tbody></table></div>` : "";
+        const riskTable = rk ? `<h3 style="margin-top:22px">Modelo de riesgo (volatilidad)</h3><p class="panel-description">${escapeHTML(rk.model)}. Mejora del error frente a "la volatilidad del último mes": ${pctText(rk.skill_vs_reference * 100, 1)}. Volatilidad diaria prevista ${numText(rk.daily_vol_pct, 2)}% (percentil ${(rk.vol_percentile == null ? "N/D" : (rk.vol_percentile * 100).toFixed(0))} de su historia). Cobertura del rango del 90%: ${(rk.range_90.historical_coverage * 100).toFixed(0)}%.</p>` : "";
         const mc = d.monte_carlo || {};
         const pc = mc.percentiles_price || {};
         const cal = mc.calibration || {};
         const mcHtml = `<h3 style="margin-top:22px">Escenarios Monte Carlo</h3><p class="panel-description">${escapeHTML(mc.method || "")}. Percentiles del precio a ${d.horizon_days} sesiones: P5 ${formatMoney(pc.p5, cur)} · P25 ${formatMoney(pc.p25, cur)} · P50 ${formatMoney(pc.p50, cur)} · P75 ${formatMoney(pc.p75, cur)} · P95 ${formatMoney(pc.p95, cur)}. Probabilidad simulada de ganancia: ${((mc.prob_gain || 0) * 100).toFixed(0)}%. ${cal.empirical_coverage != null ? `Calibración fuera de muestra: el intervalo del ${(cal.nominal_level * 100).toFixed(0)}% cubrió el ${(cal.empirical_coverage * 100).toFixed(0)}% de los casos (${cal.n_origins} orígenes).` : escapeHTML(cal.message || "")}</p>`;
-        $("#modelsContent").innerHTML = `<p class="panel-description">Datos al ${escapeHTML(d.as_of)} (${escapeHTML(d.data_source)}) · ${d.data_points} sesiones · ${d.oos_points} puntos fuera de muestra · objetivo aprox. ${escapeHTML(d.target_date_approx)}${d.data_source === "demo" ? " · <strong>DATOS DEMO SINTÉTICOS</strong>" : ""}</p>${summary}
-            <div style="overflow-x:auto"><table class="table"><thead><tr><th>Modelo</th><th>Retorno estimado</th><th>Intervalo ~90%</th><th>RMSE fuera de muestra</th><th>Mejora vs mejor referencia</th><th>Acierto direccional</th><th>Peso</th></tr></thead><tbody>${rows}${base}</tbody></table></div>${mcHtml}
-            <ul class="note">${d.notes.map((n) => `<li>${escapeHTML(n)}</li>`).join("")}</ul>`;
+        const glossary = d.glossary ? `<h3 style="margin-top:22px">Glosario</h3><dl class="note">${Object.entries(d.glossary).map(([k, v]) => `<dt><strong>${escapeHTML(k)}</strong></dt><dd style="margin:0 0 6px">${escapeHTML(v)}</dd>`).join("")}</dl>` : "";
+        $("#modelsContent").innerHTML = `<p class="panel-description">Datos al ${escapeHTML(d.as_of)} (${escapeHTML(d.data_source)}) · ${d.data_points} sesiones · ${d.oos_points} puntos fuera de muestra · objetivo aprox. ${escapeHTML(d.target_date_approx)}${d.context_used?.length ? " · contexto: " + escapeHTML(d.context_used.join(", ")) : ""}${d.data_source === "demo" ? " · <strong>DATOS DEMO SINTÉTICOS</strong>" : ""}</p>${simple}${cards}
+            <details style="margin-top:18px"><summary style="cursor:pointer;font-weight:800">Ver detalle técnico (para expertos)</summary>
+            <h3 style="margin-top:16px">Modelos de precio</h3>${summary}
+            <div style="overflow-x:auto"><table class="table"><thead><tr><th>Modelo</th><th>Retorno estimado</th><th>Intervalo ~90%</th><th>RMSE fuera de muestra</th><th>Mejora vs mejor referencia</th><th>Acierto direccional</th><th>Peso</th></tr></thead><tbody>${rows}${base}</tbody></table></div>${probTable}${riskTable}${mcHtml}
+            <ul class="note">${d.notes.map((n) => `<li>${escapeHTML(n)}</li>`).join("")}</ul></details>${glossary}`;
     }
 
     async function runModels() {
@@ -445,10 +517,15 @@ document.addEventListener("DOMContentLoaded", () => {
         box.innerHTML = `<div class="loading">Entrenando y validando modelos...</div>`;
         $("#runModels").disabled = true;
         try {
-            const response = await fetch(`/api/models/${encodeURIComponent(activeTicker)}?horizon=${encodeURIComponent(horizon)}`);
+            const [response, newsResp] = await Promise.all([
+                fetch(`/api/models/${encodeURIComponent(activeTicker)}?horizon=${encodeURIComponent(horizon)}`),
+                fetch(`/api/news/${encodeURIComponent(activeTicker)}`).catch(() => null),
+            ]);
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || "No fue posible ejecutar los modelos.");
-            renderModels(data);
+            let pulse = null;
+            try { if (newsResp && newsResp.ok) pulse = (await newsResp.json()).pulse; } catch { pulse = null; }
+            renderModels(data, pulse);
         } catch (error) { box.innerHTML = `<div class="empty-state">${escapeHTML(error.message)}</div>`; }
         finally { $("#runModels").disabled = false; }
     }
@@ -730,6 +807,8 @@ document.addEventListener("DOMContentLoaded", () => {
             $("#fullscreenChart").textContent = panel.classList.contains("fullscreen") ? "×" : "⛶";
             setTimeout(() => renderChart(marketData?.data || []), 120);
         });
+
+        if (exists("#runResults")) $("#runResults").addEventListener("click", runResults);
 
         if (exists("#save")) $("#save").addEventListener("click", async () => {
             if (!current?.predictions?.length) return setStatus("Primero debe analizar un activo.");

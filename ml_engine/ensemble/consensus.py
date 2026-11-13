@@ -13,7 +13,9 @@ def compute(results, neutral_factor=0.25):
     if not ok:
         return {"status": "sin_modelos", "message": "Ningún modelo produjo resultados."}
     preds = np.array([r["predicted_log_return"] for r in ok])
-    skills = np.array([max(r["historical_metrics"].get("skill_vs_baseline") or 0.0, 0.0) for r in ok])
+    # Solo reciben peso los modelos cuya mejora es estadísticamente significativa (si se calculó).
+    skills = np.array([max(r["historical_metrics"].get("skill_vs_baseline") or 0.0, 0.0)
+                       if r["historical_metrics"].get("significant", True) else 0.0 for r in ok])
     rmses = np.array([r["historical_metrics"]["rmse_return"] for r in ok])
     pct = lambda lr: float(np.exp(lr) - 1) * 100  # noqa: E731
 
@@ -27,7 +29,7 @@ def compute(results, neutral_factor=0.25):
     }
     if skills.sum() <= 0:
         out.update(status="sin_valor_predictivo", direction="neutral", weighted_return_pct=None,
-                   message="Ningún modelo superó a las referencias simples fuera de muestra: no se calcula consenso ponderado.",
+                   message="Ningún modelo superó a las referencias simples fuera de muestra de forma significativa: no se calcula consenso ponderado.",
                    weights={r["model_id"]: 0.0 for r in ok})
         return out
 
