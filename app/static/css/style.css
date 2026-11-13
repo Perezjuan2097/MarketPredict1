@@ -733,6 +733,13 @@ main {
 .alert {
     padding: 18px;
     border-radius: 8px;
+    color: #101828; /* fondo claro también en modo oscuro: el texto debe seguir siendo oscuro */
+}
+
+.alert h3,
+.alert li,
+.alert strong {
+    color: #101828;
 }
 
 .alert p {

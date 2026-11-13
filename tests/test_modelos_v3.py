@@ -105,3 +105,4 @@ class TestPulso(unittest.TestCase):
         p = pulse([{"title": "Stocks rally to record"}, {"title": "Shares fall on weak guidance"}, {"title": "CEO speaks"}])
         self.assertEqual(p["counts"], {"positivo": 1, "neutral": 1, "negativo": 1})
         self.assertFalse(p["validated"])
+        self.assertEqual(p["label"], "Mixto / neutral")  # 1 positivo y 1 negativo no es "positivo"

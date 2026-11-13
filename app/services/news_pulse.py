@@ -53,10 +53,12 @@ def pulse(news, symbol=None):
         total_pos, total_neg = total_pos + pos, total_neg + neg
         tone = "positivo" if pos > neg else "negativo" if neg > pos else "neutral"
         items.append({"title": n.get("title"), "tone": tone})
-    hits = total_pos + total_neg
-    score = (total_pos - total_neg) / hits if hits else 0.0
+    # El tono general se mide por titulares (no por palabras), para que coincida con el conteo que ve el usuario.
+    n_pos = sum(1 for i in items if i["tone"] == "positivo")
+    n_neg = sum(1 for i in items if i["tone"] == "negativo")
+    score = (n_pos - n_neg) / len(items) if items else 0.0
     label = ("Muy positivo" if score >= 0.5 else "Positivo" if score >= 0.15 else
-             "Muy negativo" if score <= -0.5 else "Negativo" if score <= -0.15 else "Neutral")
+             "Muy negativo" if score <= -0.5 else "Negativo" if score <= -0.15 else "Mixto / neutral")
     counts = {t: sum(1 for i in items if i["tone"] == t) for t in ("positivo", "neutral", "negativo")}
     return {
         "score": round(score, 3), "label": label, "headlines": len(items), "counts": counts, "items": items,
