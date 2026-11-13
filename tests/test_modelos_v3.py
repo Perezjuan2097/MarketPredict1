@@ -77,6 +77,15 @@ class TestRiesgo(unittest.TestCase):
         self.assertGreater(out["range_90"]["historical_coverage"], 0.75)
 
 
+    def test_colas_gruesas_rango_calibrado(self):
+        rng = np.random.default_rng(5)
+        rets = rng.standard_t(3, 900) * 0.01  # colas gruesas, como los mercados reales
+        out = risk.run(pd.DataFrame({"cierre": 100 * np.exp(np.cumsum(rets))}), 5)
+        rg = out["range_90"]
+        self.assertGreaterEqual(rg["multiplier"], 1.645)
+        self.assertGreater(rg["historical_coverage"], 0.8)  # medido en datos que no participaron en el ajuste
+
+
 class TestExplicacion(unittest.TestCase):
     def test_nunca_promete_certeza(self):
         out = run_all(demo(), "AAPL", 5)

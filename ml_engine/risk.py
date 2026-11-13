@@ -62,19 +62,28 @@ def run(df, horizon, vix=None, n_splits=5):
     if x_now.isna().any().any():
         raise ValueError("Historial insuficiente para el modelo de riesgo.")
 
-    scores = {}
+    scores, zs = {}, {}
     for name, make in (("referencia", _Baseline), ("har", _HAR)):
         idx, pred = bt.walk_forward(make, X, y, horizon, n_splits=n_splits)
         err = pred - y.iloc[idx].to_numpy()
-        band = Z90 * np.sqrt(horizon) * np.exp(pred)  # ±90 % en retorno logarítmico
-        inside = np.abs(ret_h.iloc[idx].to_numpy()) <= band
-        scores[name] = {"rmse_log_vol": float(np.sqrt(np.mean(err ** 2))), "coverage_90": float(inside.mean()),
-                        "n_oos": int(len(idx))}
+        # Calibración "conformal": los mercados tienen colas más gruesas que la normal, así que el
+        # multiplicador del rango se aprende con la primera mitad fuera de muestra y se comprueba con
+        # la segunda (que no participó en el ajuste).
+        z = np.abs(ret_h.iloc[idx].to_numpy()) / (np.sqrt(horizon) * np.exp(pred))
+        half = len(z) // 2
+        k = max(float(np.quantile(z[:half], 0.90)), Z90)
+        cov_normal = float((z <= Z90).mean())
+        cov_cal = float((z[half:] <= k).mean())
+        k_all = max(float(np.quantile(z, 0.90)), Z90)  # para el rango de hoy se usa todo el historial fuera de muestra
+        zs[name] = k_all
+        scores[name] = {"rmse_log_vol": float(np.sqrt(np.mean(err ** 2))), "coverage_90": cov_cal,
+                        "coverage_90_normal": cov_normal, "multiplier": k_all, "n_oos": int(len(idx))}
     skill = 1 - scores["har"]["rmse_log_vol"] / scores["referencia"]["rmse_log_vol"]
     use_har = skill > 0.01
     model = (_HAR if use_har else _Baseline)().fit(X, y)
     daily_vol = float(np.exp(model.predict(x_now)[0]))
     h_vol = daily_vol * np.sqrt(horizon)
+    k = zs["har" if use_har else "referencia"]
     ref = float(close.iloc[-1])
 
     hist = np.sqrt((r ** 2).rolling(22, min_periods=22).mean()).dropna()
@@ -86,8 +95,10 @@ def run(df, horizon, vix=None, n_splits=5):
         "skill_vs_reference": round(skill, 4), "beats_reference": use_har,
         "daily_vol_pct": round(daily_vol * 100, 3), "annual_vol_pct": round(daily_vol * np.sqrt(252) * 100, 2),
         "expected_move_pct": round((np.exp(h_vol) - 1) * 100, 3),
-        "range_90": {"low_price": round(ref * np.exp(-Z90 * h_vol), 6), "high_price": round(ref * np.exp(Z90 * h_vol), 6),
-                     "historical_coverage": round(used["coverage_90"], 4)},
+        "range_90": {"low_price": round(ref * np.exp(-k * h_vol), 6), "high_price": round(ref * np.exp(k * h_vol), 6),
+                     "historical_coverage": round(used["coverage_90"], 4),
+                     "coverage_if_normal": round(used["coverage_90_normal"], 4), "multiplier": round(k, 3),
+                     "method": "Volatilidad prevista × multiplicador calibrado con errores reales (colas gruesas)"},
         "risk_level": level, "vol_percentile": round(pctl, 3) if pctl is not None else None,
         "scores": {k: {kk: round(vv, 5) if isinstance(vv, float) else vv for kk, vv in v.items()} for k, v in scores.items()},
     }
