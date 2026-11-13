@@ -1057,6 +1057,8 @@ body.dark-mode .global-search input,
 body.dark-mode .symbol-input input { color: var(--text); }
 body.dark-mode .chart-actions button,
 body.dark-mode .secondary-button { background: #151e27; color: var(--text); border-color: var(--border); }
+body.dark-mode .primary-button { background: #f4f6f8; color: #0d1117; }
+body.dark-mode .primary-button:disabled { opacity: .6; }
 body.dark-mode .period:hover,
 body.dark-mode .period.active { background: #202b36; color: var(--text); }
 body.dark-mode .table td { color: #d8e0e8; border-color: var(--border); }
