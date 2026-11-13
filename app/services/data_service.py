@@ -266,8 +266,21 @@ class APIFinanciera(FuenteDatos):
             if title:
                 result.append({"title": title, "source": publisher, "date": timestamp, "url": link})
         out = {"symbol": resolved["symbol"], "news": result, "provider": "Yahoo Finance"}
-        if warning and not result:
-            out["warning"] = warning
+        if not result:
+            from app.services.finnhub_provider import FinnhubProvider
+            finnhub = FinnhubProvider()
+            if finnhub.configured:
+                try:
+                    alt = finnhub.company_news(resolved["symbol"], limit=limit)
+                    if alt:
+                        return {"symbol": resolved["symbol"], "news": alt, "provider": "Finnhub"}
+                    warning = (warning or "Yahoo Finance no devolvió noticias") + "; Finnhub tampoco (su plan gratuito solo cubre valores de EE. UU.)."
+                except RuntimeError as exc:
+                    warning = f"{warning or 'Yahoo Finance no devolvió noticias'}; {exc}"
+            elif warning:
+                warning += " Puede añadir una fuente alternativa configurando FINNHUB_API_KEY."
+            if warning:
+                out["warning"] = warning
         return out
 
     MARKETS = [

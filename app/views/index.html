@@ -30,7 +30,7 @@
     <div class="topbar-right">
         <button class="language" id="languageToggle" type="button">ES <span>⌄</span></button>
         <button class="profile-button" id="themeToggle" type="button" aria-label="Cambiar tema">◯</button>
-        <a href="#analizar" class="start-button" data-i18n="start">Empiece</a>
+        <button type="button" id="authButton" class="start-button">Empiece</button>
     </div>
 </header>
 
@@ -131,6 +131,7 @@
                     <div class="tracking-actions">
                         <select id="modelsHorizon" aria-label="Horizonte en sesiones"><option value="1">1 sesión</option><option value="5" selected>5 sesiones</option><option value="10">10 sesiones</option><option value="20">20 sesiones</option></select>
                         <button id="runModels" class="primary-button" type="button">Ejecutar modelos</button>
+                        <button id="saveModels" class="secondary-button" type="button">Guardar predicciones</button>
                     </div>
                 </div>
                 <div id="modelsContent"><div class="empty-state">Pulsa “Ejecutar modelos” para calcular el consenso del activo (puede tardar unos segundos).</div></div>
@@ -233,9 +234,60 @@
             <div class="vote-actions">
                 <button class="primary-button" type="button" data-goto="summary" data-focus="#report">Generar informe del activo</button>
                 <button class="secondary-button" type="button" data-goto="community">Ir a la comunidad</button>
+                <button class="secondary-button" type="button" data-goto="cuenta">Mi cuenta</button>
                 <a class="secondary-button" href="/admin/login" style="text-decoration:none">Panel de administración</a>
             </div>
             <p class="panel-description" style="margin-top:16px">Las predicciones son estimaciones estadísticas y no constituyen asesoría financiera.</p>
+        </div>
+    </section>
+
+
+    <section id="tabCuenta" class="tab-panel">
+        <div class="dashboard-panel">
+            <div class="panel-heading">
+                <div><span class="panel-kicker">MI CUENTA</span><h2 id="accountTitle">Mi cuenta</h2>
+                <p class="panel-description">Tus predicciones y tu portafolio simulado quedan guardados en tu cuenta. Dinero virtual: no hay conexión con ningún bróker.</p></div>
+                <button id="logoutButton" class="secondary-button" type="button" hidden>Cerrar sesión</button>
+            </div>
+            <div id="accountLoggedOut" class="empty-state">Inicia sesión o crea una cuenta para guardar tus predicciones y operar en el simulador.<br><br><button id="accountLoginBtn" class="primary-button" type="button">Iniciar sesión / Registrarme</button></div>
+            <div id="accountContent" hidden>
+                <div id="accountMsg" class="account-msg" role="status" aria-live="polite"></div>
+
+                <h3>Mis predicciones</h3>
+                <form id="predForm" class="account-form" autocomplete="off">
+                    <label>Activo<input id="predSymbol" name="symbol" maxlength="40" required placeholder="AAPL"></label>
+                    <label>Dirección<select name="direction"><option value="alcista">Alcista</option><option value="bajista">Bajista</option><option value="neutral">Neutral</option></select></label>
+                    <label>Horizonte<select name="horizon_days"><option value="1">1 sesión</option><option value="5" selected>5 sesiones</option><option value="10">10 sesiones</option><option value="20">20 sesiones</option><option value="40">40 sesiones</option></select></label>
+                    <label>Precio objetivo (opcional)<input name="target_price" type="number" step="any" min="0"></label>
+                    <label class="wide">Justificación (opcional)<textarea name="rationale" rows="2" maxlength="2000"></textarea></label>
+                    <button class="primary-button" type="submit">Publicar predicción</button>
+                </form>
+                <p class="panel-description">El precio de referencia lo fija el servidor con el último cierre disponible. Una predicción publicada no se puede editar; solo invalidar mientras está pendiente.</p>
+                <div class="vote-actions"><button id="evaluateBtn" class="secondary-button" type="button">Actualizar resultados</button></div>
+                <div id="predList" class="table-scroll"></div>
+
+                <h3 style="margin-top:28px">Mi portafolio simulado</h3>
+                <form id="pfCreateForm" class="account-form" autocomplete="off">
+                    <label>Nombre<input name="name" maxlength="80" required placeholder="Principal"></label>
+                    <label>Capital inicial (virtual)<input name="initial_cash" type="number" step="any" min="1" required value="10000"></label>
+                    <label>Comisión %<input name="commission_pct" type="number" step="any" min="0" max="10" value="0.1"></label>
+                    <button class="secondary-button" type="submit">Crear portafolio</button>
+                </form>
+                <div id="pfEmpty" class="empty-state" hidden>Aún no tienes portafolios. Crea el primero arriba.</div>
+                <div id="pfArea" hidden>
+                    <label class="inline-select">Portafolio <select id="pfSelect"></select></label>
+                    <form id="tradeForm" class="account-form" autocomplete="off">
+                        <label>Activo<input id="tradeSymbol" name="symbol" maxlength="40" required placeholder="AAPL"></label>
+                        <label>Operación<select name="side"><option value="buy">Comprar</option><option value="sell">Vender</option></select></label>
+                        <label>Cantidad<input name="quantity" type="number" step="any" min="0" required></label>
+                        <button class="primary-button" type="submit">Ejecutar al último cierre</button>
+                    </form>
+                    <p class="panel-description">Cada portafolio opera en una sola divisa (la del primer activo) y no hay conversión. Precios del último cierre disponible.</p>
+                    <div id="pfSummary"></div>
+                    <div id="pfPositions" class="table-scroll"></div>
+                    <div id="pfTrades" class="table-scroll"></div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -249,6 +301,30 @@
 </main>
 
 <footer><div class="footer-brand"><span class="brand-mark small">M</span><strong>MarketPredict</strong></div><span data-i18n="footer">Proyecto académico · Las predicciones son estimaciones, no garantías.</span></footer>
+
+
+<dialog id="authDialog" class="auth-dialog" aria-labelledby="authTitle">
+    <div class="auth-head">
+        <h2 id="authTitle">Tu cuenta</h2>
+        <button type="button" id="authClose" class="secondary-button" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="auth-tabs">
+        <button type="button" id="authTabLogin" class="active">Iniciar sesión</button>
+        <button type="button" id="authTabRegister">Crear cuenta</button>
+    </div>
+    <p id="authError" class="auth-error" role="alert"></p>
+    <form id="loginForm" class="account-form single" autocomplete="on">
+        <label>Usuario o correo<input name="identifier" autocomplete="username" required maxlength="254"></label>
+        <label>Contraseña<input name="password" type="password" autocomplete="current-password" required maxlength="128"></label>
+        <button class="primary-button" type="submit">Entrar</button>
+    </form>
+    <form id="registerForm" class="account-form single" autocomplete="on" hidden>
+        <label>Usuario (3–30: letras, números, _)<input name="username" autocomplete="username" required maxlength="30"></label>
+        <label>Correo electrónico<input name="email" type="email" autocomplete="email" required maxlength="254"></label>
+        <label>Contraseña (8+ con letra y número)<input name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="128"></label>
+        <button class="primary-button" type="submit">Crear cuenta</button>
+    </form>
+</dialog>
 
 <script src="/static/js/script.js"></script>
 </body>

@@ -11,4 +11,6 @@ if not database_url():
     sys.exit("Defina DATABASE_URL antes de ejecutar este script.")
 engine = get_engine()
 Base.metadata.create_all(engine)  # solo crea las que faltan; nunca borra ni modifica tablas existentes
+from app.repositories.factory import enable_rls  # noqa: E402
+enable_rls(engine)  # solo actúa en PostgreSQL
 print(f"Tablas disponibles: {', '.join(sorted(Base.metadata.tables))}")

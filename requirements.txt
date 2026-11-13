@@ -2,6 +2,7 @@
 Flask>=3.0,<4
 gunicorn>=22.0
 yfinance==1.7.0
+requests>=2.31
 numpy>=1.26
 pandas>=2.0
 scikit-learn>=1.4

@@ -1,6 +1,7 @@
 """Configuración centralizada. Todo proviene de variables de entorno (ver .env.example)."""
 import os
 import secrets
+from datetime import timedelta
 from pathlib import Path
 
 
@@ -29,6 +30,8 @@ class Settings:
         self.MAX_CONTENT_LENGTH = 1 * 1024 * 1024  # 1 MB por petición
         self.ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "")  # provisional hasta tener roles en BD (Fase 4)
         self.RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "120"))
+        self.PERMANENT_SESSION_LIFETIME = timedelta(days=7)
+        self.AUTO_CREATE_TABLES = _bool("AUTO_CREATE_TABLES", False)
         self.USE_DEMO = _bool("USE_DEMO", False)
         self.LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
         for key, value in (overrides or {}).items():

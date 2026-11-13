@@ -9,11 +9,12 @@ Plataforma académica de análisis y predicción de activos financieros (Flask, 
 | 1 Estabilización | **Base hecha**: fábrica de app única, configuración por entorno, admin protegido, validación, límites, cabeceras, pruebas. Pendiente: BD Supabase |
 | 3 Predicción | **Parcial**: Ridge, Random Forest, referencias, Monte Carlo, consenso, walk-forward (ver `docs/MODELOS.md`). XGBoost, ARIMA y SARIMA están escritos pero **sin verificar** (requieren `requirements-ml.txt`); pendiente LSTM y la evaluación automática |
 | Navegación | Menú superior funcional (Productos, Comunidad, Mercados, Brókers, Más) |
+| 4–5 Cuentas | **Parcial** (ver `docs/CUENTAS.md`): registro/login, predicciones guardadas con evaluación automática y portafolio simulado. Lógica probada; capa SQL pendiente de verificar en Supabase |
 | 2, 4–8 | Pendientes |
 
 ## Instalación rápida y verificación
 `scripts\instalar_local.bat` (Windows) o `bash scripts/instalar_local.sh` instala todo y ejecuta `scripts/verify_install.py`.
-Guías: `docs/INSTALACION.md`, `docs/BASE_DE_DATOS.md`, `docs/MODELOS.md`. Estado en vivo: `/api/health`.
+Guías: `docs/CUENTAS.md`, `docs/INSTALACION.md`, `docs/BASE_DE_DATOS.md`, `docs/MODELOS.md`. Estado en vivo: `/api/health`.
 
 ## Ejecución local
 ```

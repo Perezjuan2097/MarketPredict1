@@ -255,6 +255,7 @@ class Portfolio(Audit, Base):
     initial_cash: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
     cash: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
     commission_pct: Mapped[Decimal] = mapped_column(Numeric(8, 4), nullable=False, default=Decimal("0"), server_default="0")
+    currency: Mapped[Optional[str]] = mapped_column(String(10))  # se fija con la primera operación; sin conversión de divisas
     __table_args__ = (UniqueConstraint("user_id", "name", name="uq_portfolios_user_name"),
                       CheckConstraint("initial_cash > 0", name="ck_portfolios_initial"),
                       CheckConstraint("cash >= 0", name="ck_portfolios_cash"))

@@ -71,6 +71,14 @@ def check_csrf():
         abort(403, description="Token CSRF inválido o ausente.")
 
 
+def check_csrf_header():
+    """API de cuentas: el cliente reenvía el token (obtenido en /api/auth/me) en X-CSRF-Token."""
+    sent = request.headers.get("X-CSRF-Token", "")
+    expected = session.get("csrf", "")
+    if not sent or not expected or not hmac.compare_digest(sent, expected):
+        abort(403, description="Token CSRF inválido o ausente.")
+
+
 def admin_required(view):
     @wraps(view)
     def wrapper(*args, **kwargs):
@@ -109,6 +117,12 @@ def register_security(app):
     @app.errorhandler(InvalidInput)
     def _invalid(e):
         return jsonify(error=str(e)), 400
+
+    @app.errorhandler(403)
+    def _403(e):
+        if request.path.startswith("/api/"):
+            return jsonify(error=getattr(e, "description", "Acceso denegado.")), 403
+        return e
 
     @app.errorhandler(404)
     def _404(e):

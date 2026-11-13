@@ -209,3 +209,87 @@ class TestSalud(BaseCase):
         self.assertEqual(j["db"]["status"], "no_configurada")
         self.assertIn("xgboost", j["optional_models"])
         self.assertNotIn("postgresql://", json.dumps(j))
+
+
+class TestInterfazCoherente(BaseCase):
+    """Sin navegador: comprueba que el JS solo apunta a elementos que existen en el HTML."""
+
+    def test_ids_del_js_existen_en_el_html(self):
+        import re
+        html = self.c.get("/").get_data(as_text=True)
+        js = (Path(__file__).resolve().parent.parent / "app/static/js/script.js").read_text(encoding="utf-8")
+        html_ids = set(re.findall(r'id="([^"]+)"', html))
+        used = set(re.findall(r'\$\("#([A-Za-z][\w-]*)"\)', js)) | set(re.findall(r'exists\("#([A-Za-z][\w-]*)"\)', js))
+        missing = sorted(used - html_ids)
+        self.assertEqual(missing, [], f"El JS referencia ids inexistentes: {missing}")
+
+    def test_elementos_de_cuenta(self):
+        html = self.c.get("/").get_data(as_text=True)
+        for ident in ("authButton", "authDialog", "loginForm", "registerForm", "tabCuenta", "predForm", "pfCreateForm",
+                      "tradeForm", "pfSelect", "saveModels", "evaluateBtn", "logoutButton"):
+            self.assertIn(f'id="{ident}"', html)
+
+    def test_js_y_copia_identicos(self):
+        base = Path(__file__).resolve().parent.parent / "app/static/js"
+        self.assertEqual((base / "script.js").read_text(encoding="utf-8"), (base / "app.js").read_text(encoding="utf-8"))
+
+
+class TestFinnhub(unittest.TestCase):
+    def _resp(self, status=200, payload=None):
+        class R:
+            status_code = status
+            def json(self_inner):
+                return payload if payload is not None else []
+        return R()
+
+    def test_sin_clave_no_inventa(self):
+        from app.services.finnhub_provider import FinnhubProvider
+        with self.assertRaises(RuntimeError) as ctx:
+            FinnhubProvider(api_key="").company_news("AAPL")
+        self.assertIn("configuración pendiente", str(ctx.exception))
+
+    def test_normaliza_noticias_y_usa_cabecera(self):
+        from unittest.mock import patch
+        from app.services.finnhub_provider import FinnhubProvider
+        payload = [{"headline": "Apple sube", "source": "Reuters", "datetime": 1762400000, "url": "https://x.test/n", "summary": "Resumen"},
+                   {"headline": "", "source": "X"}]
+        with patch("app.services.finnhub_provider.requests.get", return_value=self._resp(200, payload)) as g:
+            out = FinnhubProvider(api_key="k").company_news("AAPL")
+        self.assertEqual([n["title"] for n in out], ["Apple sube"])
+        self.assertEqual(g.call_args.kwargs["headers"]["X-Finnhub-Token"], "k")
+        self.assertNotIn("token", g.call_args.kwargs["params"])  # la clave no viaja en la URL
+
+    def test_errores_http_son_explicitos(self):
+        from unittest.mock import patch
+        from app.services.finnhub_provider import FinnhubProvider
+        for status, text in ((429, "límite"), (401, "clave"), (500, "500")):
+            with patch("app.services.finnhub_provider.requests.get", return_value=self._resp(status)):
+                with self.assertRaises(RuntimeError) as ctx:
+                    FinnhubProvider(api_key="k").company_news("AAPL")
+            self.assertIn(text, str(ctx.exception))
+
+    def test_respaldo_en_get_news_cuando_yahoo_falla(self):
+        from unittest.mock import patch
+        from app.services.data_service import APIFinanciera
+
+        class Roto:
+            @property
+            def news(self):
+                raise ConnectionError("x")
+            def get_news(self, count=10):
+                raise ConnectionError("x")
+
+        payload = [{"headline": "Titular US", "source": "AP", "datetime": 1762400000, "url": "https://x.test/a"}]
+        with patch.object(APIFinanciera, "resolve_ticker", classmethod(lambda cls, q: {"symbol": q})), \
+             patch.object(APIFinanciera, "_ticker", staticmethod(lambda s: Roto())), \
+             patch.dict(os.environ, {"FINNHUB_API_KEY": "k"}), \
+             patch("app.services.finnhub_provider.requests.get", return_value=self._resp(200, payload)):
+            out = APIFinanciera().get_news("AAPL")
+        self.assertEqual(out["provider"], "Finnhub")
+        self.assertEqual(out["news"][0]["title"], "Titular US")
+        with patch.object(APIFinanciera, "resolve_ticker", classmethod(lambda cls, q: {"symbol": q})), \
+             patch.object(APIFinanciera, "_ticker", staticmethod(lambda s: Roto())), \
+             patch.dict(os.environ, {"FINNHUB_API_KEY": ""}):
+            out = APIFinanciera().get_news("AAPL")
+        self.assertEqual(out["news"], [])
+        self.assertIn("FINNHUB_API_KEY", out["warning"])

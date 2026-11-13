@@ -1155,3 +1155,35 @@ body.dark-mode .panel-heading h2 { color: var(--text); }
 #modelsPanel select { padding: 9px 12px; border: 1px solid var(--border, #dfe5ec); border-radius: 10px; background: transparent; color: inherit; }
 #modelsContent .note { padding-left: 18px; }
 #modelsContent h3 { font-size: 15px; }
+
+/* Cuentas, portafolio y correcciones de tema oscuro */
+[hidden] { display: none !important; }
+.account-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end; margin: 14px 0; }
+.account-form.single { grid-template-columns: 1fr; }
+.account-form label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: var(--muted, #667085); }
+.account-form .wide { grid-column: 1 / -1; }
+.account-form input, .account-form select, .account-form textarea, .inline-select select {
+    padding: 10px 12px; border: 1px solid var(--border, #dfe5ec); border-radius: 10px; background: transparent; color: var(--text, #172033); font: inherit; }
+.inline-select { display: inline-flex; gap: 10px; align-items: center; font-weight: 600; margin: 8px 0; }
+.table-scroll { overflow-x: auto; margin-top: 12px; }
+.account-msg { min-height: 20px; margin-bottom: 8px; font-size: 14px; }
+.account-msg.ok { color: #1f9d6a; }
+.account-msg.error { color: #d1435b; }
+#tabCuenta h3 { margin: 22px 0 4px; font-size: 17px; }
+#tabCuenta h4 { margin: 18px 0 0; font-size: 14px; }
+.start-button { border: 0; cursor: pointer; font: inherit; }
+.auth-dialog { border: 1px solid var(--border, #dfe5ec); border-radius: 16px; padding: 22px; width: min(420px, 92vw);
+    background: var(--surface, #fff); color: var(--text, #172033); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+.auth-dialog::backdrop { background: rgba(8, 13, 18, .6); }
+.auth-head { display: flex; justify-content: space-between; align-items: center; }
+.auth-head h2 { margin: 0; font-size: 20px; }
+.auth-tabs { display: flex; gap: 8px; margin: 16px 0 8px; }
+.auth-tabs button { flex: 1; padding: 9px; border: 1px solid var(--border, #dfe5ec); border-radius: 10px; background: transparent; color: inherit; cursor: pointer; font: inherit; font-weight: 600; }
+.auth-tabs button.active { background: var(--dark, #0d1117); color: #fff; }
+.auth-error { color: #d1435b; min-height: 18px; margin: 4px 0; font-size: 13px; }
+body.dark-mode .auth-tabs button.active { background: #edf2f7; color: #0d1117; }
+body.dark-mode .analysis-toolbar { background: #161e28; border: 1px solid var(--border); }
+body.dark-mode .analysis-toolbar h2 { color: #edf2f7; }
+body.dark-mode .analysis-toolbar .primary-button, body.dark-mode .analysis-toolbar button { background: #edf2f7; color: #0d1117; }
+body.dark-mode .account-form input, body.dark-mode .account-form select, body.dark-mode .account-form textarea { color: var(--text); }
+body.dark-mode .account-form option { color: #0d1117; }

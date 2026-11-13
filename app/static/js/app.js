@@ -152,6 +152,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (exists("#trend")) $("#trend").textContent = `Tendencia: ${data.tendency || "—"}`;
         if (exists("#modelVersion")) $("#modelVersion").textContent = data.model_version || "—";
         await loadMarketData(activeTicker, selectedPeriod, false);
+        renderCards(data.indicators);
+        renderPredictions(data.predictions);
         await loadHistory();
         setStatus(data.data_source === "demo" ? "Análisis completado con DATOS DEMO sintéticos: no son datos de mercado." : "Análisis completado.");
     }
@@ -313,6 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function loadTab(tab) {
         if (tab === "mercados") return loadMarkets();
+        if (tab === "cuenta") return loadAccount();
         if (!activeTicker) return;
         if (tab === "news") return loadNews(activeTicker);
         if (tab === "technical") return loadTechnical(activeTicker);
@@ -423,7 +426,195 @@ document.addEventListener("DOMContentLoaded", () => {
         $$(".main-nav a[data-nav]").forEach((a) => a.classList.toggle("active", a.dataset.nav === key));
     }
 
+
+    /* ---------- Cuentas, predicciones guardadas y portafolio ---------- */
+    let csrfToken = "";
+    let currentUser = null;
+    let persistenceOn = true;
+    let selectedPortfolio = null;
+    const STATUS_LABEL = { pendiente: "Pendiente", en_evaluacion: "En evaluación", cumplida: "Cumplida", no_cumplida: "No cumplida", invalidada: "Invalidada" };
+    const DIRECTION_LABEL = { alcista: "Alcista", bajista: "Bajista", neutral: "Neutral" };
+
+    async function api(method, url, body) {
+        const options = { method, headers: { "Content-Type": "application/json" } };
+        if (method !== "GET") options.headers["X-CSRF-Token"] = csrfToken;
+        if (body !== undefined) options.body = JSON.stringify(body);
+        const response = await fetch(url, options);
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) { const error = new Error(data.error || "No fue posible completar la solicitud."); error.status = response.status; throw error; }
+        if (data.csrf) csrfToken = data.csrf;
+        return data;
+    }
+
+    async function loadSession() {
+        try { const d = await api("GET", "/api/auth/me"); currentUser = d.user; csrfToken = d.csrf; persistenceOn = d.persistence; } catch (error) { currentUser = null; }
+        updateAuthUI();
+    }
+
+    function updateAuthUI() {
+        const btn = $("#authButton");
+        if (btn) btn.textContent = currentUser ? currentUser.username : (language === "es" ? "Empiece" : "Get started");
+        if (exists("#accountLoggedOut")) $("#accountLoggedOut").hidden = !!currentUser;
+        if (exists("#accountContent")) $("#accountContent").hidden = !currentUser;
+        if (exists("#logoutButton")) $("#logoutButton").hidden = !currentUser;
+        if (exists("#accountTitle")) $("#accountTitle").textContent = currentUser ? `Hola, ${currentUser.username}` : "Mi cuenta";
+    }
+
+    function accountMsg(text, ok = true) {
+        const box = $("#accountMsg");
+        if (!box) return;
+        box.textContent = text || "";
+        box.className = `account-msg ${text ? (ok ? "ok" : "error") : ""}`;
+    }
+
+    function openAuth(mode = "login") {
+        const dialog = $("#authDialog");
+        if (!dialog) return;
+        switchAuthMode(mode);
+        $("#authError").textContent = "";
+        if (typeof dialog.showModal === "function") { if (!dialog.open) dialog.showModal(); } else dialog.setAttribute("open", "");
+    }
+    function closeAuth() { const d = $("#authDialog"); if (!d) return; if (typeof d.close === "function") d.close(); else d.removeAttribute("open"); }
+    function switchAuthMode(mode) {
+        const login = mode === "login";
+        $("#loginForm").hidden = !login; $("#registerForm").hidden = login;
+        $("#authTabLogin").classList.toggle("active", login); $("#authTabRegister").classList.toggle("active", !login);
+        $("#authError").textContent = "";
+    }
+
+    async function submitAuth(event, url, fields) {
+        event.preventDefault();
+        const form = event.target;
+        const body = {};
+        fields.forEach((f) => { body[f] = form.elements[f].value; });
+        const submit = form.querySelector("button[type=submit]");
+        submit.disabled = true;
+        try {
+            const data = await api("POST", url, body);
+            currentUser = data.user; form.reset(); closeAuth(); updateAuthUI(); activateTab("cuenta");
+        } catch (error) { $("#authError").textContent = error.message; }
+        finally { submit.disabled = false; }
+    }
+
+    async function logout() {
+        try { await api("POST", "/api/auth/logout", {}); } catch (error) { /* la sesión local se limpia igualmente */ }
+        currentUser = null; updateAuthUI(); activateTab("summary");
+    }
+
+    function dateText(value) { return value ? String(value).slice(0, 10) : "—"; }
+
+    async function loadAccount() {
+        updateAuthUI();
+        if (!currentUser) return;
+        if (exists("#predSymbol") && !$("#predSymbol").value) $("#predSymbol").value = activeTicker;
+        if (exists("#tradeSymbol") && !$("#tradeSymbol").value) $("#tradeSymbol").value = activeTicker;
+        await Promise.all([loadPredictions(true), loadPortfolios()]);
+    }
+
+    async function loadPredictions(evaluateFirst = false) {
+        const box = $("#predList");
+        if (!box) return;
+        try {
+            if (evaluateFirst) { try { await api("POST", "/api/me/predictions/evaluate", {}); } catch (error) { /* se muestra lo guardado */ } }
+            const { predictions } = await api("GET", "/api/me/predictions");
+            if (!predictions.length) { box.innerHTML = `<div class="empty-state">Todavía no tienes predicciones guardadas.</div>`; return; }
+            box.innerHTML = `<table class="table"><thead><tr><th>Publicada</th><th>Activo</th><th>Origen</th><th>Dirección</th><th>Referencia</th><th>Objetivo</th><th>Vence</th><th>Estado</th><th>Resultado</th><th></th></tr></thead><tbody>${predictions.map((p) => {
+                const ev = p.evaluation;
+                const source = p.source === "model" ? `Modelo · ${escapeHTML((p.indicators && p.indicators.model_id) || "")} v${escapeHTML((p.indicators && p.indicators.model_version) || "")}` : "Usuario";
+                const result = ev ? `${numText(ev.actual_price, 4)} (${pctText(ev.actual_return_pct)})${ev.pct_error != null ? ` · error ${numText(ev.pct_error)}%` : ""}` : "—";
+                const cancel = (p.status === "pendiente" || p.status === "en_evaluacion") && !ev ? `<button type="button" class="secondary-button" data-cancel="${p.id}">Invalidar</button>` : "";
+                return `<tr><td>${dateText(p.published_at)}</td><td><strong>${escapeHTML(p.symbol)}</strong></td><td>${source}</td><td>${escapeHTML(DIRECTION_LABEL[p.direction] || p.direction)}</td><td>${numText(p.reference_price, 4)}</td><td>${p.target_price == null ? "—" : numText(p.target_price, 4)}</td><td>${dateText(p.target_date)}</td><td><span class="pill">${escapeHTML(STATUS_LABEL[p.status] || p.status)}</span></td><td>${result}</td><td>${cancel}</td></tr>`;
+            }).join("")}</tbody></table>`;
+        } catch (error) { box.innerHTML = `<div class="empty-state">${escapeHTML(error.message)}</div>`; }
+    }
+
+    async function loadPortfolios(selectId) {
+        try {
+            const { portfolios } = await api("GET", "/api/me/portfolios");
+            $("#pfEmpty").hidden = portfolios.length > 0; $("#pfArea").hidden = portfolios.length === 0;
+            if (!portfolios.length) { selectedPortfolio = null; return; }
+            const keep = selectId || selectedPortfolio || portfolios[0].id;
+            $("#pfSelect").innerHTML = portfolios.map((p) => `<option value="${p.id}">${escapeHTML(p.name)}</option>`).join("");
+            selectedPortfolio = portfolios.some((p) => p.id === keep) ? keep : portfolios[0].id;
+            $("#pfSelect").value = String(selectedPortfolio);
+            await loadPortfolioDetail();
+        } catch (error) { accountMsg(error.message, false); }
+    }
+
+    async function loadPortfolioDetail() {
+        if (!selectedPortfolio) return;
+        $("#pfSummary").innerHTML = `<div class="loading">Valorando posiciones...</div>`;
+        try {
+            const d = await api("GET", `/api/me/portfolios/${selectedPortfolio}`);
+            const cur = d.portfolio.currency || "";
+            const money = (v) => (v == null ? "N/D" : `${numText(v, 2)} ${escapeHTML(cur)}`);
+            $("#pfSummary").innerHTML = `<section class="metric-grid">
+                <article class="card"><small>Efectivo</small><strong>${money(d.cash)}</strong><small>Capital inicial ${money(d.portfolio.initial_cash)}</small></article>
+                <article class="card"><small>Valor de posiciones</small><strong>${money(d.market_value)}</strong><small>Último cierre disponible</small></article>
+                <article class="card"><small>Patrimonio</small><strong>${money(d.equity)}</strong><small>Rentabilidad ${pctText(d.return_pct)}</small></article>
+                <article class="card"><small>G/P realizada</small><strong>${money(d.realized_pnl)}</strong><small>Comisión ${numText(d.portfolio.commission_pct, 2)}%</small></article></section>`;
+            $("#pfPositions").innerHTML = d.positions.length ? `<h4>Posiciones</h4><table class="table"><thead><tr><th>Activo</th><th>Cantidad</th><th>Costo medio</th><th>Último</th><th>Valor</th><th>G/P no realizada</th><th>Peso</th></tr></thead><tbody>${d.positions.filter((r) => r.quantity > 0).map((r) => `<tr><td><strong>${escapeHTML(r.symbol)}</strong></td><td>${numText(r.quantity, 8)}</td><td>${numText(r.avg_cost, 4)}</td><td>${r.last_price == null ? "N/D" : numText(r.last_price, 4)}</td><td>${money(r.market_value)}</td><td class="${Number(r.unrealized_pnl) >= 0 ? "positive-text" : "negative-text"}">${money(r.unrealized_pnl)}</td><td>${r.weight_pct == null ? "N/D" : numText(r.weight_pct, 1) + "%"}</td></tr>`).join("") || `<tr><td colspan="7">Sin posiciones abiertas.</td></tr>`}</tbody></table>` : `<div class="empty-state">Sin posiciones todavía.</div>`;
+            $("#pfTrades").innerHTML = d.trades.length ? `<h4>Historial de operaciones</h4><table class="table"><thead><tr><th>Fecha</th><th>Activo</th><th>Operación</th><th>Cantidad</th><th>Precio</th><th>Comisión</th></tr></thead><tbody>${d.trades.slice().reverse().slice(0, 50).map((t) => `<tr><td>${dateText(t.executed_at)}</td><td>${escapeHTML(t.symbol)}</td><td>${t.side === "buy" ? "Compra" : "Venta"}</td><td>${numText(t.quantity, 8)}</td><td>${numText(t.price, 4)}</td><td>${numText(t.commission, 4)}</td></tr>`).join("")}</tbody></table>` : "";
+        } catch (error) { $("#pfSummary").innerHTML = `<div class="empty-state">${escapeHTML(error.message)}</div>`; }
+    }
+
+    async function saveModelPredictions() {
+        if (!currentUser) { openAuth("login"); return; }
+        const horizon = Number($("#modelsHorizon")?.value || 5);
+        const button = $("#saveModels");
+        button.disabled = true;
+        try {
+            const { saved } = await api("POST", "/api/me/predictions/from-models", { symbol: activeTicker, horizon });
+            setStatus(`Se guardaron ${saved.length} predicciones en tu cuenta (Mi cuenta → Mis predicciones).`);
+        } catch (error) { setStatus(error.message); }
+        finally { button.disabled = false; }
+    }
+
+    function bindAccountEvents() {
+        $("#authButton")?.addEventListener("click", () => (currentUser ? activateTab("cuenta") : openAuth("login")));
+        $("#accountLoginBtn")?.addEventListener("click", () => openAuth("login"));
+        $("#authClose")?.addEventListener("click", closeAuth);
+        $("#authTabLogin")?.addEventListener("click", () => switchAuthMode("login"));
+        $("#authTabRegister")?.addEventListener("click", () => switchAuthMode("register"));
+        $("#loginForm")?.addEventListener("submit", (e) => submitAuth(e, "/api/auth/login", ["identifier", "password"]));
+        $("#registerForm")?.addEventListener("submit", (e) => submitAuth(e, "/api/auth/register", ["username", "email", "password"]));
+        $("#logoutButton")?.addEventListener("click", logout);
+        $("#saveModels")?.addEventListener("click", saveModelPredictions);
+        $("#evaluateBtn")?.addEventListener("click", async () => { accountMsg(""); await loadPredictions(true); });
+        $("#predList")?.addEventListener("click", async (e) => {
+            const id = e.target.dataset && e.target.dataset.cancel;
+            if (!id) return;
+            try { await api("POST", `/api/me/predictions/${id}/cancel`, {}); accountMsg("Predicción invalidada (el historial se conserva)."); await loadPredictions(); } catch (error) { accountMsg(error.message, false); }
+        });
+        $("#predForm")?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const f = e.target.elements;
+            const body = { symbol: f.symbol.value, direction: f.direction.value, horizon_days: Number(f.horizon_days.value), rationale: f.rationale.value };
+            if (f.target_price.value !== "") body.target_price = Number(f.target_price.value);
+            try { await api("POST", "/api/me/predictions", body); accountMsg("Predicción publicada."); f.target_price.value = ""; f.rationale.value = ""; await loadPredictions(); } catch (error) { accountMsg(error.message, false); }
+        });
+        $("#pfCreateForm")?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const f = e.target.elements;
+            try {
+                const { portfolio } = await api("POST", "/api/me/portfolios", { name: f.name.value, initial_cash: f.initial_cash.value, commission_pct: f.commission_pct.value });
+                accountMsg("Portafolio creado."); f.name.value = ""; await loadPortfolios(portfolio.id);
+            } catch (error) { accountMsg(error.message, false); }
+        });
+        $("#pfSelect")?.addEventListener("change", async (e) => { selectedPortfolio = Number(e.target.value); await loadPortfolioDetail(); });
+        $("#tradeForm")?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const f = e.target.elements;
+            try {
+                await api("POST", `/api/me/portfolios/${selectedPortfolio}/trades`, { symbol: f.symbol.value, side: f.side.value, quantity: f.quantity.value });
+                accountMsg("Operación ejecutada (dinero virtual)."); f.quantity.value = ""; await loadPortfolioDetail();
+            } catch (error) { accountMsg(error.message, false); }
+        });
+        $("#languageToggle")?.addEventListener("click", () => setTimeout(updateAuthUI, 0));
+    }
+
     function bindEvents() {
+        bindAccountEvents();
         if (exists("#form")) $("#form").addEventListener("submit", async (event) => {
             event.preventDefault();
             const query = $("#symbol")?.value.trim();
@@ -566,6 +757,7 @@ document.addEventListener("DOMContentLoaded", () => {
         restoreTheme();
         bindEvents();
         applyLanguage();
+        await loadSession();
         await loadHistory();
         try { await loadMarketData("AAPL", "1D", false); } catch (error) { setStatus(error.message); }
     }

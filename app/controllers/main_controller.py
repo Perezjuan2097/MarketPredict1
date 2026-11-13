@@ -225,13 +225,9 @@ def markets():
         return api_error(e)
 
 
-@main_bp.get("/api/models/<path:ticker>")
-def models(ticker):
+def model_result(ticker, horizon):
+    """Resultado del motor de modelos (con caché de 15 min). Lo usan /api/models y el guardado de predicciones."""
     ticker = clean_symbol(ticker)
-    try:
-        horizon = int(request.args.get("horizon", "5"))
-    except ValueError:
-        return jsonify(error="Horizonte no válido."), 400
     demo = os.getenv("USE_DEMO", "false").lower() == "true"
 
     def compute():
@@ -244,8 +240,18 @@ def models(ticker):
         out["data_source"] = "demo" if demo else "Yahoo Finance"
         return out
 
+    return _cached(("models", ticker.upper(), int(horizon), demo), 900, compute)
+
+
+@main_bp.get("/api/models/<path:ticker>")
+def models(ticker):
+    ticker = clean_symbol(ticker)
     try:
-        return jsonify(_cached(("models", ticker.upper(), horizon, demo), 900, compute))
+        horizon = int(request.args.get("horizon", "5"))
+    except ValueError:
+        return jsonify(error="Horizonte no válido."), 400
+    try:
+        return jsonify(model_result(ticker, horizon))
     except Exception as e:
         return api_error(e)
 
