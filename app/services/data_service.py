@@ -267,6 +267,11 @@ class APIFinanciera(FuenteDatos):
                 result.append({"title": title, "source": publisher, "date": timestamp, "url": link})
         out = {"symbol": resolved["symbol"], "news": result, "provider": "Yahoo Finance"}
         if not result:
+            # Respaldo sin clave: el feed RSS público de Yahoo no usa el "crumb" que Yahoo bloquea
+            # en servidores como Render (error 401 "Invalid Crumb").
+            rss = self.yahoo_rss_news(resolved["symbol"], limit)
+            if rss:
+                return {"symbol": resolved["symbol"], "news": rss, "provider": "Yahoo Finance (RSS)"}
             from app.services.finnhub_provider import FinnhubProvider
             finnhub = FinnhubProvider()
             if finnhub.configured:
@@ -281,6 +286,40 @@ class APIFinanciera(FuenteDatos):
                 warning += " Puede añadir una fuente alternativa configurando FINNHUB_API_KEY."
             if warning:
                 out["warning"] = warning
+        return out
+
+    @staticmethod
+    def yahoo_rss_news(symbol, limit=10):
+        """Noticias del feed RSS público de Yahoo Finance. Devuelve [] si falla (nunca lanza)."""
+        import xml.etree.ElementTree as ET
+        from email.utils import parsedate_to_datetime
+        import requests
+        try:
+            resp = requests.get("https://feeds.finance.yahoo.com/rss/2.0/headline", timeout=8,
+                                params={"s": symbol, "region": "US", "lang": "en-US"},
+                                headers={"User-Agent": "Mozilla/5.0 (MarketPredict académico)"})
+            if resp.status_code != 200:
+                log.warning("RSS de Yahoo respondió %s para %s", resp.status_code, symbol)
+                return []
+            root = ET.fromstring(resp.content)
+        except Exception as exc:
+            log.warning("RSS de Yahoo falló para %s: %s", symbol, type(exc).__name__)
+            return []
+        out = []
+        for item in root.iter("item"):
+            title = (item.findtext("title") or "").strip()
+            if not title:
+                continue
+            date = item.findtext("pubDate")
+            try:
+                date = parsedate_to_datetime(date).isoformat() if date else None
+            except (TypeError, ValueError):
+                date = None
+            out.append({"title": title, "source": "Yahoo Finance", "date": date,
+                        "url": (item.findtext("link") or "").strip() or None,
+                        "summary": ((item.findtext("description") or "").strip()[:400]) or None})
+            if len(out) >= limit:
+                break
         return out
 
     MARKETS = [

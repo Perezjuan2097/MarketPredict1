@@ -318,6 +318,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function loadTab(tab) {
         if (tab === "mercados") return loadMarkets();
+        if (tab === "brokers") return loadBroker();
         if (tab === "cuenta") return loadAccount();
         if (!activeTicker) return;
         if (tab === "news") return loadNews(activeTicker);
@@ -363,6 +364,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function pctText(v, d = 2) { return v == null || !isFinite(v) ? "N/D" : `${v > 0 ? "+" : ""}${Number(v).toFixed(d)}%`; }
     function numText(v, d = 2) { return v == null || !isFinite(v) ? "N/D" : Number(v).toLocaleString("es-ES", { maximumFractionDigits: d }); }
+
+    async function loadBroker() {
+        const box = $("#brokerContent");
+        if (!box) return;
+        box.innerHTML = `<div class="empty-state">Consultando Alpaca (paper trading)...</div>`;
+        try {
+            const response = await fetch("/api/broker/status");
+            const d = await response.json();
+            if (!d.authorized) {
+                box.innerHTML = `<div class="empty-state">${escapeHTML(d.error || d.message || "Bróker no disponible.")}</div>`;
+                return;
+            }
+            const a = d.account || {};
+            const m = (v) => formatMoney(v, a.currency || "USD");
+            const pct = (v) => (v === null || v === undefined) ? "—" : `${v > 0 ? "+" : ""}${Number(v).toFixed(2)}%`;
+            const cards = [["Patrimonio", m(a.equity)], ["Efectivo", m(a.cash)], ["Poder de compra", m(a.buying_power)],
+                ["Variación del día", `${m(a.day_change)} (${pct(a.day_change_pct)})`],
+                ["Mercado", d.market?.is_open ? "Abierto" : "Cerrado"], ["Estado de la cuenta", a.status || "—"]];
+            const positions = (d.positions || []).length
+                ? `<table class="table"><thead><tr><th>Activo</th><th>Cantidad</th><th>Precio medio</th><th>Precio actual</th><th>Valor</th><th>G/P</th></tr></thead><tbody>${d.positions.map((p) => `<tr><td><strong>${escapeHTML(p.symbol)}</strong></td><td>${escapeHTML(p.qty)}</td><td>${m(p.avg_entry_price)}</td><td>${m(p.current_price)}</td><td>${m(p.market_value)}</td><td>${m(p.unrealized_pl)} (${pct(p.unrealized_plpc)})</td></tr>`).join("")}</tbody></table>`
+                : `<div class="empty-state">No hay posiciones abiertas.</div>`;
+            const orders = (d.orders || []).length
+                ? `<table class="table"><thead><tr><th>Fecha</th><th>Activo</th><th>Lado</th><th>Cantidad</th><th>Precio</th><th>Estado</th></tr></thead><tbody>${d.orders.map((o) => `<tr><td>${formatDateTime(o.submitted_at)}</td><td>${escapeHTML(o.symbol)}</td><td>${escapeHTML(o.side === "buy" ? "Compra" : "Venta")}</td><td>${escapeHTML(o.qty ?? "—")}</td><td>${o.filled_avg_price ? m(o.filled_avg_price) : "—"}</td><td>${escapeHTML(o.status)}</td></tr>`).join("")}</tbody></table>`
+                : `<div class="empty-state">No hay órdenes recientes.</div>`;
+            box.innerHTML = `<div class="metric-grid">${cards.map(([k, v]) => `<article class="card"><small>${escapeHTML(k)}</small><strong>${escapeHTML(v)}</strong></article>`).join("")}</div><h3>Posiciones</h3>${positions}<h3>Órdenes recientes</h3>${orders}<p class="note">${escapeHTML(d.broker)} · cuenta simulada, sin dinero real.</p>`;
+        } catch { box.innerHTML = `<div class="empty-state">No fue posible consultar el bróker.</div>`; }
+    }
 
     async function loadMarkets() {
         const box = $("#marketsContent");
