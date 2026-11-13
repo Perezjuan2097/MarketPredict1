@@ -28,8 +28,22 @@ class TestPublico(BaseCase):
     def test_analyze_demo_marca_origen_y_fechas_iso(self):
         j = self.c.post("/api/analyze", json={"symbol": "AAPL"}).get_json()
         self.assertEqual(j["data_source"], "demo")
-        self.assertEqual(len(j["predictions"]), 5)
+        self.assertGreaterEqual(len(j["predictions"]), 1)
+        self.assertTrue(all(p["horizonte"] == "5 sesiones" for p in j["predictions"]))
+        self.assertIn(j["alert"]["nivel"], ("ALTA", "MEDIA", "BAJA", "SIN SEÑAL"))
         self.assertRegex(j["data"][0]["fecha"], r"^\d{4}-\d{2}-\d{2}$")
+
+    def test_analyze_coincide_con_consenso(self):
+        """La tarjeta de predicciones y el panel de consenso salen del mismo motor."""
+        j = self.c.post("/api/analyze", json={"symbol": "AAPL"}).get_json()
+        m = self.c.get("/api/models/AAPL?horizon=5").get_json()
+        if m["consensus"]["status"] == "ok":
+            self.assertEqual(j["predictions"][0]["modelo"], "Consenso multimodelo")
+            self.assertAlmostEqual(j["predictions"][0]["valor_estimado"], round(m["consensus"]["estimated_price"], 2))
+        else:
+            self.assertEqual(j["alert"]["nivel"], "SIN SEÑAL")
+            precios = {round(x["estimated_price"], 2) for x in m["models"] if x["status"] == "ok"}
+            self.assertEqual({p["valor_estimado"] for p in j["predictions"]}, precios)
 
     def test_symbol_invalido(self):
         self.assertEqual(self.c.post("/api/analyze", json={"symbol": "<script>"}).status_code, 422)
@@ -107,8 +121,7 @@ class TestAdmin(BaseCase):
         self.assertIn("actualizada", ok.get_data(as_text=True))
         self.assertEqual(os.environ.get("MODEL_HORIZON"), before)
         j = self.c.post("/api/analyze", json={"symbol": "AAPL"}).get_json()
-        self.assertEqual(len(j["predictions"]), 7)
-        self.assertEqual(j["model_version"], "v2")
+        self.assertTrue(all(p["horizonte"] == "7 sesiones" for p in j["predictions"]))
 
 
 class TestConfig(unittest.TestCase):
@@ -229,9 +242,10 @@ class TestInterfazCoherente(BaseCase):
                       "tradeForm", "pfSelect", "saveModels", "evaluateBtn", "logoutButton"):
             self.assertIn(f'id="{ident}"', html)
 
-    def test_js_y_copia_identicos(self):
+    def test_solo_un_js(self):
         base = Path(__file__).resolve().parent.parent / "app/static/js"
-        self.assertEqual((base / "script.js").read_text(encoding="utf-8"), (base / "app.js").read_text(encoding="utf-8"))
+        self.assertTrue((base / "script.js").exists())
+        self.assertFalse((base / "app.js").exists())  # la copia duplicada se eliminó
 
 
 class TestFinnhub(unittest.TestCase):

@@ -127,7 +127,9 @@ document.addEventListener("DOMContentLoaded", () => {
             $("#predictions").innerHTML = `<div class="empty-state">No hay predicciones disponibles.</div>`;
             return;
         }
-        $("#predictions").innerHTML = `<table class="table"><thead><tr><th>Fecha</th><th>Horizonte</th><th>Estimación</th></tr></thead><tbody>${predictions.map((p) => `<tr><td>${escapeHTML(p.fecha_objetivo)}</td><td>${escapeHTML(p.horizonte)}</td><td><strong>${formatMoney(p.valor_estimado, marketData?.currency)}</strong></td></tr>`).join("")}</tbody></table>`;
+        const range = (p) => (p.intervalo_bajo && p.intervalo_alto) ? `${formatMoney(p.intervalo_bajo, marketData?.currency)} – ${formatMoney(p.intervalo_alto, marketData?.currency)}` : "—";
+        const notes = [...new Set(predictions.map((p) => p.nota).filter(Boolean))];
+        $("#predictions").innerHTML = `<table class="table"><thead><tr><th>Modelo</th><th>Fecha objetivo</th><th>Estimación</th><th>Intervalo ~90%</th></tr></thead><tbody>${predictions.map((p) => `<tr><td>${escapeHTML(p.modelo)} <small>${escapeHTML(p.version || "")}</small></td><td>${escapeHTML(p.fecha_objetivo)}<br><small>${escapeHTML(p.horizonte)}</small></td><td><strong>${formatMoney(p.valor_estimado, marketData?.currency)}</strong></td><td>${range(p)}</td></tr>`).join("")}</tbody></table>${notes.map((n) => `<p class="note">${escapeHTML(n)}</p>`).join("")}`;
     }
 
     function renderAlert(alert) {
@@ -136,7 +138,8 @@ document.addEventListener("DOMContentLoaded", () => {
             $("#alert").innerHTML = `<div class="empty-state">Sin señal.</div>`;
             return;
         }
-        $("#alert").innerHTML = `<div class="alert ${escapeHTML(alert.nivel || "BAJA")}"><span class="pill">${escapeHTML(alert.nivel || "BAJA")}</span><p>${escapeHTML(alert.fundamento || "Sin fundamento disponible.")}</p></div>`;
+        const level = { ALTA: "ALTA", MEDIA: "MEDIA", BAJA: "BAJA" }[alert.nivel] || "NEUTRA";
+        $("#alert").innerHTML = `<div class="alert ${level}"><span class="pill">${escapeHTML(alert.nivel || "BAJA")}</span><p>${escapeHTML(alert.fundamento || "Sin fundamento disponible.")}</p></div>`;
     }
 
     async function analyzeAsset(query) {

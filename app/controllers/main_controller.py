@@ -3,8 +3,8 @@ from flask import Blueprint, render_template, request, jsonify, current_app, sen
 
 from app.services.data_service import APIFinanciera, ValidadorDatos, ProcesadorDatos
 from app.services.analysis_service import AnalizadorMercado
-from app.services.prediction_service import ModeloML
-from app.services.alert_service import ClasificadorAlertas
+from app.services.prediction_service import predicciones_desde_motor
+from app.services.alert_service import alerta_desde_motor
 from app.services.report_service import InformeEmpresarial
 from app.services.storage_service import Storage
 from app.services.community_service import CommunityStorage
@@ -26,8 +26,10 @@ def pipeline(symbol):
     data = ProcesadorDatos().procesar(ValidadorDatos().validar(raw))
     analyzer = AnalizadorMercado()
     inds = [x.__dict__ for x in analyzer.indicadores(data)]
-    preds = ModeloML().predecir(data, cfg.horizon, cfg.model_version)
-    alert = ClasificadorAlertas().clasificar(data, preds, cfg.alert_drop)
+    # Predicción y alerta salen del mismo motor validado que el panel "Consenso de modelos".
+    engine = model_result(resolved["symbol"], cfg.horizon)
+    preds = predicciones_desde_motor(engine)
+    alert = alerta_desde_motor(engine, cfg.alert_drop)
     return cfg, resolved, data, inds, preds, alert, analyzer.tendencia(data)
 
 
@@ -165,7 +167,7 @@ def analyze():
         return jsonify(
             symbol=resolved["symbol"], query=symbol, name=resolved.get("name"), data=data,
             indicators=inds, predictions=preds, alert=alert, tendency=tend,
-            model_version=cfg.model_version,
+            model_version="ml_engine (consenso validado)",
             data_source="demo" if os.getenv("USE_DEMO", "false").lower() == "true" else "Yahoo Finance",
         )
     except Exception as e:
