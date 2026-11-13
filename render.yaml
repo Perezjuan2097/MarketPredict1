@@ -3,7 +3,7 @@ services:
     name: marketpredict-backend
     runtime: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt -r requirements-ml.txt
     startCommand: gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 1 --timeout 120
     healthCheckPath: /
     envVars:
@@ -19,3 +19,5 @@ services:
         sync: false        # cadena de conexión de Supabase (pooler)
       - key: USE_DEMO
         value: "false"
+      - key: ENABLE_TS_MODELS
+        value: "false"     # ARIMA/SARIMA: cambie a "true" tras verificar tiempos en Render
