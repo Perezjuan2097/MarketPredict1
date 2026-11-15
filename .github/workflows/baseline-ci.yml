@@ -1,0 +1,68 @@
+name: Baseline fase3
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+env:
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  PYTHONUTF8: "1"
+
+jobs:
+  pytest:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+        requirements: [requirements-test.txt, requirements-dev.txt]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r "${{ matrix.requirements }}"
+      - run: python -m pip check
+      - name: Verify the dependency profile
+        shell: bash
+        run: |
+          python - <<'PY'
+          from ml_engine.model_registry.registry import optional_status
+          expected = "${{ matrix.requirements }}" == "requirements-dev.txt"
+          status = optional_status()
+          assert all(item["installed"] == expected for item in status.values()), status
+          PY
+      - run: python -m pytest -q -rs
+
+  postgresql:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: marketpredict_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d marketpredict_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      TEST_POSTGRES_URL: postgresql+psycopg2://postgres@127.0.0.1:5432/marketpredict_test
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements-test.txt
+      - run: python -m pytest -q -rs tests/test_repository_contract.py tests/test_identity_migration.py tests/test_account.py

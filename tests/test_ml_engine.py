@@ -179,12 +179,17 @@ class TestMotor(unittest.TestCase):
         required = {"model_id", "name", "version", "asset", "run_date", "reference_price", "horizon_days",
                     "estimated_price", "estimated_return_pct", "interval", "indicators_used",
                     "historical_metrics", "status"}
-        self.assertEqual(len(r["models"]), 2)
+        from ml_engine.model_registry import registry
+
+        model_ids = [model["model_id"] for model in r["models"]]
+        self.assertCountEqual(model_ids, registry.active_model_ids())
+        self.assertTrue({"linear_regression", "random_forest"} <= set(model_ids))
         for m in r["models"]:
             self.assertTrue(required <= set(m), required - set(m))
             self.assertEqual(m["status"], "ok")
             self.assertLess(m["interval"]["low_price"], m["interval"]["high_price"])
-        self.assertEqual(len(r["baselines"]), 2)
+        self.assertCountEqual([model["model_id"] for model in r["baselines"]],
+                              ["baseline_last_price", "baseline_mean_return"])
         self.assertIn("calibration", r["monte_carlo"])
 
     def test_ruido_puro_no_genera_consenso_alcista_o_bajista(self):

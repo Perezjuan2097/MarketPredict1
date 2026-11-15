@@ -5,6 +5,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 os.environ["USE_DEMO"] = "true"
 
@@ -12,6 +13,9 @@ os.environ["USE_DEMO"] = "true"
 class BaseCase(unittest.TestCase):
     def setUp(self):
         from app import create_app
+        from app.services.data_service import APIFinanciera
+        self.enterContext(patch.object(APIFinanciera, "search_yahoo", return_value=[]))
+        self.enterContext(patch.object(APIFinanciera, "_ticker", side_effect=OSError("Proveedor sin conexión")))
         self.tmp = Path(tempfile.mkdtemp())
         self.app = create_app({"TESTING": True, "PROJECT_ROOT": self.tmp, "ADMIN_TOKEN": "tok-prueba",
                                "RATE_LIMIT_PER_MINUTE": 1000})
@@ -51,8 +55,9 @@ class TestPublico(BaseCase):
         self.assertEqual(self.c.post("/api/analyze", data="x", content_type="text/plain").status_code, 400)
 
     def test_errores_no_filtran_internos(self):
-        r = self.c.get("/api/seasonal/AAPL")  # sin yfinance/red en pruebas
-        self.assertIn(r.status_code, (200, 422, 500))
+        r = self.c.get("/api/seasonal/AAPL")
+        self.assertEqual(r.status_code, 500)
+        self.assertNotIn("Proveedor sin conexión", r.get_data(as_text=True))
         self.assertNotIn("Traceback", r.get_data(as_text=True))
 
     def test_save_valida_y_deduplica(self):
@@ -160,8 +165,10 @@ class TestNuevosEndpoints(BaseCase):
 
     def test_markets_sin_proveedor_no_revienta(self):
         r = self.c.get("/api/markets")
-        self.assertIn(r.status_code, (200, 422))
-        self.assertNotIn("Traceback", r.get_data(as_text=True))
+        self.assertEqual(r.status_code, 200)
+        markets = r.get_json()["markets"]
+        self.assertTrue(markets)
+        self.assertTrue(all(m["price"] is None and m["error"] for m in markets))
 
     def test_index_tiene_navegacion_funcional(self):
         html = self.c.get("/").get_data(as_text=True)

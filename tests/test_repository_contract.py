@@ -1,6 +1,7 @@
 """Pruebas de contrato: cualquier repositorio debe comportarse igual. Memoria siempre; SQL si hay SQLAlchemy."""
 import importlib.util
 import os
+from uuid import uuid4
 import tempfile
 import unittest
 from decimal import Decimal
@@ -40,6 +41,25 @@ class RepoContract:
         self.assertEqual(self.repo.get_user(self.u1["id"])["username"], "ana")
         self.assertIsNone(self.repo.get_user(9999))
         self.repo.touch_login(self.u1["id"])
+
+    def test_identidad_unicode_y_grafia_visible(self):
+        user = self.repo.create_user("Clara", "Éxito@x.co", "h")
+        self.assertEqual(self.repo.find_user("  CLARA  ")["id"], user["id"])
+        self.assertEqual(self.repo.find_user("ÉXITO@X.CO")["username"], "Clara")
+        with self.assertRaises(DuplicateError):
+            self.repo.create_user("Otra", "ÉXITO@X.CO", "h")
+        self.repo.create_portfolio(user["id"], "Índice", Decimal("5"), Decimal("0"))
+        with self.assertRaises(DuplicateError):
+            self.repo.create_portfolio(user["id"], "íNDICE", Decimal("5"), Decimal("0"))
+        self.assertEqual(self.repo.list_portfolios(user["id"])[0]["name"], "Índice")
+
+    def test_autenticacion_por_identificador_normalizado(self):
+        from app.services.account_service import authenticate, register
+
+        user = register(self.repo, "Clara", "Clara@x.co", "Clave1234")
+        for identifier in ("  CLARA  ", "CLARA@X.CO"):
+            self.assertEqual(authenticate(self.repo, identifier, "Clave1234")["id"], user["id"])
+        self.assertIsNone(authenticate(self.repo, "Clara", "OtraClave1"))
 
     def test_activos_idempotentes(self):
         self.assertEqual(self.repo.get_or_create_asset("AAPL"), self.aid)
@@ -108,13 +128,36 @@ class TestSQLRepo(RepoContract, unittest.TestCase):
         from sqlalchemy import create_engine
         from app.models.orm import Base
         from app.repositories.sql import SQLRepository
-        self._dir = tempfile.TemporaryDirectory()
-        engine = create_engine(f"sqlite:///{os.path.join(self._dir.name, 't.db')}")
+        directory = self.enterContext(tempfile.TemporaryDirectory())
+        engine = create_engine(f"sqlite:///{os.path.join(directory, 't.db')}")
+        self.addCleanup(engine.dispose)
         Base.metadata.create_all(engine)
         return SQLRepository(engine)
 
-    def tearDown(self):
-        self._dir.cleanup()
+@unittest.skipUnless(os.getenv("TEST_POSTGRES_URL"), "requiere TEST_POSTGRES_URL")
+class TestPostgresRepo(RepoContract, unittest.TestCase):
+    def make_repo(self):
+        from sqlalchemy import create_engine
+        from sqlalchemy.schema import CreateSchema, DropSchema
+        from app.models.orm import Base
+        from app.repositories.sql import SQLRepository
+
+        url = os.environ["TEST_POSTGRES_URL"]
+        schema = f"mp_test_{uuid4().hex}"
+        admin = create_engine(url)
+        self.addCleanup(admin.dispose)
+        with admin.begin() as conn:
+            conn.execute(CreateSchema(schema))
+
+        def drop_schema():
+            with admin.begin() as conn:
+                conn.execute(DropSchema(schema, cascade=True))
+
+        self.addCleanup(drop_schema)
+        engine = create_engine(url, connect_args={"options": f"-csearch_path={schema}"})
+        self.addCleanup(engine.dispose)
+        Base.metadata.create_all(engine)
+        return SQLRepository(engine)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ import threading
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from app.repositories.base import DUE_STATUSES, ConflictError, DuplicateError, NotFoundError, q2
+from app.repositories.base import DUE_STATUSES, ConflictError, DuplicateError, NotFoundError, identity_key, q2
 
 
 def _now():
@@ -21,10 +21,10 @@ class MemoryRepository:
     def create_user(self, username, email, password_hash):
         with self._lock:
             for u in self.users.values():
-                if u["username"].lower() == username.lower() or u["email"].lower() == email.lower():
+                if identity_key(u["username"]) == identity_key(username) or u["email"] == identity_key(email):
                     raise DuplicateError("Usuario o correo ya registrado.")
             uid = next(self._ids["user"])
-            self.users[uid] = {"id": uid, "username": username, "email": email.lower(), "password_hash": password_hash,
+            self.users[uid] = {"id": uid, "username": username, "email": identity_key(email), "password_hash": password_hash,
                                "role": "user", "bio": None, "avatar_url": None, "is_blocked": False,
                                "created_at": _now(), "last_login_at": None}
             return dict(self.users[uid])
@@ -34,9 +34,9 @@ class MemoryRepository:
         return dict(u) if u else None
 
     def find_user(self, identifier):
-        ident = identifier.strip().lower()
+        ident = identity_key(identifier)
         for u in self.users.values():
-            if u["username"].lower() == ident or u["email"] == ident:
+            if identity_key(u["username"]) == ident or u["email"] == ident:
                 return dict(u)
         return None
 
@@ -108,7 +108,7 @@ class MemoryRepository:
     # ------------------------------------------------------------ portafolios
     def create_portfolio(self, user_id, name, initial_cash, commission_pct):
         with self._lock:
-            if any(p["user_id"] == user_id and p["name"].lower() == name.lower() for p in self.portfolios.values()):
+            if any(p["user_id"] == user_id and identity_key(p["name"]) == identity_key(name) for p in self.portfolios.values()):
                 raise DuplicateError("Ya existe un portafolio con ese nombre.")
             pid = next(self._ids["pf"])
             self.portfolios[pid] = {"id": pid, "user_id": user_id, "name": name, "initial_cash": q2(initial_cash),

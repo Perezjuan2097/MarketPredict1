@@ -16,6 +16,11 @@ class NotFoundError(Exception):
     pass
 
 
+def identity_key(value):
+    """Clave Unicode uniforme para memoria y SQL. El campo visible conserva su grafía."""
+    return value.strip().lower()
+
+
 def q2(value):
     return Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 

@@ -1,8 +1,4 @@
-"""Repositorio SQLAlchemy (Supabase/PostgreSQL y SQLite). Capa fina: toda la lógica está en los servicios.
-
-Importante: este módulo no se pudo ejecutar en el entorno de desarrollo (sin SQLAlchemy instalado).
-Verifíquelo con:  python -m unittest tests.test_repository_contract -v
-"""
+"""Repositorio SQLAlchemy para PostgreSQL y SQLite."""
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -11,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
 from app.models import orm
-from app.repositories.base import DUE_STATUSES, ConflictError, DuplicateError, NotFoundError, q2
+from app.repositories.base import DUE_STATUSES, ConflictError, DuplicateError, NotFoundError, identity_key, q2
 
 
 def _iso(value):
@@ -60,7 +56,7 @@ class SQLRepository:
     # ------------------------------------------------------------ usuarios
     def create_user(self, username, email, password_hash):
         with self._Session() as s:
-            u = orm.User(username=username, email=email.lower(), password_hash=password_hash)
+            u = orm.User(username=username, email=identity_key(email), password_hash=password_hash)
             s.add(u)
             try:
                 s.commit()
@@ -76,10 +72,10 @@ class SQLRepository:
             return _user(u) if u else None
 
     def find_user(self, identifier):
-        ident = identifier.strip().lower()
+        ident = identity_key(identifier)
         with self._Session() as s:
-            u = s.execute(select(orm.User).where(or_(func.lower(orm.User.username) == ident,
-                                                     func.lower(orm.User.email) == ident))).scalars().first()
+            u = s.execute(select(orm.User).where(or_(orm.User.username_key == ident,
+                                                     orm.User.email_key == ident))).scalar_one_or_none()
             return _user(u) if u else None
 
     def touch_login(self, user_id):

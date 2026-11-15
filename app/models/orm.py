@@ -9,7 +9,13 @@ from typing import Optional
 
 from sqlalchemy import (JSON, Boolean, CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, Numeric, String,
                         Text, UniqueConstraint, func)
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, validates
+
+from app.repositories.base import identity_key
+
+
+# Compare already-normalized keys bytewise on both supported databases.
+IDENTITY_KEY = Text().with_variant(Text(collation="C"), "postgresql")
 
 
 class Base(DeclarativeBase):
@@ -32,13 +38,22 @@ class User(Audit, Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
     email: Mapped[str] = mapped_column(String(254), unique=True, nullable=False)
+    username_key: Mapped[str] = mapped_column(IDENTITY_KEY, nullable=False)
+    email_key: Mapped[str] = mapped_column(IDENTITY_KEY, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(10), nullable=False, default="user", server_default="user")
     bio: Mapped[Optional[str]] = mapped_column(String(500))
     avatar_url: Mapped[Optional[str]] = mapped_column(String(500))
     is_blocked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="0")
     last_login_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    __table_args__ = (CheckConstraint("role IN ('user','admin')", name="ck_users_role"),
+    @validates("username", "email")
+    def _set_identity_key(self, field, value):
+        setattr(self, f"{field}_key", identity_key(value))
+        return value
+
+    __table_args__ = (Index("ux_users_username_key", "username_key", unique=True),
+                      Index("ux_users_email_key", "email_key", unique=True),
+                      CheckConstraint("role IN ('user','admin')", name="ck_users_role"),
                       CheckConstraint("length(username) >= 3", name="ck_users_username_len"))
 
 
@@ -252,11 +267,18 @@ class Portfolio(Audit, Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(80), nullable=False)
+    name_key: Mapped[str] = mapped_column(IDENTITY_KEY, nullable=False)
     initial_cash: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
     cash: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
     commission_pct: Mapped[Decimal] = mapped_column(Numeric(8, 4), nullable=False, default=Decimal("0"), server_default="0")
     currency: Mapped[Optional[str]] = mapped_column(String(10))  # se fija con la primera operación; sin conversión de divisas
+    @validates("name")
+    def _set_name_key(self, _field, value):
+        self.name_key = identity_key(value)
+        return value
+
     __table_args__ = (UniqueConstraint("user_id", "name", name="uq_portfolios_user_name"),
+                      Index("ux_portfolios_owner_name_key", "user_id", "name_key", unique=True),
                       CheckConstraint("initial_cash > 0", name="ck_portfolios_initial"),
                       CheckConstraint("cash >= 0", name="ck_portfolios_cash"))
 
