@@ -86,6 +86,8 @@ class MemoryRepository:
         with self._lock:
             if pred_id not in self.preds:
                 raise NotFoundError("Predicción no encontrada.")
+            if self.preds[pred_id]["status"] not in DUE_STATUSES:
+                raise ConflictError("La predicción ya no está pendiente.")
             self.preds[pred_id]["status"] = status
 
     def due_predictions(self, before_date, user_id=None):
@@ -100,8 +102,8 @@ class MemoryRepository:
         with self._lock:
             if pred_id not in self.preds:
                 raise NotFoundError("Predicción no encontrada.")
-            if pred_id in self.evals:
-                raise ConflictError("La predicción ya fue evaluada.")
+            if pred_id in self.evals or self.preds[pred_id]["status"] not in DUE_STATUSES:
+                raise ConflictError("La predicción ya no está pendiente.")
             self.evals[pred_id] = {"prediction_id": pred_id, "evaluated_at": _now(), **evaluation}
             self.preds[pred_id]["status"] = new_status
 

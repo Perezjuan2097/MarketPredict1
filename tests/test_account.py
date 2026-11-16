@@ -28,7 +28,10 @@ class FakeProvider:
             raise ValueError(f"No se encontraron datos para el activo {s}.")
         return {"symbol": s, "name": s, "price": self.prices[s], "currency": self.currency[s], "source": "fake"}
 
-    def close_on_or_before(self, symbol, target):
+    def forecast_reference(self, symbol, now):
+        return {**self.latest(symbol), "calendar": "24/7", "as_of": (now.date() - timedelta(days=1)).isoformat()}
+
+    def close_on(self, symbol, target):
         return self.closes.get((symbol.upper(), target.isoformat()))
 
 
@@ -188,6 +191,9 @@ class TestPredicciones(Base):
         self.assertEqual(self.post("/api/me/predictions/evaluate").get_json(), {"evaluated": 0, "waiting_for_data": 0})  # aún no vence
         past = (date.today() - timedelta(days=3)).isoformat()
         self.repo.preds[pid]["target_date"] = past
+        self.repo.preds[pid]["indicators"]["provenance"]["target_close_at"] = (
+            date.fromisoformat(past) + timedelta(days=1)
+        ).isoformat() + "T00:00:00Z"
         r = self.post("/api/me/predictions/evaluate").get_json()  # vencida, sin dato de precio todavía
         self.assertEqual(r, {"evaluated": 0, "waiting_for_data": 1})
         self.assertEqual(self.repo.preds[pid]["status"], "en_evaluacion")

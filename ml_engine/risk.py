@@ -16,7 +16,7 @@ from ml_engine.evaluation import backtest as bt
 Z90 = 1.645
 
 
-def _frame(close, horizon, vix=None):
+def _frame(close, horizon, vix=None, trading_days=252):
     r = np.log(close).diff()
     sq = r ** 2
     eps = 1e-6
@@ -25,8 +25,9 @@ def _frame(close, horizon, vix=None):
         "lv5": np.log(np.sqrt(sq.rolling(5, min_periods=5).mean()) + eps),
         "lv22": np.log(np.sqrt(sq.rolling(22, min_periods=22).mean()) + eps),
     })
-    if vix is not None and np.isfinite(vix).sum() > 100:
-        f["lvix"] = np.log(pd.Series(vix, index=f.index).clip(lower=1) / 100.0 / np.sqrt(252))
+    if vix is not None:
+        published = pd.Series(vix, index=f.index)
+        f["lvix"] = np.log(published.where(np.isfinite(published), 20).clip(lower=1) / 100.0 / np.sqrt(trading_days))
     # Objetivo: volatilidad diaria realizada en las próximas h sesiones (t+1..t+h)
     fut = sq.shift(-1).rolling(horizon, min_periods=horizon).mean().shift(-(horizon - 1))
     target = np.log(np.sqrt(fut) + eps)
@@ -50,11 +51,9 @@ class _HAR:
         return self.m.predict(X)
 
 
-def run(df, horizon, vix=None, n_splits=5):
+def run(df, horizon, vix=None, n_splits=5, *, trading_days=252):
     close = df["cierre"].astype(float).reset_index(drop=True)
-    f, target, r = _frame(close, horizon, vix)
-    if "lvix" in f and f["lvix"].iloc[-1:].isna().any():
-        f = f.drop(columns="lvix")
+    f, target, r = _frame(close, horizon, vix, trading_days)
     labeled = f.notna().all(axis=1) & target.notna()
     X, y = f[labeled].reset_index(drop=True), target[labeled].reset_index(drop=True)
     ret_h = (np.log(close).shift(-horizon) - np.log(close))[labeled].reset_index(drop=True)
@@ -66,19 +65,20 @@ def run(df, horizon, vix=None, n_splits=5):
     for name, make in (("referencia", _Baseline), ("har", _HAR)):
         idx, pred = bt.walk_forward(make, X, y, horizon, n_splits=n_splits)
         err = pred - y.iloc[idx].to_numpy()
-        # Calibración "conformal": los mercados tienen colas más gruesas que la normal, así que el
-        # multiplicador del rango se aprende con la primera mitad fuera de muestra y se comprueba con
-        # la segunda (que no participó en el ajuste).
         z = np.abs(ret_h.iloc[idx].to_numpy()) / (np.sqrt(horizon) * np.exp(pred))
-        half = len(z) // 2
-        k = max(float(np.quantile(z[:half], 0.90)), Z90)
-        cov_normal = float((z <= Z90).mean())
-        cov_cal = float((z[half:] <= k).mean())
-        k_all = max(float(np.quantile(z, 0.90)), Z90)  # para el rango de hoy se usa todo el historial fuera de muestra
-        zs[name] = k_all
-        scores[name] = {"rmse_log_vol": float(np.sqrt(np.mean(err ** 2))), "coverage_90": cov_cal,
-                        "coverage_90_normal": cov_normal, "multiplier": k_all, "n_oos": int(len(idx))}
-    skill = 1 - scores["har"]["rmse_log_vol"] / scores["referencia"]["rmse_log_vol"]
+        first_calibration, first_final = len(idx) // 2, len(idx) * 3 // 4
+        selection = err[idx + horizon <= idx[first_calibration]]
+        calibration = z[(idx >= idx[first_calibration]) & (idx + horizon <= idx[first_final])]
+        validation = z[first_final:]
+        k = max(float(np.quantile(calibration, 0.90)), Z90) if len(calibration) >= 10 else Z90
+        cov_normal = float((validation <= Z90).mean())
+        cov_cal = float((validation <= k).mean())
+        zs[name] = k
+        scores[name] = {"rmse_log_vol": float(np.sqrt(np.mean(selection ** 2))) if len(selection) else None,
+                        "coverage_90": cov_cal, "coverage_90_normal": cov_normal, "multiplier": k,
+                        "n_oos": int(len(idx)), "n_calibration": len(calibration), "n_final": len(validation)}
+    reference_rmse = scores["referencia"]["rmse_log_vol"]
+    skill = 1 - scores["har"]["rmse_log_vol"] / reference_rmse if reference_rmse else 0.0
     use_har = skill > 0.01
     model = (_HAR if use_har else _Baseline)().fit(X, y)
     daily_vol = float(np.exp(model.predict(x_now)[0]))
@@ -93,7 +93,7 @@ def run(df, horizon, vix=None, n_splits=5):
     return {
         "model": "HAR (volatilidad de 1, 5 y 22 días" + (" + VIX" if "lvix" in X else "") + ")" if use_har else "Volatilidad del último mes",
         "skill_vs_reference": round(skill, 4), "beats_reference": use_har,
-        "daily_vol_pct": round(daily_vol * 100, 3), "annual_vol_pct": round(daily_vol * np.sqrt(252) * 100, 2),
+        "daily_vol_pct": round(daily_vol * 100, 3), "annual_vol_pct": round(daily_vol * np.sqrt(trading_days) * 100, 2),
         "expected_move_pct": round((np.exp(h_vol) - 1) * 100, 3),
         "range_90": {"low_price": round(ref * np.exp(-k * h_vol), 6), "high_price": round(ref * np.exp(k * h_vol), 6),
                      "historical_coverage": round(used["coverage_90"], 4),

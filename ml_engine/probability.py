@@ -42,9 +42,10 @@ def calibration_table(prob, actual, edges=(0.0, 0.4, 0.47, 0.53, 0.6, 1.0)):
     return rows
 
 
-def run(X, y, x_now, horizon, seed=0, n_splits=5):
+def run(X, y, x_now, horizon, seed=0, n_splits=5, *, holdout_start=None):
     up = (np.asarray(y) > 0).astype(int)
-    blocks = bt.split_blocks(len(X), horizon, n_splits)
+    development_end = len(X) if holdout_start is None else holdout_start - horizon + 1
+    blocks = bt.split_blocks(development_end, horizon, n_splits)
     idx = np.concatenate([np.arange(a, b) for _, a, b in blocks])
     actual = up[idx]
     base = np.concatenate([np.full(b - a, up[: tr + 1].mean()) for tr, a, b in blocks])
@@ -78,6 +79,18 @@ def run(X, y, x_now, horizon, seed=0, n_splits=5):
     ok = [e for e in evaluated if "error" not in e]
     best = max(ok, key=lambda e: e["brier_skill"]) if ok else None
     base_rate_all = float(up.mean())
+    final = None
+    if holdout_start is not None:
+        actual_final = up[holdout_start:]
+        reference_final = float(up[:development_end].mean())
+        prediction_final = np.full(len(actual_final), reference_final)
+        if best and best["significant"]:
+            frozen = best["_make"](seed).fit(X.iloc[:development_end], up[:development_end])
+            prediction_final = _proba(frozen, X.iloc[holdout_start:])
+        final = {"brier": bt.M.mse(actual_final, prediction_final),
+                 "reference_brier": bt.M.mse(actual_final, reference_final),
+                 "calibration": calibration_table(prediction_final, actual_final),
+                 "n_origins": len(actual_final)}
     if best and best["significant"]:
         model = best["_make"](seed).fit(X, up)
         prob_now = float(_proba(model, x_now)[0])
@@ -90,4 +103,5 @@ def run(X, y, x_now, horizon, seed=0, n_splits=5):
         "prob_up": round(prob_now, 4), "source": source, "has_edge": useful,
         "base_rate": round(base_rate_all, 4), "brier_reference": round(brier_base, 5),
         "n_oos": int(len(idx)), "models": evaluated, "best_model": best["id"] if best else None,
+        "final_evaluation": final,
     }

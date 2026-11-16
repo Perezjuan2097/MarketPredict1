@@ -6,6 +6,7 @@ requests>=2.31
 numpy>=1.26
 pandas>=2.0
 scikit-learn>=1.4
+exchange-calendars==4.13.3
 # Base de datos (Supabase/PostgreSQL)
 SQLAlchemy>=2.0,<3
 alembic>=1.13

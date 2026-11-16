@@ -33,8 +33,8 @@ def predicciones_desde_motor(resultado):
     cons = resultado.get("consensus") or {}
     h = resultado["horizon_days"]
     ref = resultado["reference_price"]
-    hoy = resultado["as_of"]
-    objetivo = resultado["target_date_approx"]
+    hoy = resultado["provenance"]["cutoff_at"][:10]
+    objetivo = resultado["target_date"]
     horizonte = f"{h} sesión" if h == 1 else f"{h} sesiones"
     out = []
     if cons.get("status") == "ok" and cons.get("estimated_price"):

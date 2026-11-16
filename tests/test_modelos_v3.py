@@ -38,7 +38,8 @@ class TestContexto(unittest.TestCase):
         d = demo(400)
         df = builder.to_frame(d)
         # serie de contexto que solo existe hasta la mitad: después debe repetirse el último valor, no inventar
-        half = [{"fecha": r["fecha"], "cierre": 10 + i} for i, r in enumerate(d[:200])]
+        half = [{"event_at": r["fecha"] + "T00:00:00Z", "available_at": r["fecha"] + "T00:00:00Z",
+                 "cierre": 10 + i} for i, r in enumerate(d[:200])]
         X, _ = builder.build(df, 5, {"^VIX": half})
         self.assertAlmostEqual(X["vix_nivel"].iloc[-1], X["vix_nivel"].iloc[199])
         # cambiar un valor futuro del contexto no altera las filas anteriores

@@ -19,7 +19,7 @@ def alerta_desde_motor(resultado, drop_threshold):
     """
     cons = resultado.get("consensus") or {}
     h = resultado["horizon_days"]
-    objetivo = resultado["target_date_approx"]
+    objetivo = resultado["target_date"]
     if cons.get("status") != "ok":
         return {"nivel": "SIN SEÑAL", "fecha": objetivo,
                 "fundamento": "Ningún modelo superó a las referencias simples fuera de muestra, "

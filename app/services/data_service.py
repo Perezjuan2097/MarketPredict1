@@ -454,21 +454,26 @@ class APIFinanciera(FuenteDatos):
 
 
 class DemoFuente(FuenteDatos):
-    def obtener(self, simbolo, dias=90):
-        seed = sum(ord(c) for c in simbolo.upper())
-        rng = random.Random(seed)
-        base = 100 + (seed % 90)
-        result, prev = [], base
-        start = date.today() - timedelta(days=dias - 1)
+    def obtener(self, simbolo, dias=90, *, end=None):
+        symbol = simbolo.upper()
+        base = 100 + sum(map(ord, symbol)) % 90
+        start = (end or date.today()) - timedelta(days=dias - 1)
+
+        def price(day):
+            rng = random.Random(f"demo-v2:{symbol}:{day.isoformat()}")
+            i = (day - date(2020, 1, 1)).days
+            return max(1, base + 0.05 * i + 3 * math.sin(i / 9) + rng.uniform(-2.2, 2.2)), rng
+
+        result, prev = [], price(start - timedelta(days=1))[0]
         for i in range(dias):
-            trend = 0.05 * i + 3 * math.sin(i / 9)
-            close = max(1, base + trend + rng.uniform(-2.2, 2.2))
+            day = start + timedelta(days=i)
+            close, rng = price(day)
             open_ = prev + rng.uniform(-1.2, 1.2)
             high = max(open_, close) + rng.uniform(0.2, 2)
             low = min(open_, close) - rng.uniform(0.2, 2)
             vol = int(50000 + rng.random() * 450000)
             var = ((close - prev) / prev) * 100 if prev else 0
-            result.append(DatosMercado((start + timedelta(days=i)).isoformat(), open_, high, low, close, vol, var).__dict__)
+            result.append(DatosMercado(day.isoformat(), open_, high, low, close, vol, var).__dict__)
             prev = close
         return result
 

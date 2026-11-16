@@ -1,5 +1,7 @@
 """Evaluación de una predicción contra el resultado real. Función pura, sin acceso a datos externos."""
 
+from math import isfinite
+
 
 def evaluate(pred, actual_price, neutral_band_pct=1.0):
     """Devuelve (evaluación, nuevo_estado).
@@ -10,7 +12,7 @@ def evaluate(pred, actual_price, neutral_band_pct=1.0):
     Siempre se compara con la referencia ingenua "mantener el último precio".
     """
     ref, actual = float(pred["reference_price"]), float(actual_price)
-    if ref <= 0 or actual <= 0:
+    if not isfinite(ref) or not isfinite(actual) or ref <= 0 or actual <= 0:
         raise ValueError("Precios no válidos para evaluar.")
     ret = (actual / ref - 1.0) * 100.0
     direction = pred["direction"]

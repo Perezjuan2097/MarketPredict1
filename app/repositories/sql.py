@@ -2,7 +2,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
@@ -135,11 +135,18 @@ class SQLRepository:
 
     def set_prediction_status(self, pred_id, status):
         with self._Session() as s:
-            p = s.get(orm.Prediction, pred_id)
-            if p is None:
-                raise NotFoundError("Predicción no encontrada.")
-            p.status = status
+            self._set_pending_status(s, pred_id, status)
             s.commit()
+
+    @staticmethod
+    def _set_pending_status(session, pred_id, status):
+        result = session.execute(update(orm.Prediction).where(
+            orm.Prediction.id == pred_id, orm.Prediction.status.in_(DUE_STATUSES),
+        ).values(status=status))
+        if not result.rowcount:
+            if session.get(orm.Prediction, pred_id) is None:
+                raise NotFoundError("Predicción no encontrada.")
+            raise ConflictError("La predicción ya no está pendiente.")
 
     def due_predictions(self, before_date, user_id=None):
         q = (self._select_preds().where(orm.Prediction.target_date < date.fromisoformat(before_date),
@@ -152,9 +159,7 @@ class SQLRepository:
 
     def save_evaluation(self, pred_id, evaluation, new_status):
         with self._Session() as s:
-            p = s.get(orm.Prediction, pred_id)
-            if p is None:
-                raise NotFoundError("Predicción no encontrada.")
+            self._set_pending_status(s, pred_id, new_status)
             s.add(orm.PredictionEvaluation(
                 prediction_id=pred_id, actual_price=Decimal(str(evaluation["actual_price"])),
                 actual_return_pct=Decimal(str(evaluation["actual_return_pct"])),
@@ -162,7 +167,6 @@ class SQLRepository:
                 pct_error=None if evaluation.get("pct_error") is None else Decimal(str(evaluation["pct_error"])),
                 direction_correct=evaluation.get("direction_correct"),
                 baseline_abs_error=None if evaluation.get("baseline_abs_error") is None else Decimal(str(evaluation["baseline_abs_error"]))))
-            p.status = new_status
             try:
                 s.commit()
             except IntegrityError as exc:

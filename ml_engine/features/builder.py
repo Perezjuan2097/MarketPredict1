@@ -7,6 +7,7 @@ Variables: solo información disponible en t. Las últimas `horizon` filas no ti
 import numpy as np
 import pandas as pd
 
+from ml_engine.calendar import utc_instant
 from ml_engine.features import technical as ta
 
 FEATURES = [
@@ -22,15 +23,18 @@ def to_frame(data):
     df = pd.DataFrame(data).copy()
     if df.empty:
         raise ValueError("Sin datos para construir el modelo.")
-    df["fecha"] = pd.to_datetime(df["fecha"], utc=True, errors="coerce").dt.tz_localize(None)
-    df = df.dropna(subset=["fecha", "cierre"]).sort_values("fecha").drop_duplicates("fecha")
+    df["fecha"] = pd.to_datetime(df["fecha"], format="mixed", utc=True, errors="coerce")
+    if df["fecha"].isna().any() or df["fecha"].duplicated().any() or not df["fecha"].is_monotonic_increasing:
+        raise ValueError("Fechas inválidas, duplicadas o desordenadas en la serie.")
     for col in ("apertura", "maximo", "minimo", "cierre", "volumen"):
         df[col] = pd.to_numeric(df[col], errors="coerce") if col in df else np.nan
-    df = df[df["cierre"] > 0].reset_index(drop=True)
+    if not np.isfinite(df["cierre"]).all() or (df["cierre"] <= 0).any():
+        raise ValueError("La serie contiene cierres inválidos.")
+    df = df.reset_index(drop=True)
     # Series sin máximo/mínimo/apertura (algunas divisas e índices): se usa el cierre.
     for col in ("apertura", "maximo", "minimo"):
-        df[col] = df[col].where(df[col] > 0, df["cierre"])
-    df["volumen"] = df["volumen"].fillna(0)
+        df[col] = df[col].where(np.isfinite(df[col]) & (df[col] > 0), df["cierre"])
+    df["volumen"] = df["volumen"].where(np.isfinite(df["volumen"]) & (df["volumen"] >= 0), 0)
     return df
 
 
@@ -58,14 +62,14 @@ def build(df, horizon, context=None):
     out["vol_ratio"] = (vol / avg.where(avg > 0)).replace([np.inf, -np.inf], np.nan).fillna(1.0)
     # Si faltan máximo/mínimo (algunas series), se aproximan con el cierre para ATR y estocástico.
     out = out.replace([np.inf, -np.inf], np.nan)
-    cols = list(FEATURES)
-    if context:
-        ctx = context_features(df, context)
-        for c in ctx.columns:
-            out[c] = ctx[c].to_numpy()
-        cols += list(ctx.columns)
+    # Fixed schema and causal missingness. A series that starts tomorrow cannot change today's columns.
+    ctx = context_features(df, context)
+    for prefix in CONTEXT_LABELS:
+        columns = ctx.filter(regex=f"^{prefix}_")
+        out[f"{prefix}_known"] = columns.notna().any(axis=1).astype(float)
+    out = pd.concat([out, ctx.fillna(0.0)], axis=1)
     target = logp.shift(-horizon) - logp
-    return out[cols], target
+    return out, target
 
 
 # --- Contexto de mercado: lo que pasa "en el mundo" además del propio activo -------------------
@@ -78,33 +82,46 @@ CONTEXT_SERIES = {
 
 
 def context_features(df, context):
-    """Variables de contexto alineadas a la fecha de cada fila usando SOLO el último dato conocido
-    (merge_asof hacia atrás: nunca se usa un dato posterior a la fecha del activo)."""
-    base = pd.DataFrame({"fecha": df["fecha"].values}).sort_values("fecha")
-    out = pd.DataFrame(index=range(len(df)))
-    for sym, rows in (context or {}).items():
-        if not rows:
+    """Join only explicitly timestamped observations known at each origin."""
+    cutoffs = pd.to_datetime(df.get("cutoff_at", df["fecha"]), format="mixed", utc=True)
+    base = pd.DataFrame({"known_at": cutoffs.astype("datetime64[ns, UTC]")})
+    if base["known_at"].isna().any() or not base["known_at"].is_monotonic_increasing:
+        raise ValueError("Cortes de predicción inválidos o desordenados.")
+    out = pd.DataFrame(index=df.index)
+    names = {"^VIX": "vix", "^GSPC": "spx", "^TNX": "tnx", "DX-Y.NYB": "dxy"}
+    for sym, name in names.items():
+        columns = ([f"{name}_nivel", f"{name}_cambio_5"] if name in ("vix", "tnx")
+                   else [f"{name}_ret_5", f"{name}_ret_20"])
+        out[columns] = np.nan
+        observations = []
+        for row in (context or {}).get(sym, ()):
+            if row.get("available_at") is None:
+                continue
+            event = utc_instant(row.get("event_at") or row["fecha"])
+            available = utc_instant(row["available_at"])
+            published = utc_instant(row["published_at"]) if row.get("published_at") is not None else available
+            known_at = max(event, available, published)
+            if known_at > base["known_at"].iloc[-1]:
+                continue
+            close = float(row["cierre"])
+            if not np.isfinite(close) or close <= 0:
+                raise ValueError(f"Cierre de contexto inválido: {sym}.")
+            observations.append((event, known_at, close))
+        if not observations:
             continue
-        c = pd.DataFrame(rows)
-        if c.empty or "cierre" not in c:
-            continue
-        c["fecha"] = pd.to_datetime(c["fecha"], utc=True, errors="coerce").dt.tz_localize(None).dt.normalize()
-        c = c.dropna(subset=["fecha", "cierre"]).sort_values("fecha").drop_duplicates("fecha")
-        c = c[c["cierre"] > 0]
-        if len(c) < 60:
-            continue
-        lv = np.log(c["cierre"].astype(float))
-        name = {"^VIX": "vix", "^GSPC": "spx", "^TNX": "tnx", "DX-Y.NYB": "dxy"}.get(sym, sym.lower())
-        feats = pd.DataFrame({"fecha": c["fecha"]})
+        c = pd.DataFrame(observations, columns=["event_at", "known_at", "close"]).sort_values(["known_at", "event_at"])
+        # Keep the earliest usable release of each advancing event. Late revisions never rewrite features.
+        previous_event = c["event_at"].cummax().shift()
+        c = c.loc[previous_event.isna() | (c["event_at"] > previous_event)]
+        feats = pd.DataFrame({"known_at": c["known_at"].astype("datetime64[ns, UTC]")})
+        lv = np.log(c["close"])
         if name in ("vix", "tnx"):  # niveles con significado propio
-            feats[f"{name}_nivel"] = c["cierre"].astype(float) / (100.0 if name == "vix" else 10.0)
-            feats[f"{name}_cambio_5"] = lv.diff(5)
+            feats[columns[0]] = c["close"] / (100.0 if name == "vix" else 10.0)
+            feats[columns[1]] = lv.diff(5)
         else:
-            feats[f"{name}_ret_5"] = lv.diff(5)
-            feats[f"{name}_ret_20"] = lv.diff(20)
-        merged = pd.merge_asof(base.assign(fecha=base["fecha"].dt.normalize()), feats, on="fecha", direction="backward")
-        for col in feats.columns:
-            if col != "fecha":
-                out[col] = merged[col].to_numpy()
+            feats[columns[0]] = lv.diff(5)
+            feats[columns[1]] = lv.diff(20)
+        merged = pd.merge_asof(base, feats, on="known_at", direction="backward")
+        out[columns] = merged[columns].to_numpy()
     return out
 

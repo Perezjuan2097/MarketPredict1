@@ -10,7 +10,9 @@ from app.services.storage_service import Storage
 from app.services.community_service import CommunityStorage
 from app.models.config import ModelConfig
 import time
+from datetime import datetime, timezone
 from ml_engine.engine import run_all
+from ml_engine.calendar import CONTINUOUS, YAHOO_CLOSE_LAG_MINUTES, market_calendar, utc_instant
 from app.services.data_service import DemoFuente
 from app.security import api_error, clean_symbol
 
@@ -230,39 +232,33 @@ def markets():
         return api_error(e)
 
 
-def market_context():
-    """Series de contexto (VIX, S&P 500, tasa a 10 años, dólar), en caché 1 hora. Si una falla, se omite."""
-    from ml_engine.features.builder import CONTEXT_SERIES
-
-    def fetch():
-        out = {}
-        for sym in CONTEXT_SERIES:
-            try:
-                out[sym] = APIFinanciera().obtener_periodo(sym, "2y", "1d")["data"]
-            except Exception as exc:
-                current_app.logger.warning("Contexto %s no disponible: %s", sym, exc)
-        return out
-    return _cached(("context",), 3600, fetch)
-
-
 def model_result(ticker, horizon):
-    """Resultado del motor de modelos (con caché de 15 min). Lo usan /api/models y el guardado de predicciones."""
+    """Share forecasts across analysis, models and saving until the next temporal boundary."""
     ticker = clean_symbol(ticker)
     demo = os.getenv("USE_DEMO", "false").lower() == "true"
+    cutoff = datetime.now(timezone.utc)
+    key = ("models", ticker.upper(), int(horizon), demo)
+    hit = _CACHE.get(key)
+    if hit and utc_instant(hit[1]["provenance"]["expires_at"]) <= cutoff:
+        _CACHE.pop(key, None)
 
     def compute():
         if demo:
-            data, name = DemoFuente().obtener(ticker, 600), ticker.upper()
-            context = None
+            calendar, lag = CONTINUOUS, 0
+            data, name = DemoFuente().obtener(ticker, 600, end=cutoff.date()), ticker.upper()
         else:
             res = APIFinanciera().obtener_periodo(ticker, "2y", "1d")
             data, name = res["data"], res["symbol"]
-            context = market_context()
-        out = run_all(data, name, horizon, context=context)
+            calendar = market_calendar(name, res["exchange"], res["quote_type"])
+            lag = YAHOO_CLOSE_LAG_MINUTES
+            if not calendar:
+                raise ValueError(f"Calendario de negociación sin verificar para {name}.")
+        # Yahoo daily history carries no point-in-time publication timestamps for context.
+        out = run_all(data, name, horizon, calendar=calendar, cutoff=cutoff, lag_minutes=lag)
         out["data_source"] = "demo" if demo else "Yahoo Finance"
         return out
 
-    return _cached(("models", ticker.upper(), int(horizon), demo), 1800, compute)
+    return _cached(key, 1800, compute)
 
 
 @main_bp.get("/api/models/<path:ticker>")

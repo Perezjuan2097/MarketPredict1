@@ -1,18 +1,16 @@
 """Predicciones de usuarios: publicar, guardar las de los modelos, cancelar y evaluar al vencer el horizonte."""
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
+import logging
 
 import numpy as np
 
 from app.repositories.base import ConflictError
 from app.security import InvalidInput, clean_symbol
 from app.services.evaluation import evaluate
+from ml_engine.calendar import CONTRACT_VERSION, calendar_timezone, session_close, target_session, utc_instant
 
 DIRECTIONS = ("alcista", "bajista", "neutral")
-
-
-def target_date_for(horizon_days, start=None):
-    start = start or date.today()
-    return str(np.busday_offset(np.datetime64(start.isoformat()), int(horizon_days), roll="forward"))
+log = logging.getLogger("marketpredict")
 
 
 def _opt_float(value, name, lo, hi):
@@ -44,8 +42,20 @@ def publish(repo, provider, user_id, payload):
     rationale = str(payload.get("rationale") or "").strip()[:2000] or None
     indicators = [str(i)[:40] for i in (payload.get("indicators") or [])[:10]] if isinstance(payload.get("indicators"), list) else None
 
-    quote = provider.latest(symbol)  # el precio de referencia lo fija el servidor, no el cliente
+    now = datetime.now(timezone.utc)
+    quote = provider.forecast_reference(symbol, now)
     ref = float(quote["price"])
+    if not np.isfinite(ref) or ref <= 0:
+        raise InvalidInput("Precio de referencia no válido.")
+    calendar = quote["calendar"]
+    origin = date.fromisoformat(quote["as_of"])
+    target_date = target_session(calendar, origin, horizon)
+    target_close = session_close(calendar, target_date)
+    lag = quote.get("lag_minutes", 0)
+    if session_close(calendar, target_session(calendar, origin, 1)) + timedelta(minutes=lag) <= now:
+        raise InvalidInput("El cierre de referencia está desactualizado.")
+    if target_close <= now:
+        raise InvalidInput("El cierre objetivo ya pasó.")
     if target is not None:
         if direction == "alcista" and target <= ref:
             raise InvalidInput("Una predicción alcista requiere un precio objetivo superior al de referencia.")
@@ -55,17 +65,25 @@ def publish(repo, provider, user_id, payload):
     return repo.add_prediction({
         "source": "user", "user_id": user_id, "asset_id": asset_id, "direction": direction, "reference_price": ref,
         "target_price": target, "expected_return_pct": expected, "horizon_days": horizon,
-        "target_date": target_date_for(horizon), "rationale": rationale, "indicators": indicators,
+        "target_date": target_date.isoformat(), "rationale": rationale,
+        "indicators": {"user_indicators": indicators, "data_source": quote["source"], "provenance": {
+            "contract_version": CONTRACT_VERSION, "calendar": calendar, "timezone": calendar_timezone(calendar),
+            "origin_at": session_close(calendar, origin).isoformat(), "origin_session": origin.isoformat(),
+            "cutoff_at": now.isoformat(), "target_close_at": target_close.isoformat(), "lag_minutes": lag,
+            "horizon": horizon}},
         "is_public": bool(payload.get("is_public", False))})
 
 
 def save_model_predictions(repo, user_id, engine_result):
     """Guarda cada modelo válido y el consenso del resultado de ml_engine como predicciones del usuario."""
     symbol, ref, horizon = engine_result["asset"], engine_result["reference_price"], engine_result["horizon_days"]
+    target_date = engine_result["target_date"]
+    if not target_date or utc_instant(engine_result["provenance"]["target_close_at"]) <= datetime.now(timezone.utc):
+        raise InvalidInput("El pronóstico no tiene una sesión objetivo futura verificable.")
     asset_id = repo.get_or_create_asset(symbol)
     saved = []
     entries = [(m["model_id"], m["version"], m["predicted_log_return"], m.get("estimated_return_pct"), m.get("estimated_price"))
-               for m in engine_result["models"] if m["status"] == "ok"]
+               for m in engine_result["models"] if m["status"] == "ok" and "predicted_log_return" in m]
     cons = engine_result.get("consensus", {})
     if cons.get("status") == "ok":
         entries.append(("consensus", "1.0", cons["weighted_log_return"], cons["weighted_return_pct"], cons["estimated_price"]))
@@ -76,8 +94,9 @@ def save_model_predictions(repo, user_id, engine_result):
         saved.append(repo.add_prediction({
             "source": "model", "user_id": user_id, "asset_id": asset_id, "direction": direction, "reference_price": ref,
             "target_price": price, "expected_return_pct": ret_pct, "horizon_days": horizon,
-            "target_date": target_date_for(horizon, date.fromisoformat(engine_result["as_of"])),
-            "rationale": None, "indicators": {"model_id": model_id, "model_version": version, "data_source": engine_result.get("data_source")},
+            "target_date": target_date, "rationale": None,
+            "indicators": {"model_id": model_id, "model_version": version, "data_source": engine_result.get("data_source"),
+                           "provenance": engine_result["provenance"]},
             "is_public": False}))
     if not saved:
         raise InvalidInput("Ningún modelo produjo una predicción válida para guardar.")
@@ -94,20 +113,47 @@ def cancel(repo, user_id, pred_id):
     return repo.get_prediction(pred_id)
 
 
-def evaluate_due(repo, provider, user_id=None, today=None):
+def evaluate_due(repo, provider, user_id=None, *, now=None):
     """Evalúa predicciones cuyo horizonte ya terminó. Devuelve contadores; los fallos de datos no abortan."""
-    today = today or date.today()
+    now = utc_instant(now or datetime.now(timezone.utc))
     done = pending = 0
-    for pred in repo.due_predictions(today.isoformat(), user_id):
+    for pred in repo.due_predictions((now.date() + timedelta(days=1)).isoformat(), user_id):
+        target = date.fromisoformat(pred["target_date"])
+        metadata = pred["indicators"] if isinstance(pred["indicators"], dict) else {}
+        provenance = metadata.get("provenance", {})
+        target_close = provenance.get("target_close_at")
+        if target_close:
+            if utc_instant(target_close) + timedelta(minutes=provenance.get("lag_minutes", 0)) > now:
+                continue
+        elif target >= now.date():
+            continue
+        reason = "sin cierre exacto válido"
+        price = None
         try:
-            price = provider.close_on_or_before(pred["symbol"], date.fromisoformat(pred["target_date"]))
+            source = metadata.get("data_source")
+            if not target_close or provenance.get("contract_version") != CONTRACT_VERSION:
+                reason = "contrato temporal histórico sin verificar"
+            elif source != provider.source:
+                reason = "fuente distinta de la registrada"
+            else:
+                price = provider.close_on(pred["symbol"], target)
         except Exception:
-            price = None
-        if price is None:
-            repo.set_prediction_status(pred["id"], "en_evaluacion")
+            reason = "proveedor de precios no disponible"
+        if price is None or not np.isfinite(price) or price <= 0:
+            if pred["status"] == "pendiente":
+                try:
+                    repo.set_prediction_status(pred["id"], "en_evaluacion")
+                except ConflictError:
+                    continue
+            log.info("Predicción %s pendiente de evaluación (%s): %s", pred["id"], target, reason)
             pending += 1
             continue
-        ev, status = evaluate(pred, price)
+        try:
+            ev, status = evaluate(pred, price)
+        except ValueError:
+            log.info("Predicción %s pendiente de evaluación: precio de referencia inválido", pred["id"])
+            pending += 1
+            continue
         try:
             repo.save_evaluation(pred["id"], ev, status)
             done += 1

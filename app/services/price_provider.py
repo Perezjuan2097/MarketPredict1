@@ -1,7 +1,9 @@
 """Proveedores de precio para el simulador y la evaluación de predicciones (interfaz mínima)."""
-from datetime import date, timedelta
+from datetime import timedelta
+from math import isfinite
 
 from app.services.data_service import APIFinanciera, DemoFuente
+from ml_engine.calendar import CONTINUOUS, YAHOO_CLOSE_LAG_MINUTES, closed_bars, market_calendar
 
 
 class YahooPriceProvider:
@@ -13,17 +15,31 @@ class YahooPriceProvider:
         return {"symbol": res["symbol"], "name": res.get("name"), "price": float(last["cierre"]),
                 "currency": res.get("currency") or "USD", "as_of": last["fecha"], "source": self.source}
 
-    def close_on_or_before(self, symbol, target):
-        """Último cierre diario con fecha <= target (date). None si no hay datos."""
-        api = APIFinanciera()
-        official = api.resolve_ticker(symbol)["symbol"]
-        frame = api._ticker(official).history(start=(target - timedelta(days=10)).isoformat(),
-                                              end=(target + timedelta(days=1)).isoformat(), interval="1d",
-                                              auto_adjust=False, actions=False)
+    def forecast_reference(self, symbol, now):
+        res = APIFinanciera().obtener_periodo(symbol, "5d", "1d")
+        calendar = market_calendar(res["symbol"], res["exchange"], res["quote_type"])
+        if not calendar:
+            raise ValueError("Calendario de negociación sin verificar para este activo.")
+        bars = closed_bars(res["data"], calendar, now, lag_minutes=YAHOO_CLOSE_LAG_MINUTES)
+        if not bars:
+            raise ValueError("No hay un cierre diario disponible.")
+        last = bars[-1]
+        return {"symbol": res["symbol"], "name": res["name"], "currency": res["currency"],
+                "price": last["cierre"], "as_of": last["fecha"], "calendar": calendar,
+                "lag_minutes": YAHOO_CLOSE_LAG_MINUTES, "source": self.source}
+
+    def close_on(self, symbol, target):
+        """Return the exact daily close for the requested session, or None."""
+        frame = APIFinanciera._ticker(symbol).history(
+            start=target.isoformat(), end=(target + timedelta(days=1)).isoformat(),
+            interval="1d", auto_adjust=False, actions=False, prepost=False,
+        )
         if frame is None or frame.empty:
             return None
-        closes = [(ts.date(), float(v)) for ts, v in frame["Close"].dropna().items() if ts.date() <= target]
-        return closes[-1][1] if closes else None
+        closes = [float(value) for ts, value in frame["Close"].items() if ts.date() == target]
+        if len(closes) == 1 and isfinite(closes[0]) and closes[0] > 0:
+            return closes[0]
+        return None
 
 
 class DemoPriceProvider:
@@ -35,6 +51,10 @@ class DemoPriceProvider:
         return {"symbol": symbol.upper(), "name": symbol.upper(), "price": float(data[-1]["cierre"]), "currency": "USD",
                 "as_of": data[-1]["fecha"], "source": self.source}
 
-    def close_on_or_before(self, symbol, target):
-        data = [d for d in DemoFuente().obtener(symbol, 400) if date.fromisoformat(d["fecha"]) <= target]
-        return float(data[-1]["cierre"]) if data else None
+    def forecast_reference(self, symbol, now):
+        last = DemoFuente().obtener(symbol, 1, end=now.date() - timedelta(days=1))[0]
+        return {"symbol": symbol.upper(), "name": symbol.upper(), "currency": "USD",
+                "price": last["cierre"], "as_of": last["fecha"], "calendar": CONTINUOUS, "source": self.source}
+
+    def close_on(self, symbol, target):
+        return float(DemoFuente().obtener(symbol, 1, end=target)[0]["cierre"])
