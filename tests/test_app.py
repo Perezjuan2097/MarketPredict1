@@ -179,13 +179,14 @@ class TestNuevosEndpoints(BaseCase):
 
 
 class TestNoticias(unittest.TestCase):
-    def _svc(self, fake):
-        from unittest.mock import patch
+    def _svc(self, fake, rss_news=()):
         from app.services.data_service import APIFinanciera
         p1 = patch.object(APIFinanciera, "resolve_ticker", classmethod(lambda cls, q: {"symbol": q}))
         p2 = patch.object(APIFinanciera, "_ticker", staticmethod(lambda s: fake))
         p1.start(); p2.start()
         self.addCleanup(p1.stop); self.addCleanup(p2.stop)
+        self.rss = self.enterContext(patch.object(APIFinanciera, "yahoo_rss_news", return_value=list(rss_news)))
+        self.enterContext(patch.dict(os.environ, {"FINNHUB_API_KEY": ""}))
         return APIFinanciera()
 
     def test_formato_nuevo_yfinance(self):
@@ -215,6 +216,23 @@ class TestNoticias(unittest.TestCase):
         out = self._svc(T()).get_news("AAPL")
         self.assertEqual(out["news"], [])
         self.assertIn("no respondió", out["warning"])
+        self.rss.assert_called_once_with("AAPL", 10)
+
+    def test_respaldo_rss_devuelve_noticias_antes_de_finnhub(self):
+        class T:
+            news = []
+
+            def get_news(self, count=10):
+                raise ConnectionError("bloqueado")
+
+        article = {"title": "Titular RSS", "source": "Yahoo Finance", "date": None,
+                   "url": "https://x.test/rss", "summary": None}
+        service = self._svc(T(), rss_news=[article])
+        with patch("app.services.finnhub_provider.FinnhubProvider") as finnhub:
+            out = service.get_news("AAPL", limit=2)
+        self.assertEqual(out, {"symbol": "AAPL", "news": [article], "provider": "Yahoo Finance (RSS)"})
+        self.rss.assert_called_once_with("AAPL", 2)
+        finnhub.assert_not_called()
 
 
 class TestSalud(BaseCase):
@@ -303,6 +321,7 @@ class TestFinnhub(unittest.TestCase):
         payload = [{"headline": "Titular US", "source": "AP", "datetime": 1762400000, "url": "https://x.test/a"}]
         with patch.object(APIFinanciera, "resolve_ticker", classmethod(lambda cls, q: {"symbol": q})), \
              patch.object(APIFinanciera, "_ticker", staticmethod(lambda s: Roto())), \
+             patch.object(APIFinanciera, "yahoo_rss_news", return_value=[]), \
              patch.dict(os.environ, {"FINNHUB_API_KEY": "k"}), \
              patch("app.services.finnhub_provider.requests.get", return_value=self._resp(200, payload)):
             out = APIFinanciera().get_news("AAPL")
@@ -310,6 +329,7 @@ class TestFinnhub(unittest.TestCase):
         self.assertEqual(out["news"][0]["title"], "Titular US")
         with patch.object(APIFinanciera, "resolve_ticker", classmethod(lambda cls, q: {"symbol": q})), \
              patch.object(APIFinanciera, "_ticker", staticmethod(lambda s: Roto())), \
+             patch.object(APIFinanciera, "yahoo_rss_news", return_value=[]), \
              patch.dict(os.environ, {"FINNHUB_API_KEY": ""}):
             out = APIFinanciera().get_news("AAPL")
         self.assertEqual(out["news"], [])
