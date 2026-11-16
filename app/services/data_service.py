@@ -11,6 +11,14 @@ from app.models.domain import DatosMercado
 
 log = logging.getLogger("marketpredict")
 
+
+class MarketDataError(ValueError):
+    def __init__(self, message, code, status):
+        super().__init__(message)
+        self.code = code
+        self.status = status
+
+
 try:
     import yfinance as yf
 except ImportError:
@@ -23,6 +31,8 @@ class FuenteDatos:
 
 
 class APIFinanciera(FuenteDatos):
+    # Primary listings independently verified from the issuer/exchange. See docs/RENDER_REGRESIONES.md.
+    VERIFIED_LISTINGS = {"NVDA": ("NVIDIA Corporation", "NMS"), "AAPL": ("Apple Inc.", "NMS")}
     PERIODOS = {
         "1D": ("1d", "5m"),
         "5D": ("5d", "15m"),
@@ -152,7 +162,9 @@ class APIFinanciera(FuenteDatos):
             "exchange": best.get("exchange", ""),
         }
 
-    def obtener_periodo(self, simbolo: str, period: str, interval: str):
+    def obtener_periodo(self, simbolo: str, period: str, interval: str, *, forecast=False):
+        if forecast:
+            return self._forecast_history(simbolo, period, interval)
         resolved = self.resolve_ticker(simbolo)
         official = resolved["symbol"]
         ticker = self._ticker(official)
@@ -160,6 +172,17 @@ class APIFinanciera(FuenteDatos):
         if frame is None or frame.empty:
             raise ValueError(f"No se encontraron datos para el activo {official}.")
 
+        data = self._history_rows(frame)
+        if not data:
+            raise ValueError(f"No hay observaciones válidas para {official}.")
+
+        for i, item in enumerate(data):
+            previous = data[i - 1]["cierre"] if i else item["apertura"]
+            item["variacion"] = round(((item["cierre"] - previous) / previous) * 100, 4) if previous else 0.0
+
+        return self._market_summary(simbolo, period, interval, resolved, ticker, data)
+
+    def _history_rows(self, frame):
         data = []
         for timestamp, row in frame.iterrows():
             close = self._number(row.get("Close"))
@@ -179,13 +202,10 @@ class APIFinanciera(FuenteDatos):
                 "variacion": 0.0,
             })
 
-        if not data:
-            raise ValueError(f"No hay observaciones válidas para {official}.")
+        return data
 
-        for i, item in enumerate(data):
-            previous = data[i - 1]["cierre"] if i else item["apertura"]
-            item["variacion"] = round(((item["cierre"] - previous) / previous) * 100, 4) if previous else 0.0
-
+    def _market_summary(self, simbolo, period, interval, resolved, ticker, data):
+        official = resolved["symbol"]
         info = self._safe_info(ticker)
         current_price = data[-1]["cierre"]
         try:
@@ -232,6 +252,76 @@ class APIFinanciera(FuenteDatos):
             "last_timestamp": data[-1]["fecha"],
             "data": data,
         }
+
+    def _forecast_history(self, query, period, interval):
+        from ml_engine.calendar import market_calendar
+
+        normalized = " ".join(query.strip().lower().split())
+        requested = self.FALLBACK_TICKERS.get(normalized, normalized.upper())
+        listing = self.VERIFIED_LISTINGS.get(requested)
+        resolved = {"symbol": requested, "name": requested, "exchange": "", "quote_type": ""}
+        if listing is None:
+            candidate = self.resolve_ticker(query)
+            candidate_name = " ".join(candidate["name"].lower().split())
+            if candidate["symbol"].upper() == requested or candidate_name == normalized:
+                resolved = candidate
+        symbol = resolved["symbol"].upper()
+        listing = self.VERIFIED_LISTINGS.get(symbol)
+        try:
+            ticker = self._ticker(symbol)
+            frame = ticker.history(period=period, interval=interval, auto_adjust=False,
+                                   actions=False, prepost=False, raise_errors=True)
+        except Exception as exc:
+            # yfinance also reports upstream failures as missing prices/timezone. Those
+            # exceptions alone are not evidence of an invalid or delisted instrument.
+            log.warning("Yahoo history unavailable for %s (%s)", symbol, type(exc).__name__)
+            raise MarketDataError(f"Yahoo Finance no pudo entregar el histórico de {symbol}.",
+                                  "provider_unavailable", 503) from exc
+        if frame is None or frame.empty:
+            raise MarketDataError(f"Yahoo Finance no entregó observaciones para {symbol}.",
+                                  "provider_unavailable", 503)
+
+        metadata_failed = False
+        try:
+            chart = ticker.get_history_metadata() or {}
+        except Exception:
+            chart, metadata_failed = {}, True
+        confirmed = str(chart.get("symbol") or "").upper()
+        if confirmed and confirmed != symbol:
+            raise MarketDataError("El símbolo del histórico no coincide con el activo solicitado.",
+                                  "provider_mismatch", 502)
+        def known(value):
+            value = str(value or "").strip().upper()
+            return "" if value in ("UNKNOWN", "N/A", "NONE") else value
+
+        exchange = known(chart.get("exchangeName")) or known(resolved.get("exchange"))
+        quote_type = known(chart.get("instrumentType")) or known(resolved.get("quote_type"))
+        if not exchange and listing:
+            exchange, quote_type = listing[1], quote_type or "EQUITY"
+        if not exchange and quote_type != "CRYPTOCURRENCY":
+            try:
+                info = ticker.get_info() or {}
+            except Exception:
+                info, metadata_failed = {}, True
+            if str(info.get("symbol") or "").upper() == symbol:
+                exchange = known(info.get("exchange"))
+                quote_type = known(info.get("quoteType")) or quote_type
+        calendar = market_calendar(symbol, exchange, quote_type)
+        if not calendar:
+            if exchange:
+                raise MarketDataError(f"Calendario no soportado para {symbol} ({exchange}).",
+                                      "unsupported_calendar", 422)
+            if metadata_failed:
+                raise MarketDataError(f"Yahoo Finance no pudo verificar el mercado de {symbol}.",
+                                      "provider_unavailable", 503)
+            raise MarketDataError(f"Instrumento sin mercado verificable: {symbol}.",
+                                  "unverified_instrument", 422)
+        data = self._history_rows(frame)
+        if not data:
+            raise MarketDataError(f"Yahoo Finance no entregó cierres válidos para {symbol}.",
+                                  "provider_unavailable", 503)
+        return {"symbol": symbol, "name": listing[0] if listing else resolved["name"],
+                "currency": chart.get("currency"), "calendar": calendar, "data": data}
 
     def get_news(self, simbolo, limit=10):
         resolved = self.resolve_ticker(simbolo)

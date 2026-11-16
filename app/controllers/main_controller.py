@@ -12,7 +12,7 @@ from app.models.config import ModelConfig
 import time
 from datetime import datetime, timezone
 from ml_engine.engine import run_all
-from ml_engine.calendar import CONTINUOUS, YAHOO_CLOSE_LAG_MINUTES, market_calendar, utc_instant
+from ml_engine.calendar import CONTINUOUS, YAHOO_CLOSE_LAG_MINUTES, utc_instant
 from app.services.data_service import DemoFuente
 from app.security import api_error, clean_symbol
 
@@ -23,8 +23,12 @@ def pipeline(symbol):
     cfg = ModelConfig.from_env(current_app.extensions.get("runtime_config")).validate()
     symbol = clean_symbol(symbol)
     source = APIFinanciera()
-    resolved = source.resolve_ticker(symbol)
-    raw = source.obtener(resolved["symbol"], 90)
+    if os.getenv("USE_DEMO", "false").lower() == "true":
+        resolved = source.resolve_ticker(symbol)
+        raw = source.obtener(resolved["symbol"], 90)
+    else:
+        resolved = source.obtener_periodo(symbol, "3mo", "1d", forecast=True)
+        raw = resolved["data"]
     data = ProcesadorDatos().procesar(ValidadorDatos().validar(raw))
     analyzer = AnalizadorMercado()
     inds = [x.__dict__ for x in analyzer.indicadores(data)]
@@ -247,12 +251,10 @@ def model_result(ticker, horizon):
             calendar, lag = CONTINUOUS, 0
             data, name = DemoFuente().obtener(ticker, 600, end=cutoff.date()), ticker.upper()
         else:
-            res = APIFinanciera().obtener_periodo(ticker, "2y", "1d")
+            res = APIFinanciera().obtener_periodo(ticker, "2y", "1d", forecast=True)
             data, name = res["data"], res["symbol"]
-            calendar = market_calendar(name, res["exchange"], res["quote_type"])
+            calendar = res["calendar"]
             lag = YAHOO_CLOSE_LAG_MINUTES
-            if not calendar:
-                raise ValueError(f"Calendario de negociación sin verificar para {name}.")
         # Yahoo daily history carries no point-in-time publication timestamps for context.
         out = run_all(data, name, horizon, calendar=calendar, cutoff=cutoff, lag_minutes=lag)
         out["data_source"] = "demo" if demo else "Yahoo Finance"

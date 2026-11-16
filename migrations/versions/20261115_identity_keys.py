@@ -3,6 +3,7 @@
 import sqlalchemy as sa
 from alembic import op
 
+from app.repositories.base import identity_key
 
 revision = "20261115_identity_keys"
 down_revision = None
@@ -20,7 +21,7 @@ def _backfill_values(bind, table, fields, scope=None):
     for row in bind.execute(sa.select(source).order_by(source.c.id)).mappings():
         keys = {}
         for field in fields:
-            key = row[field].strip().lower()
+            key = identity_key(row[field])
             scoped_key = (row[scope], key) if scope else key
             previous = seen[field].get(scoped_key)
             if previous is not None:
@@ -39,7 +40,8 @@ def upgrade():
     if not all(sa.inspect(bind).has_table(table) for table in ("users", "portfolios")):
         raise RuntimeError("Se requiere el esquema existente de fase3. Consulte docs/BASE_DE_DATOS.md.")
     if dialect == "postgresql":
-        bind.execute(sa.text("LOCK TABLE users, portfolios IN SHARE ROW EXCLUSIVE MODE"))
+        bind.execute(sa.text("SET LOCAL lock_timeout = '5s'"))
+        bind.execute(sa.text("LOCK TABLE users, portfolios IN ACCESS EXCLUSIVE MODE"))
     if dialect == "sqlite" and bind.exec_driver_sql("PRAGMA foreign_keys").scalar():
         raise RuntimeError("La copia SQLite de desarrollo debe migrarse con foreign_keys desactivado.")
 
@@ -50,18 +52,44 @@ def upgrade():
         ("users", ("username_key", "email_key"), users),
         ("portfolios", ("name_key",), portfolios),
     ):
+        existing = {column["name"]: column for column in sa.inspect(bind).get_columns(table)}
         for name in names:
-            op.add_column(table, sa.Column(name, key_type, nullable=True))
+            if name not in existing:
+                op.add_column(table, sa.Column(name, key_type, nullable=True))
+            elif dialect == "postgresql":
+                correct_type = bind.execute(sa.text("""
+                    SELECT a.atttypid = 'text'::regtype AND c.collname = 'C'
+                    FROM pg_attribute a JOIN pg_collation c ON c.oid = a.attcollation
+                    WHERE a.attrelid = to_regclass(:table) AND a.attname = :column
+                """), {"table": table, "column": name}).scalar()
+                if not correct_type:
+                    raise RuntimeError(f"Definición inesperada en {table}.{name}; revise el esquema.")
         target = sa.table(table, sa.column("id", sa.Integer), *(sa.column(name, key_type) for name in names))
+        actual = {row["id"]: row for row in bind.execute(sa.select(target)).mappings()}
         for row_id, keys in values:
-            bind.execute(target.update().where(target.c.id == row_id).values(**keys))
-        with op.batch_alter_table(table) as batch:
-            for name in names:
-                batch.alter_column(name, existing_type=key_type, nullable=False)
+            if any(actual[row_id][key] != value for key, value in keys.items()):
+                bind.execute(target.update().where(target.c.id == row_id).values(**keys))
+        missing_not_null = [name for name in names if name not in existing or existing[name]["nullable"]]
+        if dialect == "postgresql":
+            for name in missing_not_null:
+                op.alter_column(table, name, existing_type=key_type, nullable=False)
+        elif missing_not_null:
+            with op.batch_alter_table(table) as batch:
+                for name in missing_not_null:
+                    batch.alter_column(name, existing_type=key_type, nullable=False)
 
-    op.create_index("ux_users_username_key", "users", ["username_key"], unique=True)
-    op.create_index("ux_users_email_key", "users", ["email_key"], unique=True)
-    op.create_index("ux_portfolios_owner_name_key", "portfolios", ["user_id", "name_key"], unique=True)
+    for table, name, columns in (
+        ("users", "ux_users_username_key", ["username_key"]),
+        ("users", "ux_users_email_key", ["email_key"]),
+        ("portfolios", "ux_portfolios_owner_name_key", ["user_id", "name_key"]),
+    ):
+        indexes = {index["name"]: index for index in sa.inspect(bind).get_indexes(table)}
+        index = indexes.get(name)
+        if index is None:
+            op.create_index(name, table, columns, unique=True)
+        elif (not index["unique"] or index["column_names"] != columns
+              or any(key.endswith("_where") for key in index.get("dialect_options", {}))):
+            raise RuntimeError(f"Índice inesperado {name}; revise el esquema.")
 
 
 def downgrade():

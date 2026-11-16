@@ -34,7 +34,7 @@ def guarded(auth=True):
         def wrapper(*args, **kwargs):
             repo = _repo()
             if repo is None:
-                return jsonify(error="La base de datos no está configurada: las cuentas no están disponibles."), 503
+                return jsonify(error="El almacenamiento de cuentas no está disponible. Revise /api/health."), 503
             if request.method != "GET":
                 check_csrf_header()
             user = None

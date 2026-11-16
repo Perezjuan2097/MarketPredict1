@@ -55,6 +55,35 @@ def _upgrade(conn):
         revision.upgrade()
 
 
+def test_postgres_repairs_stamped_partial_installation(connection, monkeypatch):
+    if connection.dialect.name != "postgresql":
+        pytest.skip("reparación de revisión PostgreSQL")
+    from alembic import command
+    from alembic.config import Config
+
+    _legacy(connection)
+    connection.exec_driver_sql("ALTER TABLE users ADD COLUMN password_hash TEXT")
+    connection.exec_driver_sql("UPDATE users SET password_hash = 'fixture-hash'")
+    connection.exec_driver_sql('ALTER TABLE users ADD COLUMN username_key TEXT COLLATE "C"')
+    connection.exec_driver_sql("CREATE TABLE predictions (id INTEGER PRIMARY KEY, user_id INTEGER REFERENCES users(id))")
+    connection.exec_driver_sql("INSERT INTO predictions VALUES (11, 4)")
+    oids = connection.exec_driver_sql("SELECT 'users'::regclass::oid, 'portfolios'::regclass::oid").one()
+    monkeypatch.setenv("DATABASE_URL", os.environ["TEST_POSTGRES_URL"])
+    cfg = Config("alembic.ini")
+    cfg.attributes["connection"] = connection
+    command.stamp(cfg, "20261115_identity_keys")
+    command.upgrade(cfg, "head")
+    command.upgrade(cfg, "head")
+    assert MigrationContext.configure(connection).get_current_revision() == "20261116_identity_repair"
+    assert connection.exec_driver_sql("SELECT 'users'::regclass::oid, 'portfolios'::regclass::oid").one() == oids
+    assert connection.exec_driver_sql("SELECT id, username_key, email_key, password_hash FROM users").one() == (
+        4, "clara", "éxito@x.co", "fixture-hash"
+    )
+    assert connection.exec_driver_sql("SELECT id, name_key FROM portfolios").one() == (7, "índice")
+    assert connection.exec_driver_sql("SELECT * FROM predictions").one() == (11, 4)
+    assert connection.exec_driver_sql("SELECT * FROM trades").one() == (9, 7)
+
+
 def test_identity_revision_preserves_data(connection):
     _legacy(connection)
     _upgrade(connection)

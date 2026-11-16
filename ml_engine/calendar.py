@@ -13,6 +13,8 @@ YAHOO_CLOSE_LAG_MINUTES = 20
 # Yahoo exchange identifiers. Keep index calendars explicit where metadata describes a publisher.
 EXCHANGES = {
     "NYQ": "XNYS", "NMS": "NASDAQ", "NGM": "NASDAQ", "NCM": "NASDAQ",
+    "NASDAQ": "NASDAQ", "NASDAQGS": "NASDAQ", "NASDAQGM": "NASDAQ", "NASDAQCM": "NASDAQ",
+    "NYSE": "XNYS",
     "ASE": "XNYS", "PCX": "XNYS", "BTS": "XNYS", "MCE": "XMAD",
     "LSE": "XLON", "PAR": "XPAR", "GER": "XETR", "TOR": "XTSE",
     "HKG": "XHKG", "JPX": "XTKS", "ASX": "XASX",
@@ -28,9 +30,10 @@ def _exchange(name):
 
 def market_calendar(symbol, exchange="", quote_type=""):
     symbol = symbol.upper()
-    if str(quote_type).upper() == "CRYPTOCURRENCY" or exchange == "CCC":
+    exchange = str(exchange or "").strip().upper()
+    if exchange == "CCC" or (not exchange and str(quote_type).upper() == "CRYPTOCURRENCY"):
         return CONTINUOUS
-    return INDEX_CALENDARS.get(symbol) or EXCHANGES.get(str(exchange).upper())
+    return INDEX_CALENDARS.get(symbol) or EXCHANGES.get(exchange)
 
 
 def utc_instant(value):

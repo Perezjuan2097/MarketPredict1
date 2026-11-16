@@ -3,7 +3,7 @@ from datetime import timedelta
 from math import isfinite
 
 from app.services.data_service import APIFinanciera, DemoFuente
-from ml_engine.calendar import CONTINUOUS, YAHOO_CLOSE_LAG_MINUTES, closed_bars, market_calendar
+from ml_engine.calendar import CONTINUOUS, YAHOO_CLOSE_LAG_MINUTES, closed_bars
 
 
 class YahooPriceProvider:
@@ -16,10 +16,8 @@ class YahooPriceProvider:
                 "currency": res.get("currency") or "USD", "as_of": last["fecha"], "source": self.source}
 
     def forecast_reference(self, symbol, now):
-        res = APIFinanciera().obtener_periodo(symbol, "5d", "1d")
-        calendar = market_calendar(res["symbol"], res["exchange"], res["quote_type"])
-        if not calendar:
-            raise ValueError("Calendario de negociación sin verificar para este activo.")
+        res = APIFinanciera().obtener_periodo(symbol, "5d", "1d", forecast=True)
+        calendar = res["calendar"]
         bars = closed_bars(res["data"], calendar, now, lag_minutes=YAHOO_CLOSE_LAG_MINUTES)
         if not bars:
             raise ValueError("No hay un cierre diario disponible.")

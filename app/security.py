@@ -27,6 +27,9 @@ def clean_symbol(value):
 
 def api_error(exc, status=422):
     """Devuelve el mensaje solo si es un error de validación/negocio; el resto se registra."""
+    from app.services.data_service import MarketDataError
+    if isinstance(exc, MarketDataError):
+        return jsonify(error=str(exc), code=exc.code), exc.status
     if isinstance(exc, (ValueError, RuntimeError)):
         return jsonify(error=str(exc)), status
     log.exception("Error no controlado en %s", request.path)

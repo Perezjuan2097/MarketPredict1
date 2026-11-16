@@ -23,7 +23,8 @@ y campos de auditoría (`created_at`, `updated_at`) están declarados ahí.
    ```
    alembic stamp 20261115_identity_keys
    ```
-   Para una base existente de fase3 usa el procedimiento de actualización de identidad de abajo.
+   Para una base existente de fase3, especialmente en Render, usa el
+   [procedimiento de inspección, respaldo y reparación](RENDER_REGRESIONES.md).
 4. **Seguridad en Supabase:** pega `supabase/extra.sql` en *SQL Editor* y ejecútalo. Activa Row Level Security en todas las
    tablas (la clave pública `sb_publishable_...` no podrá leer ni escribir datos) y añade un *trigger* que impide
    modificar o borrar predicciones públicas ya publicadas. Ese SQL no se ha podido probar en PostgreSQL: léelo antes.

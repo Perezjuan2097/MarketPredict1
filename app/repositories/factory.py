@@ -2,7 +2,7 @@
 import logging
 import os
 
-from app.db import database_url, get_engine
+from app.db import database_url, get_engine, identity_schema_issues
 
 log = logging.getLogger("marketpredict")
 
@@ -34,11 +34,16 @@ def get_repo(app):
             if app.config.get("AUTO_CREATE_TABLES"):
                 Base.metadata.create_all(engine)  # solo crea tablas que faltan; nunca borra ni altera datos
                 enable_rls(engine)
+            with engine.connect() as conn:
+                missing = identity_schema_issues(conn)
+            if missing:
+                log.warning("Migración requerida para cuentas: %s", ", ".join(missing))
+                return None
             repo = SQLRepository(engine)
         except Exception as exc:
             detail = f" ({exc.name})" if isinstance(exc, ModuleNotFoundError) else ""
             log.error("No se pudo inicializar el repositorio SQL: %s%s", type(exc).__name__, detail)
-            repo = None
+            return None
     if repo is None and os.getenv("USE_MEMORY_DB", "false").lower() == "true":
         from app.repositories.memory import MemoryRepository
         repo = MemoryRepository()  # solo desarrollo: los datos se pierden al reiniciar

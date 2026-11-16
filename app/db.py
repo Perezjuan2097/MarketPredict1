@@ -50,6 +50,31 @@ def reset_engine():
     _engine = None
 
 
+def identity_schema_issues(bind):
+    from sqlalchemy import inspect
+
+    inspector = inspect(bind)
+    missing = []
+    for table, required, unique_indexes in (
+        ("users", ("username_key", "email_key"),
+         {"ux_users_username_key": ["username_key"], "ux_users_email_key": ["email_key"]}),
+        ("portfolios", ("name_key",), {"ux_portfolios_owner_name_key": ["user_id", "name_key"]}),
+    ):
+        if not inspector.has_table(table):
+            missing.append(table)
+            continue
+        present = {column["name"]: column for column in inspector.get_columns(table)}
+        missing.extend(f"{table}.{column}" for column in required
+                       if column not in present or present[column]["nullable"])
+        indexes = {index["name"]: index for index in inspector.get_indexes(table)}
+        for name, columns in unique_indexes.items():
+            index = indexes.get(name, {})
+            if (not index.get("unique") or index.get("column_names") != columns
+                    or any(key.endswith("_where") for key in index.get("dialect_options", {}))):
+                missing.append(f"{table}.{name}")
+    return missing
+
+
 def check_db():
     """Estado de la base de datos sin exponer credenciales."""
     if not database_url():
@@ -58,6 +83,10 @@ def check_db():
         from sqlalchemy import text
         with get_engine().connect() as conn:
             conn.execute(text("SELECT 1"))
+            missing = identity_schema_issues(conn)
+            if missing:
+                return {"status": "migracion_requerida", "missing": missing,
+                        "detail": "La base responde, pero el esquema de identidad requiere revisión."}
         return {"status": "ok", "detail": "Conexión correcta."}
     except RuntimeError as exc:
         return {"status": "error", "detail": str(exc)}
