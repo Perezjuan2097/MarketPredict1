@@ -33,8 +33,9 @@ def register(repo, username, email, password):
 def authenticate(repo, identifier, password):
     """Devuelve el usuario o None. Mismo mensaje y tiempo aproximado para usuario inexistente o clave errónea."""
     user = repo.find_user(str(identifier or ""))
-    ok = check_password_hash(user["password_hash"] if user else _DUMMY_HASH, str(password or ""))
-    if not user or not ok or user.get("is_blocked"):
+    valid = isinstance(password, str) and 0 < len(password) <= 128
+    ok = check_password_hash(user["password_hash"] if user else _DUMMY_HASH, password if valid else "")
+    if not valid or not user or not ok or user.get("is_blocked"):
         return None
     repo.touch_login(user["id"])
     return user

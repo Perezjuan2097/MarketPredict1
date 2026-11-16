@@ -3,7 +3,7 @@
 - Siempre usa el endpoint de paper trading: la app nunca toca dinero real.
 - Solo lectura: no envía órdenes.
 - Claves en variables de entorno ALPACA_API_KEY y ALPACA_API_SECRET (nunca en el código ni en GitHub).
-- BROKER_USERS: usuarios o correos autorizados a ver el panel, separados por comas.
+- BROKER_USER_IDS: identificadores internos autorizados por el operador.
 """
 import logging
 import os
@@ -16,16 +16,16 @@ PAPER_BASE = "https://paper-api.alpaca.markets"
 
 
 def allowed_users():
-    raw = os.getenv("BROKER_USERS", "")
-    return {x.strip().lower() for x in re.split(r"[,;\s]+", raw) if x.strip()}
+    raw = os.getenv("BROKER_USER_IDS", "")
+    return {int(value) for value in re.split(r"[,;\s]+", raw) if value.isascii() and value.isdecimal()}
 
 
 def user_allowed(user):
-    """True si el usuario (dict con username/email) figura en BROKER_USERS."""
-    if not user:
-        return False
-    names = allowed_users()
-    return bool(names) and (str(user.get("username", "")).lower() in names or str(user.get("email", "")).lower() in names)
+    return bool(user and not user.get("is_blocked") and user.get("id") in allowed_users())
+
+
+class BrokerUnavailable(RuntimeError):
+    """Error de proveedor con un mensaje controlado."""
 
 
 class AlpacaPaper:
@@ -45,14 +45,14 @@ class AlpacaPaper:
                                 headers={"APCA-API-KEY-ID": self.key, "APCA-API-SECRET-KEY": self.secret})
         except requests.RequestException as exc:
             log.warning("Alpaca no respondió: %s", type(exc).__name__)
-            raise RuntimeError("Alpaca no respondió. Intente de nuevo en unos segundos.") from exc
+            raise BrokerUnavailable("Alpaca no respondió. Intente de nuevo en unos segundos.") from exc
         if resp.status_code in (401, 403):
-            raise RuntimeError("Alpaca rechazó las claves. Verifique que ALPACA_API_KEY y ALPACA_API_SECRET "
+            raise BrokerUnavailable("Alpaca rechazó las claves. Verifique que ALPACA_API_KEY y ALPACA_API_SECRET "
                                "sean de una cuenta de PAPER trading (las claves de cuenta real no funcionan aquí).")
         if resp.status_code == 429:
-            raise RuntimeError("Alpaca: límite de solicitudes alcanzado.")
+            raise BrokerUnavailable("Alpaca: límite de solicitudes alcanzado.")
         if resp.status_code != 200:
-            raise RuntimeError(f"Alpaca respondió con error {resp.status_code}.")
+            raise BrokerUnavailable(f"Alpaca respondió con error {resp.status_code}.")
         return resp.json()
 
     @staticmethod

@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from ml_engine.engine import run_all
 from ml_engine.calendar import CONTINUOUS, YAHOO_CLOSE_LAG_MINUTES, utc_instant
 from app.services.data_service import DemoFuente
-from app.security import api_error, clean_symbol
+from app.security import InvalidInput, api_error, check_csrf_header, clean_symbol, json_object, legacy_owner_key, require_user
 
 main_bp = Blueprint("main", __name__)
 
@@ -145,29 +145,37 @@ def community(ticker):
 
 @main_bp.post("/api/community/<path:ticker>/post")
 def community_post(ticker):
+    user = require_user()
+    check_csrf_header()
     ticker = clean_symbol(ticker)
-    payload = request.get_json(silent=True) or {}
+    payload = json_object()
+    if not isinstance(payload.get("text"), str):
+        raise InvalidInput("El comentario debe ser texto.")
     try:
-        post = CommunityStorage(current_app.config["PROJECT_ROOT"]).add_post(ticker, payload.get("author"), payload.get("text"))
+        post = CommunityStorage(current_app.config["PROJECT_ROOT"]).add_post(ticker, user["username"], payload["text"])
         return jsonify(post=post), 201
-    except Exception as e:
+    except ValueError as e:
         return jsonify(error=str(e)), 400
 
 
 @main_bp.post("/api/community/<path:ticker>/vote")
 def community_vote(ticker):
+    user = require_user()
+    check_csrf_header()
     ticker = clean_symbol(ticker)
-    payload = request.get_json(silent=True) or {}
+    payload = json_object()
+    if payload.get("direction") not in ("bullish", "bearish"):
+        raise InvalidInput("Voto no válido.")
     try:
-        sentiment = CommunityStorage(current_app.config["PROJECT_ROOT"]).vote(ticker, payload.get("direction"))
+        sentiment = CommunityStorage(current_app.config["PROJECT_ROOT"]).vote(ticker, payload["direction"], legacy_owner_key(user))
         return jsonify(sentiment=sentiment)
-    except Exception as e:
+    except ValueError as e:
         return jsonify(error=str(e)), 400
 
 
 @main_bp.post("/api/analyze")
 def analyze():
-    body = request.get_json(silent=True) if request.is_json else request.form
+    body = json_object() if request.is_json else request.form
     symbol = str((body or {}).get("symbol", "")).strip()
     if not symbol:
         return jsonify(error="Debe ingresar un identificador de activo."), 400
@@ -185,21 +193,24 @@ def analyze():
 
 @main_bp.post("/api/report")
 def report():
-    payload = request.get_json(silent=True) or {}
+    check_csrf_header()
+    payload = json_object()
     symbol = payload.get("symbol", "")
     try:
         cfg, resolved, data, inds, preds, alert, tend = pipeline(symbol)
-        path = InformeEmpresarial().generar(current_app.config["PROJECT_ROOT"], resolved["symbol"], data, inds, preds, alert, tend)
-        return send_file(path, as_attachment=True, download_name=path.name)
+        content, filename = InformeEmpresarial().generar(resolved["symbol"], data, inds, preds, alert, tend)
+        return send_file(content, as_attachment=True, download_name=filename, mimetype="text/html", max_age=0)
     except Exception as e:
         return api_error(e)
 
 
 @main_bp.post("/api/save")
 def save():
-    payload = request.get_json(silent=True)
+    user = require_user()
+    check_csrf_header()
+    payload = json_object()
     try:
-        created = Storage(current_app.config["PROJECT_ROOT"]).add(payload)
+        created = Storage(current_app.config["PROJECT_ROOT"]).add(payload, legacy_owner_key(user))
     except ValueError as e:
         return jsonify(error=str(e)), 400
     return jsonify(ok=True, duplicate=not created)
@@ -207,7 +218,8 @@ def save():
 
 @main_bp.get("/api/history")
 def history():
-    return jsonify(Storage(current_app.config["PROJECT_ROOT"]).all())
+    user = require_user()
+    return jsonify(Storage(current_app.config["PROJECT_ROOT"]).all(legacy_owner_key(user)))
 
 
 _CACHE = {}

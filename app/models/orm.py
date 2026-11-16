@@ -7,8 +7,8 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import (JSON, Boolean, CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, Numeric, String,
-                        Text, UniqueConstraint, func)
+from sqlalchemy import (JSON, BigInteger, Boolean, CheckConstraint, Column, Date, DateTime, ForeignKey,
+                        Index, Integer, Numeric, String, Table, Text, UniqueConstraint, func)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, validates
 
 from app.repositories.base import identity_key
@@ -20,6 +20,15 @@ IDENTITY_KEY = Text().with_variant(Text(collation="C"), "postgresql")
 
 class Base(DeclarativeBase):
     pass
+
+
+auth_sessions = Table(
+    "auth_sessions", Base.metadata,
+    Column("digest", String(64), primary_key=True),
+    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True),
+    Column("admin_key", String(64)),
+    Column("expires_at", BigInteger, nullable=False, index=True),
+)
 
 
 class Audit:

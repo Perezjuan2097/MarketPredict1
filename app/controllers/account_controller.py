@@ -3,11 +3,12 @@ import logging
 from decimal import Decimal
 from functools import wraps
 
-from flask import Blueprint, current_app, jsonify, request, session
+from flask import Blueprint, current_app, jsonify, request
 
 from app.repositories import factory
-from app.repositories.base import ConflictError
-from app.security import InvalidInput, api_error, check_csrf_header, client_ip, csrf_token, limiter
+from app.repositories.base import ConflictError, identity_key
+from app.security import InvalidInput, api_error, audit, check_csrf_header, client_ip, csrf_token, json_object, limiter
+from app.session_store import end_session, start_session, user_id
 from app.services import account_service, portfolio_service, user_predictions
 
 log = logging.getLogger("marketpredict")
@@ -35,14 +36,17 @@ def guarded(auth=True):
             repo = _repo()
             if repo is None:
                 return jsonify(error="El almacenamiento de cuentas no está disponible. Revise /api/health."), 503
-            if request.method != "GET":
-                check_csrf_header()
             user = None
             if auth:
-                user = repo.get_user(session.get("uid")) if session.get("uid") else None
+                uid = user_id()
+                user = repo.get_user(uid) if uid is not None else None
                 if not user or user.get("is_blocked"):
-                    session.pop("uid", None)
+                    audit("account_access_denied", uid)
+                    if uid is not None:
+                        end_session()
                     return jsonify(error="Debe iniciar sesión."), 401
+            if request.method not in ("GET", "HEAD", "OPTIONS"):
+                check_csrf_header()
             try:
                 return view(repo, user, *args, **kwargs)
             except InvalidInput as exc:
@@ -59,46 +63,57 @@ def guarded(auth=True):
 @account_bp.get("/api/auth/me")
 def me():
     repo = _repo()
-    user = repo.get_user(session["uid"]) if repo and session.get("uid") else None
-    if repo and session.get("uid") and not user:
-        session.pop("uid", None)
+    uid = user_id()
+    user = repo.get_user(uid) if repo and uid is not None else None
+    if uid is not None and (not user or user.get("is_blocked")):
+        end_session()
+        user = None
     return jsonify(user=account_service.public_user(user) if user else None, csrf=csrf_token(), persistence=repo is not None)
 
 
 def _start_session(user):
-    session.clear()
-    session["uid"] = user["id"]
-    session.permanent = True
+    start_session(user_id=user["id"])
     return jsonify(user=account_service.public_user(user), csrf=csrf_token())
 
 
 @account_bp.post("/api/auth/register")
 @guarded(auth=False)
 def register(repo, _user):
-    body = request.get_json(silent=True) or {}
     if not limiter.allow("register:" + client_ip(), 10):
+        audit("registration_rate_limited")
         return jsonify(error="Demasiados registros desde esta dirección. Intente más tarde."), 429
+    body = json_object()
     user = account_service.register(repo, body.get("username"), body.get("email"), body.get("password"))
+    audit("account_registered", user["id"])
     return _start_session(user), 201
 
 
 @account_bp.post("/api/auth/login")
 @guarded(auth=False)
 def login(repo, _user):
-    body = request.get_json(silent=True) or {}
-    ident = str(body.get("identifier") or "")[:254]
-    if not limiter.allow("login:" + client_ip(), 30) or not limiter.allow(f"login:{client_ip()}:{ident.lower()}", 8):
+    from hashlib import sha256
+    body = json_object()
+    ident = body.get("identifier")
+    ident = identity_key(ident) if isinstance(ident, str) and len(ident) <= 254 else ""
+    key = sha256(ident.encode()).hexdigest()
+    ip = client_ip()
+    if not limiter.allow("login:" + ip, 30) or not limiter.allow(f"login:{ip}:{key}", 8):
+        audit("login_rate_limited")
         return jsonify(error="Demasiados intentos. Espere un minuto."), 429
     user = account_service.authenticate(repo, ident, body.get("password"))
     if not user:
+        audit("login_failed")
         return jsonify(error="Credenciales inválidas."), 401
+    audit("login_success", user["id"])
     return _start_session(user)
 
 
 @account_bp.post("/api/auth/logout")
 def logout():
     check_csrf_header()
-    session.clear()
+    uid = user_id()
+    end_session()
+    audit("logout", uid)
     return jsonify(ok=True, csrf=csrf_token())
 
 
@@ -112,7 +127,7 @@ def list_predictions(repo, user):
 @account_bp.post("/api/me/predictions")
 @guarded()
 def publish_prediction(repo, user):
-    pred = user_predictions.publish(repo, factory.get_provider(current_app), user["id"], request.get_json(silent=True))
+    pred = user_predictions.publish(repo, factory.get_provider(current_app), user["id"], json_object())
     return jsonify(prediction=jsonable(pred)), 201
 
 
@@ -120,7 +135,7 @@ def publish_prediction(repo, user):
 @guarded()
 def save_from_models(repo, user):
     from app.controllers.main_controller import model_result
-    body = request.get_json(silent=True) or {}
+    body = json_object()
     try:
         horizon = int(body.get("horizon", 5))
     except (TypeError, ValueError):
@@ -133,6 +148,8 @@ def save_from_models(repo, user):
 @guarded()
 def cancel_prediction(repo, user, pred_id):
     pred = user_predictions.cancel(repo, user["id"], pred_id)
+    if pred is None:
+        audit("prediction_access_denied", user["id"], pred_id)
     return (jsonify(prediction=jsonable(pred)) if pred else (jsonify(error="Predicción no encontrada."), 404))
 
 
@@ -152,7 +169,7 @@ def list_portfolios(repo, user):
 @account_bp.post("/api/me/portfolios")
 @guarded()
 def create_portfolio(repo, user):
-    body = request.get_json(silent=True) or {}
+    body = json_object()
     pf = portfolio_service.create(repo, user["id"], body.get("name"), body.get("initial_cash"), body.get("commission_pct"))
     return jsonify(portfolio=jsonable(pf)), 201
 
@@ -162,6 +179,7 @@ def create_portfolio(repo, user):
 def portfolio_detail(repo, user, pf_id):
     pf = portfolio_service.owned(repo, user["id"], pf_id)
     if not pf:
+        audit("portfolio_access_denied", user["id"], pf_id)
         return jsonify(error="Portafolio no encontrado."), 404
     return jsonify(jsonable(portfolio_service.snapshot(repo, factory.get_provider(current_app), pf)))
 
@@ -171,7 +189,8 @@ def portfolio_detail(repo, user, pf_id):
 def trade(repo, user, pf_id):
     pf = portfolio_service.owned(repo, user["id"], pf_id)
     if not pf:
+        audit("portfolio_write_denied", user["id"], pf_id)
         return jsonify(error="Portafolio no encontrado."), 404
-    body = request.get_json(silent=True) or {}
+    body = json_object()
     t = portfolio_service.execute_trade(repo, factory.get_provider(current_app), pf, body.get("symbol"), body.get("side"), body.get("quantity"))
     return jsonify(trade=jsonable(t)), 201

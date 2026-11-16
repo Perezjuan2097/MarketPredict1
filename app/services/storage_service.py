@@ -1,4 +1,5 @@
 import json
+from math import isfinite
 import os
 import tempfile
 import threading
@@ -20,7 +21,7 @@ class Storage:
             return []
         try:
             return json.loads(self.path.read_text(encoding="utf-8"))
-        except Exception:
+        except FileNotFoundError:
             return []
 
     @staticmethod
@@ -33,14 +34,15 @@ class Storage:
             if not isinstance(value, typ) or isinstance(value, bool):
                 raise ValueError(f"Campo inválido o ausente: {key}.")
             clean[key] = value[:60] if isinstance(value, str) else float(value)
-        if clean["prediccion"] <= 0:
+        if not isfinite(clean["prediccion"]) or clean["prediccion"] <= 0:
             raise ValueError("La predicción debe ser positiva.")
         clean["real"] = None
         return clean
 
-    def add(self, registro):
+    def add(self, registro, owner_key):
         """Devuelve False si ya existía un registro idéntico (se ignora el duplicado)."""
         clean = self.validar(registro)
+        clean["owner_key"] = owner_key
         with _lock:
             data = self.read()
             key = {k: v for k, v in clean.items() if k != "real"}
@@ -53,5 +55,6 @@ class Storage:
             os.replace(tmp, self.path)  # escritura atómica
         return True
 
-    def all(self):
-        return list(reversed(self.read()))
+    def all(self, owner_key):
+        return [{key: value for key, value in row.items() if key != "owner_key"}
+                for row in reversed(self.read()) if row.get("owner_key") == owner_key]

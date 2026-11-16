@@ -50,6 +50,7 @@ def _trade(t, symbol):
 
 
 class SQLRepository:
+    persistent_sessions = True
     def __init__(self, engine):
         self._Session = sessionmaker(engine, expire_on_commit=False)
 
@@ -77,6 +78,15 @@ class SQLRepository:
             u = s.execute(select(orm.User).where(or_(orm.User.username_key == ident,
                                                      orm.User.email_key == ident))).scalar_one_or_none()
             return _user(u) if u else None
+
+    def set_user_blocked(self, user_id, blocked):
+        from sqlalchemy import delete
+
+        with self._Session.begin() as s:
+            result = s.execute(update(orm.User).where(orm.User.id == user_id).values(is_blocked=blocked))
+            if result.rowcount and blocked:
+                s.execute(delete(orm.auth_sessions).where(orm.auth_sessions.c.user_id == user_id))
+            return bool(result.rowcount)
 
     def touch_login(self, user_id):
         with self._Session() as s:

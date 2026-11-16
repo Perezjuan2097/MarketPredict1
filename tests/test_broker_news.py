@@ -33,18 +33,25 @@ class TestNoticiasRSS(unittest.TestCase):
 
 class TestBroker(unittest.TestCase):
     def setUp(self):
-        self.env = mock.patch.dict(os.environ, {"ALPACA_API_KEY": "k", "ALPACA_API_SECRET": "s", "BROKER_USERS": "ana, luis@x.com"})
+        self.env = mock.patch.dict(os.environ, {"ALPACA_API_KEY": "k", "ALPACA_API_SECRET": "s", "BROKER_USER_IDS": "7, 9"})
         self.env.start()
-        self.c = create_app({"TESTING": True}).test_client()
+        self.c = create_app({"TESTING": True, "ADMIN_TOKEN": "admin-fixture"}).test_client()
 
     def tearDown(self):
         self.env.stop()
 
     def test_usuarios_autorizados(self):
-        self.assertTrue(broker_service.user_allowed({"username": "Ana", "email": "a@x.com"}))
-        self.assertTrue(broker_service.user_allowed({"username": "z", "email": "LUIS@x.com"}))
-        self.assertFalse(broker_service.user_allowed({"username": "z", "email": "z@x.com"}))
+        self.assertTrue(broker_service.user_allowed({"id": 7}))
+        self.assertTrue(broker_service.user_allowed({"id": 9}))
+        self.assertFalse(broker_service.user_allowed({"id": 8, "username": "Ana", "email": "LUIS@x.com"}))
+        self.assertFalse(broker_service.user_allowed({"id": 7, "is_blocked": True}))
         self.assertFalse(broker_service.user_allowed(None))
+
+    def _admin_login(self):
+        self.c.get("/admin/login")
+        with self.c.session_transaction() as session:
+            csrf = session["csrf"]
+        self.assertEqual(self.c.post("/admin/login", data={"csrf_token": csrf, "token": "admin-fixture"}).status_code, 302)
 
     def test_anonimo_no_ve_la_cuenta(self):
         r = self.c.get("/api/broker/status")
@@ -58,8 +65,7 @@ class TestBroker(unittest.TestCase):
         def fake_get(url, **kw):
             self.assertTrue(url.startswith("https://paper-api.alpaca.markets"))  # nunca la API real
             return Resp(payload=payloads[url.replace(broker_service.PAPER_BASE, "")])
-        with self.c.session_transaction() as s:
-            s["is_admin"] = True
+        self._admin_login()
         with mock.patch("app.services.broker_service.requests.get", side_effect=fake_get):
             j = self.c.get("/api/broker/status").get_json()
         self.assertTrue(j["authorized"] and j["paper"])
@@ -67,8 +73,7 @@ class TestBroker(unittest.TestCase):
         self.assertEqual(j["positions"][0]["unrealized_plpc"], 5.0)
 
     def test_claves_rechazadas(self):
-        with self.c.session_transaction() as s:
-            s["is_admin"] = True
+        self._admin_login()
         with mock.patch("app.services.broker_service.requests.get", return_value=Resp(401)):
             r = self.c.get("/api/broker/status")
         self.assertEqual(r.status_code, 502)

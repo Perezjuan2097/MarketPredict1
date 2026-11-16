@@ -50,7 +50,7 @@ class TestPublico(BaseCase):
             self.assertEqual({p["valor_estimado"] for p in j["predictions"]}, precios)
 
     def test_symbol_invalido(self):
-        self.assertEqual(self.c.post("/api/analyze", json={"symbol": "<script>"}).status_code, 422)
+        self.assertEqual(self.c.post("/api/analyze", json={"symbol": "<script>"}).status_code, 400)
         self.assertEqual(self.c.get("/api/community/%3Cb%3E").status_code, 400)
         self.assertEqual(self.c.post("/api/analyze", data="x", content_type="text/plain").status_code, 400)
 
@@ -61,13 +61,21 @@ class TestPublico(BaseCase):
         self.assertNotIn("Traceback", r.get_data(as_text=True))
 
     def test_save_valida_y_deduplica(self):
+        from app.repositories.memory import MemoryRepository
+        self.app.config["REPOSITORY"] = MemoryRepository()
+        csrf = self.c.get("/api/auth/me").json["csrf"]
+        registration = self.c.post("/api/auth/register", json={"username": "owner", "email": "owner@x.co",
+                                                             "password": "Password123"},
+                                   headers={"X-CSRF-Token": csrf})
+        self.assertEqual(registration.status_code, 201)
+        headers = {"X-CSRF-Token": registration.json["csrf"]}
         rec = {"symbol": "AAPL", "fecha": "2026-11-08", "horizonte": "1 día(s)", "prediccion": 100.5,
                "modelo": "Regresión lineal", "version": "t"}
-        self.assertEqual(self.c.post("/api/save", json=rec).get_json()["duplicate"], False)
-        self.assertEqual(self.c.post("/api/save", json=rec).get_json()["duplicate"], True)
+        self.assertEqual(self.c.post("/api/save", json=rec, headers=headers).get_json()["duplicate"], False)
+        self.assertEqual(self.c.post("/api/save", json=rec, headers=headers).get_json()["duplicate"], True)
         self.assertEqual(len(self.c.get("/api/history").get_json()), 1)
-        self.assertEqual(self.c.post("/api/save", json={"symbol": "X"}).status_code, 400)
-        self.assertEqual(self.c.post("/api/save", json={**rec, "prediccion": -1}).status_code, 400)
+        self.assertEqual(self.c.post("/api/save", json={"symbol": "X"}, headers=headers).status_code, 400)
+        self.assertEqual(self.c.post("/api/save", json={**rec, "prediccion": -1}, headers=headers).status_code, 400)
 
     def test_cabeceras_seguridad(self):
         h = self.c.get("/").headers
@@ -80,7 +88,7 @@ class TestPublico(BaseCase):
         from app.security import limiter
         limiter.hits.clear()
         c = app.test_client()
-        codes = [c.get("/api/history").status_code for _ in range(5)]
+        codes = [c.get("/api/search").status_code for _ in range(5)]
         self.assertEqual(codes[:3], [200, 200, 200])
         self.assertEqual(codes[-1], 429)
 

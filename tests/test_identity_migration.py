@@ -74,7 +74,8 @@ def test_postgres_repairs_stamped_partial_installation(connection, monkeypatch):
     command.stamp(cfg, "20261115_identity_keys")
     command.upgrade(cfg, "head")
     command.upgrade(cfg, "head")
-    assert MigrationContext.configure(connection).get_current_revision() == "20261116_identity_repair"
+    assert MigrationContext.configure(connection).get_current_revision() == "20261117_auth_sessions"
+    assert sa.inspect(connection).has_table("auth_sessions")
     assert connection.exec_driver_sql("SELECT 'users'::regclass::oid, 'portfolios'::regclass::oid").one() == oids
     assert connection.exec_driver_sql("SELECT id, username_key, email_key, password_hash FROM users").one() == (
         4, "clara", "éxito@x.co", "fixture-hash"

@@ -12,6 +12,7 @@ def _now():
 
 
 class MemoryRepository:
+    persistent_sessions = False
     def __init__(self):
         self._lock = threading.RLock()
         self._ids = {k: itertools.count(1) for k in ("user", "asset", "pred", "pf", "trade")}
@@ -39,6 +40,13 @@ class MemoryRepository:
             if identity_key(u["username"]) == ident or u["email"] == ident:
                 return dict(u)
         return None
+
+    def set_user_blocked(self, user_id, blocked):
+        with self._lock:
+            if user_id not in self.users:
+                return False
+            self.users[user_id]["is_blocked"] = blocked
+            return True
 
     def touch_login(self, user_id):
         with self._lock:

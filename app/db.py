@@ -33,13 +33,17 @@ def get_engine():
     if not url:
         raise RuntimeError("DATABASE_URL no está definida.")
     try:
-        from sqlalchemy import create_engine
+        from sqlalchemy import create_engine, event
     except ImportError as exc:
         raise RuntimeError("SQLAlchemy no está instalado.") from exc
-    kwargs = {"pool_pre_ping": True, "future": True}
+    kwargs = {"pool_pre_ping": True, "future": True, "hide_parameters": True}
     if not url.startswith("sqlite"):
         kwargs.update(pool_size=3, max_overflow=2, pool_recycle=1800)
     _engine = create_engine(url, **kwargs)
+    if _engine.dialect.name == "sqlite":
+        @event.listens_for(_engine, "connect")
+        def enable_foreign_keys(connection, _record):
+            connection.execute("PRAGMA foreign_keys=ON")
     return _engine
 
 
@@ -72,6 +76,8 @@ def identity_schema_issues(bind):
             if (not index.get("unique") or index.get("column_names") != columns
                     or any(key.endswith("_where") for key in index.get("dialect_options", {}))):
                 missing.append(f"{table}.{name}")
+    if not inspector.has_table("auth_sessions"):
+        missing.append("auth_sessions")
     return missing
 
 
@@ -93,5 +99,4 @@ def check_db():
     except Exception as exc:  # el mensaje original puede contener host/usuario: solo al log
         detail = f" ({exc.name})" if isinstance(exc, ModuleNotFoundError) else ""
         log.error("Fallo de conexión a la base de datos: %s%s", type(exc).__name__, detail)
-        log.debug("Detalle", exc_info=True)
         return {"status": "error", "detail": "No fue posible conectar. Revise DATABASE_URL (use la cadena Session pooler de Supabase) y los logs."}

@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function formatDateTime(value) {
         if (!value) return "—";
         const date = new Date(value);
-        if (Number.isNaN(date.getTime())) return String(value);
+        if (Number.isNaN(date.getTime())) return "—";
         return new Intl.DateTimeFormat(language === "es" ? "es-CO" : "en-US", {
             day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
         }).format(date);
@@ -230,12 +230,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function loadHistory() {
         if (!exists("#history")) return;
+        const principal = currentUser;
+        if (!currentUser) {
+            $("#history").textContent = "Inicia sesión para consultar tu historial.";
+            return;
+        }
         try {
             const response = await fetch("/api/history");
+            if (!response.ok) throw new Error();
             const data = await response.json();
+            if (currentUser !== principal) return;
             $("#history").innerHTML = data.length ? `<table class="table"><thead><tr><th>Activo</th><th>Fecha</th><th>Predicción</th><th>Modelo</th></tr></thead><tbody>${data.slice(0, 8).map((r) => `<tr><td><strong>${escapeHTML(r.symbol)}</strong></td><td>${escapeHTML(r.fecha)}</td><td>${formatMoney(r.prediccion, marketData?.currency)}</td><td>${escapeHTML(r.modelo)}</td></tr>`).join("")}</tbody></table>` : `<div class="empty-state">No hay predicciones guardadas todavía.</div>`;
         } catch {
             $("#history").textContent = "No fue posible cargar el historial.";
+        }
+    }
+
+    function safeNewsUrl(value) {
+        try {
+            const url = new URL(value);
+            return url.protocol === "https:" || url.protocol === "http:";
+        } catch {
+            return false;
         }
     }
 
@@ -249,7 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const p = data.pulse;
             const head = p && p.headlines ? `<div class="alert ${p.score >= 0.15 ? "BAJA" : p.score <= -0.15 ? "ALTA" : "NEUTRA"}" style="margin-bottom:12px"><span class="pill">PULSO DE NOTICIAS: ${escapeHTML(p.label.toUpperCase())}</span><p>${p.counts.positivo} titulares positivos, ${p.counts.neutral} neutrales y ${p.counts.negativo} negativos (fuente: ${escapeHTML(data.provider || "")}). ${escapeHTML(p.note)}</p></div>` : "";
             const tones = Object.fromEntries((p?.items || []).map((i) => [i.title, i.tone]));
-            box.innerHTML = head + (data.news.length ? data.news.map((item) => `<article class="news-item"><div><span class="news-source">${escapeHTML(item.source)}${tones[item.title] && tones[item.title] !== "neutral" ? ` · <span class="${tones[item.title] === "positivo" ? "positive-text" : "negative-text"}">${tones[item.title]}</span>` : ""}</span><h3>${escapeHTML(item.title)}</h3><small>${formatDateTime(item.date)}</small></div>${item.url ? `<a href="${escapeHTML(item.url)}" target="_blank" rel="noopener noreferrer">Abrir ↗</a>` : ""}</article>`).join("") : `<div class="empty-state">${escapeHTML(data.warning || "Yahoo Finance no devolvió noticias para este activo.")}</div>`);
+            box.innerHTML = head + (data.news.length ? data.news.map((item) => `<article class="news-item"><div><span class="news-source">${escapeHTML(item.source)}${tones[item.title] && tones[item.title] !== "neutral" ? ` · <span class="${tones[item.title] === "positivo" ? "positive-text" : "negative-text"}">${tones[item.title]}</span>` : ""}</span><h3>${escapeHTML(item.title)}</h3><small>${formatDateTime(item.date)}</small></div>${safeNewsUrl(item.url) ? `<a href="${escapeHTML(item.url)}" target="_blank" rel="noopener noreferrer">Abrir ↗</a>` : ""}</article>`).join("") : `<div class="empty-state">${escapeHTML(data.warning || "Yahoo Finance no devolvió noticias para este activo.")}</div>`);
         } catch (error) { box.innerHTML = `<div class="empty-state">${escapeHTML(error.message || "No fue posible cargar las noticias.")}</div>`; }
     }
 
@@ -600,13 +616,19 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const data = await api("POST", url, body);
             currentUser = data.user; form.reset(); closeAuth(); updateAuthUI(); activateTab("cuenta");
+            await loadHistory();
         } catch (error) { $("#authError").textContent = error.message; }
         finally { submit.disabled = false; }
     }
 
     async function logout() {
-        try { await api("POST", "/api/auth/logout", {}); } catch (error) { /* la sesión local se limpia igualmente */ }
+        try { await api("POST", "/api/auth/logout", {}); } catch (error) { setStatus(error.message); return; }
+        selectedPortfolio = null;
+        for (const selector of ["#predList", "#pfSelect", "#pfSummary", "#pfPositions", "#pfTrades", "#brokerContent"]) {
+            $(selector)?.replaceChildren();
+        }
         currentUser = null; updateAuthUI(); activateTab("summary");
+        await loadHistory();
     }
 
     function dateText(value) { return value ? String(value).slice(0, 10) : "—"; }
@@ -620,11 +642,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function loadPredictions(evaluateFirst = false) {
+        const principal = currentUser;
         const box = $("#predList");
         if (!box) return;
         try {
             if (evaluateFirst) { try { await api("POST", "/api/me/predictions/evaluate", {}); } catch (error) { /* se muestra lo guardado */ } }
             const { predictions } = await api("GET", "/api/me/predictions");
+            if (currentUser !== principal) return;
             if (!predictions.length) { box.innerHTML = `<div class="empty-state">Todavía no tienes predicciones guardadas.</div>`; return; }
             box.innerHTML = `<table class="table"><thead><tr><th>Publicada</th><th>Activo</th><th>Origen</th><th>Dirección</th><th>Referencia</th><th>Objetivo</th><th>Vence</th><th>Estado</th><th>Resultado</th><th></th></tr></thead><tbody>${predictions.map((p) => {
                 const ev = p.evaluation;
@@ -637,8 +661,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function loadPortfolios(selectId) {
+        const principal = currentUser;
         try {
             const { portfolios } = await api("GET", "/api/me/portfolios");
+            if (currentUser !== principal) return;
             $("#pfEmpty").hidden = portfolios.length > 0; $("#pfArea").hidden = portfolios.length === 0;
             if (!portfolios.length) { selectedPortfolio = null; return; }
             const keep = selectId || selectedPortfolio || portfolios[0].id;
@@ -651,9 +677,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function loadPortfolioDetail() {
         if (!selectedPortfolio) return;
+        const principal = currentUser;
         $("#pfSummary").innerHTML = `<div class="loading">Valorando posiciones...</div>`;
         try {
             const d = await api("GET", `/api/me/portfolios/${selectedPortfolio}`);
+            if (currentUser !== principal) return;
             const cur = d.portfolio.currency || "";
             const money = (v) => (v == null ? "N/D" : `${numText(v, 2)} ${escapeHTML(cur)}`);
             $("#pfSummary").innerHTML = `<section class="metric-grid">
@@ -811,11 +839,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (exists("#runResults")) $("#runResults").addEventListener("click", runResults);
 
         if (exists("#save")) $("#save").addEventListener("click", async () => {
+            if (!currentUser) return openAuth();
             if (!current?.predictions?.length) return setStatus("Primero debe analizar un activo.");
             const p = current.predictions[0];
             try {
-                const response = await fetch("/api/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ symbol: current.symbol, fecha: p.fecha_generacion, horizonte: p.horizonte, prediccion: p.valor_estimado, modelo: p.modelo, version: p.version }) });
-                if (!response.ok) throw new Error();
+                await api("POST", "/api/save", { symbol: current.symbol, fecha: p.fecha_generacion, horizonte: p.horizonte, prediccion: p.valor_estimado, modelo: p.modelo, version: p.version });
                 await loadHistory();
                 setStatus("Predicción guardada correctamente.");
             } catch { setStatus("No fue posible guardar la predicción."); }
@@ -825,7 +853,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!current) return setStatus("Primero debe analizar un activo.");
             setStatus("Generando informe...");
             try {
-                const response = await fetch("/api/report", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ symbol: current.symbol }) });
+                const response = await fetch("/api/report", { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken }, body: JSON.stringify({ symbol: current.symbol }) });
                 if (!response.ok) throw new Error();
                 const blob = await response.blob();
                 const url = URL.createObjectURL(blob);
@@ -839,10 +867,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (exists("#voteBearish")) $("#voteBearish").addEventListener("click", () => sendVote("bearish"));
         if (exists("#communityForm")) $("#communityForm").addEventListener("submit", async (event) => {
             event.preventDefault();
+            if (!currentUser) return openAuth();
             try {
-                const response = await fetch(`/api/community/${encodeURIComponent(activeTicker)}/post`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ author: $("#communityAuthor").value, text: $("#communityText").value }) });
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.error);
+                await api("POST", `/api/community/${encodeURIComponent(activeTicker)}/post`, { text: $("#communityText").value });
                 $("#communityText").value = "";
                 await loadCommunity(activeTicker);
             } catch (error) { setStatus(error.message || "No fue posible publicar el comentario."); }
@@ -852,10 +879,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function sendVote(direction) {
+        if (!currentUser) return openAuth();
         try {
-            const response = await fetch(`/api/community/${encodeURIComponent(activeTicker)}/vote`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ direction }) });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error);
+            const data = await api("POST", `/api/community/${encodeURIComponent(activeTicker)}/vote`, { direction });
             $("#bullishPercent").textContent = `${data.sentiment.bullish}%`;
             $("#bearishPercent").textContent = `${data.sentiment.bearish}%`;
             $("#bullishBar").style.width = `${data.sentiment.bullish}%`;

@@ -23,6 +23,8 @@ class Settings:
                 raise RuntimeError("SECRET_KEY es obligatoria en producción (APP_ENV=production).")
             # En desarrollo se genera una clave efímera: las sesiones se pierden al reiniciar.
             secret = secrets.token_hex(32)
+        if env == "production" and len(secret) < 32:
+            raise RuntimeError("SECRET_KEY debe tener al menos 32 caracteres en producción.")
         self.SECRET_KEY = secret
         self.SESSION_COOKIE_HTTPONLY = True
         self.SESSION_COOKIE_SAMESITE = "Lax"
@@ -31,6 +33,9 @@ class Settings:
         self.ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "")  # provisional hasta tener roles en BD (Fase 4)
         self.RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "120"))
         self.PERMANENT_SESSION_LIFETIME = timedelta(days=7)
+        self.ADMIN_SESSION_LIFETIME = timedelta(hours=1)
+        self.SESSION_REFRESH_EACH_REQUEST = False
+        self.TRUSTED_PROXY_CIDRS = os.getenv("TRUSTED_PROXY_CIDRS", "")
         self.AUTO_CREATE_TABLES = _bool("AUTO_CREATE_TABLES", False)
         self.USE_DEMO = _bool("USE_DEMO", False)
         self.LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
