@@ -1,4 +1,3 @@
-import logging
 import sys
 
 from flask import Flask
@@ -13,10 +12,9 @@ def create_app(overrides=None):
     app.config.from_mapping(settings.as_flask_config())
     app.config["JSON_SORT_KEYS"] = False
 
-    logging.basicConfig(
-        stream=sys.stdout, level=settings.LOG_LEVEL,
-        format='{"time":"%(asctime)s","level":"%(levelname)s","logger":"%(name)s","msg":"%(message)s"}',
-    )
+    from app.observability import observe_requests, setup_logging
+    setup_logging(settings.LOG_LEVEL, sys.stdout)
+    observe_requests(app)
 
     from app.security import register_security
     register_security(app)
@@ -35,6 +33,8 @@ def create_app(overrides=None):
     app.register_blueprint(forecast_bp)
     from app.controllers.automation_controller import automation_bp
     app.register_blueprint(automation_bp)
+    from app.controllers.commercial_controller import commercial_bp
+    app.register_blueprint(commercial_bp)
     from app.controllers.broker_controller import broker_bp
     app.register_blueprint(broker_bp)
     app.extensions["runtime_config"] = {}

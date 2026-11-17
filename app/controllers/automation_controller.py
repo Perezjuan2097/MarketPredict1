@@ -1,10 +1,9 @@
 """Private APIs for enterprise jobs, schedules, alerts, and report downloads."""
-from hashlib import sha256
 from importlib.util import find_spec
-import json
 import re
+from uuid import uuid4
 
-from flask import Blueprint, Response, current_app, jsonify, request
+from flask import Blueprint, Response, current_app, g, jsonify, request
 
 from app.controllers.dataset_controller import dataset_guarded
 from app.controllers.enterprise_forecast_controller import _configuration
@@ -48,11 +47,11 @@ def enqueue(repo, actor, slug, dataset_id, kind, body):
     params = parameters(kind, body)
     key = request.headers.get("Idempotency-Key")
     if key is None:
-        key = sha256(json.dumps([dataset_id, kind, params], separators=(",", ":"), sort_keys=True).encode()).hexdigest()
+        key = uuid4().hex
     if not re.fullmatch(r"[a-zA-Z0-9_-]{1,100}", key):
         raise InvalidInput("Clave de idempotencia no válida.")
     try:
-        job = repo.enqueue_job(actor, slug, dataset_id, kind, params, key)
+        job = repo.enqueue_job(actor, slug, dataset_id, kind, params, key, g.request_id)
     except QueueFull as exc:
         return jsonify(error=str(exc)), 429, {"Retry-After": "30"}
     audit("enterprise_job_requested", actor, job["id"])
@@ -96,9 +95,12 @@ def create_schedule(repo, actor, slug, dataset_id):
         raise InvalidInput("Selecciona una frecuencia y hora UTC válidas.")
     if cadence == "weekly" and (type(weekday) is not int or not 0 <= weekday <= 6):
         raise InvalidInput("El día de la semana debe estar entre 0 (lunes) y 6.")
+    policy = config.get("version_policy", "fixed")
+    if policy not in ("fixed", "latest"):
+        raise InvalidInput("Política de versión no válida.")
     row = repo.manage_schedule(actor, slug, dataset_id, config={
         "kind": kind, "cadence": cadence,
-        "parameters": {**parameters(kind, config), "hour_utc": hour,
+        "parameters": {**parameters(kind, config), "hour_utc": hour, "version_policy": policy,
                        "weekday": weekday if cadence == "weekly" else None},
     })
     audit("enterprise_schedule_created", actor, row["id"])

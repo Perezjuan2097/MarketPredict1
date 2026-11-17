@@ -101,6 +101,8 @@ window.createEnterpriseAutomationPanel = function (api, readForecast) {
         });
         listing("automationSchedules", data.schedules, (row, schedule) => {
             add(row, "span", "#" + schedule.id + " · " + kinds[schedule.kind] + " · v" + schedule.parameters.version +
+                (schedule.parameters.version_policy === "latest" ? " · última versión validada" : " · versión fija") +
+                (schedule.last_outcome ? " · " + schedule.last_outcome + " v" + (schedule.last_version ?? "—") : "") +
                 (schedule.cadence === "daily" ? " · diaria" : " · semanal") +
                 (schedule.enabled ? " · próxima " + new Date(schedule.next_at * 1000).toISOString() : " · pausada") + " ");
             if (context.manage) button(row, schedule.enabled ? "Pausar" : "Reactivar",
@@ -153,6 +155,7 @@ window.createEnterpriseAutomationPanel = function (api, readForecast) {
         if (kind === "evaluation") payload.zero_dates = form.zero_dates.split(",").map(day => day.trim()).filter(Boolean);
         if (event.submitter?.value === "schedule") {
             payload.cadence = form.cadence;
+            payload.version_policy = form.version_policy;
             payload.hour_utc = Number(form.hour);
             payload.weekday = Number(form.weekday);
             command("POST", "/schedules", payload);

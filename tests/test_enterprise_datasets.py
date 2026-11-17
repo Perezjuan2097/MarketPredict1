@@ -514,6 +514,7 @@ def test_queue_failure_backoff_is_bounded_and_alert_is_terminal(accounts):
 def test_postgres_worker_process_executes_outside_flask(repo):
     import subprocess
     import sys
+    from app.models.orm import EnterpriseWorkerHeartbeat
 
     with repo._Session() as session:
         if session.bind.dialect.name != "postgresql":
@@ -521,18 +522,209 @@ def test_postgres_worker_process_executes_outside_flask(repo):
         schema = session.scalar(sa.text("SELECT current_schema()"))
         url = session.bind.url.update_query_dict({"options": "-csearch_path=" + schema})
     user = repo.create_user("owner", "owner@example.test", "unused")["id"]
-    repo.create_organization(user, "Example", "example")
-    dataset = repo.create_dataset(user, "example", "Ventas")["id"]
-    scope = repo.dataset_import_scope(user, "example", dataset)
-    source, fingerprint = import_identity(CSV, ".csv", MAPPING)
-    repo.save_dataset_import(user, "example", dataset, scope,
-                             {"mapping": MAPPING, "sha256": source, "fingerprint": fingerprint, "format": "csv"},
-                             parse_import(CSV, ".csv", 10, MAPPING))
-    job = repo.enqueue_job(user, "example", dataset, "indicators", {"version": 1}, "worker-test")
-    env = {**os.environ, "DATABASE_URL": url.render_as_string(hide_password=False)}
-    result = subprocess.run([sys.executable, "-m", "scripts.enterprise_worker", "--once"], env=env, capture_output=True,
-                            text=True, timeout=40)
-    assert result.returncode == 0
-    ready = repo.get_job(user, "example", dataset, job["id"])
-    assert ready["state"] == "completed", ready["error_code"]
-    assert ready["result"]["metrics"]["sales"] == "32.5"
+    jobs = []
+    for slug in ("alpha", "beta"):
+        repo.create_organization(user, "Example", slug)
+        dataset = repo.create_dataset(user, slug, "Ventas")["id"]
+        scope = repo.dataset_import_scope(user, slug, dataset)
+        source, fingerprint = import_identity(CSV, ".csv", MAPPING)
+        repo.save_dataset_import(user, slug, dataset, scope,
+                                 {"mapping": MAPPING, "sha256": source, "fingerprint": fingerprint, "format": "csv"},
+                                 parse_import(CSV, ".csv", 10, MAPPING))
+        job = repo.enqueue_job(user, slug, dataset, "indicators", {"version": 1}, slug + "-worker-test")
+        jobs.append((slug, dataset, job))
+    env = {**os.environ, "DATABASE_URL": url.render_as_string(hide_password=False),
+           "ENTERPRISE_FORECAST_CONCURRENCY": "2"}
+
+    def execute():
+        completed = subprocess.run([sys.executable, "-m", "scripts.enterprise_worker", "--once"],
+                                   env=env, capture_output=True, text=True, timeout=60)
+        return completed.returncode
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first, second = pool.submit(execute), pool.submit(execute)
+        assert first.result(timeout=65) == second.result(timeout=65) == 0
+    for slug, dataset, job in jobs:
+        ready = repo.get_job(user, slug, dataset, job["id"])
+        assert ready["state"] == "completed", ready["error_code"]
+        assert ready["result"]["metrics"]["sales"] == "32.5"
+    with repo._Session() as session:
+        assert session.scalar(sa.select(sa.func.count()).select_from(EnterpriseWorkerHeartbeat)) == 2
+
+
+def test_commercial_quotas_recheck_plan_and_isolate_global_operations(accounts):
+    app, account = accounts
+    repo = app.config["REPOSITORY"]
+    owner, key, _ = account("owner")
+    administrator, akey, admin_id = account("platform_admin")
+    assert repo.admin_update_user(admin_id, None, role="admin")
+    base = f"{BASE}/alpha/datasets"
+    first = _setup(owner, key, "alpha")
+    org_id = owner.get(BASE + "/alpha").json["organization"]["id"]
+    path = "/admin/api/commercial"
+    assert owner.get(path).status_code == 403
+    assert administrator.get(first).status_code == 404
+    assert administrator.patch(path + f"/organizations/{org_id}", json={"plan": "Pilot"}).status_code == 403
+    payload = administrator.get(path).json
+    assert payload["organizations"][0]["usage"]["datasets"] == 1
+    assert payload["organizations"][0]["plan"] == "Pilot"
+    limits = {**payload["plans"]["Starter"], "datasets": 2, "imports": 0}
+    assert administrator.put(path + "/plans/Starter", headers=akey, json=limits).status_code == 204
+    assert administrator.patch(path + f"/organizations/{org_id}", headers=akey, json={"plan": "Starter"}).status_code == 204
+    preview = _post_file(owner, first + "/preview", key, mapping=json.dumps(MAPPING)).json
+    failed = _post_file(owner, first + "/imports", key, preview_token=preview["preview_token"])
+    assert failed.status_code == 409
+    assert owner.get(first).json["metrics"] is None
+    assert administrator.put(path + "/plans/Starter", headers=akey,
+                             json={**limits, "imports": 1, "storage_bytes": 100}).status_code == 204
+    assert _post_file(owner, first + "/imports", key, preview_token=preview["preview_token"]).status_code == 409
+    assert administrator.put(path + "/plans/Starter", headers=akey,
+                             json={**limits, "imports": 1, "storage_bytes": 1000}).status_code == 204
+    assert _post_file(owner, first + "/imports", key, preview_token=preview["preview_token"]).status_code == 201
+
+    barrier = Barrier(2)
+
+    def reserve(name):
+        barrier.wait(timeout=5)
+        try:
+            return repo.create_dataset(owner_id, "alpha", name)["id"]
+        except ConflictError:
+            return None
+
+    owner_id = owner.get("/api/auth/me").json["user"]["id"]
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        a, b = pool.submit(reserve, "Two"), pool.submit(reserve, "Three")
+        assert [a.result(timeout=10), b.result(timeout=10)].count(None) == 1
+    assert len(owner.get(base).json["datasets"]) == 2
+    payload = administrator.get(path).json
+    assert payload["organizations"][0]["usage"]["datasets"] == 2
+    assert payload["organizations"][0]["usage"]["storage_bytes"] == 130
+    assert payload["organizations"][0]["usage"]["imports"] == 1
+    assert {row["kind"] for row in payload["events"]} >= {"plan_assigned", "plan_configured"}
+    assert app.test_client().get("/api/live").status_code == 200
+
+
+def test_manual_idempotency_and_latest_schedule_dedup(accounts):
+    from time import time
+
+    app, account = accounts
+    repo = app.config["REPOSITORY"]
+    app.config["DATASET_MAX_BYTES"] = 4096
+    owner, key, _ = account("alice")
+    path, params = _forecast_fixture(owner, key, "alpha")
+    base = path + "/automation"
+
+    def enqueue(headers):
+        response = owner.post(path + "/forecasts", headers=headers, json=params)
+        assert response.status_code == 202, response.json
+        return response.json["job"]["id"]
+
+    assert enqueue(key) != enqueue(key)
+    key_with_id = {**key, "Idempotency-Key": "retry-explicit", "X-Request-ID": "valid-request-abc"}
+    explicit = enqueue(key_with_id)
+    assert explicit == enqueue(key_with_id)
+    assert owner.get(base + f"/jobs/{explicit}").json["job"]["request_id"] == "valid-request-abc"
+    cfg = {**params, "kind": "forecast", "cadence": "daily", "hour_utc": 1}
+    fixed = owner.post(base + "/schedules", headers=key, json={**cfg, "version_policy": "fixed"}).json["schedule"]
+    latest = owner.post(base + "/schedules", headers=key, json={**cfg, "version_policy": "latest"}).json["schedule"]
+    assert repo.schedule_due(max(fixed["next_at"], latest["next_at"])) == 0
+    assert {row["last_outcome"] for row in owner.get(base).json["schedules"]} == {"unchanged"}
+
+    data = CSV.replace(b",10.25", b",75")
+    preview = _post_file(owner, path + "/preview", key, data=data, mapping=json.dumps(MAPPING)).json
+    assert _post_file(owner, path + "/imports", key, data=data, preview_token=preview["preview_token"]).status_code == 201
+    upcoming = owner.get(base).json["schedules"]
+    assert repo.schedule_due(max(row["next_at"] for row in upcoming)) == 1
+    rows = {row["id"]: row for row in owner.get(base).json["schedules"]}
+    assert rows[fixed["id"]]["last_version"] == 1 and rows[fixed["id"]]["last_outcome"] == "unchanged"
+    assert rows[latest["id"]]["last_version"] == 2 and rows[latest["id"]]["last_outcome"] == "queued"
+    assert repo.schedule_due(int(time())) == 0
+
+
+def test_tenant_write_locks_allow_independent_postgres_organizations(repo):
+    from threading import Event
+    from time import monotonic
+    from app.repositories.organization_sql import lock_identity_writes, lock_tenant_writes
+
+    with repo._Session() as session:
+        if session.bind.dialect.name != "postgresql":
+            pytest.skip("bloqueos PostgreSQL")
+    actor = repo.create_user("owner", "owner@example.test", "unused")["id"]
+    for slug in ("alpha", "beta"):
+        repo.create_organization(actor, slug, slug)
+
+    def measure(global_lock):
+        entered, released = Event(), Event()
+
+        def holder():
+            with repo._Session.begin() as session:
+                if global_lock:
+                    lock_identity_writes(session)
+                else:
+                    lock_tenant_writes(session, "alpha")
+                entered.set()
+                assert released.wait(10)
+
+        def contender():
+            assert entered.wait(10)
+            start = monotonic()
+            repo.create_dataset(actor, "beta", "Example")
+            return monotonic() - start
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            a, b = pool.submit(holder), pool.submit(contender)
+            try:
+                if global_lock:
+                    from concurrent.futures import TimeoutError
+                    with pytest.raises(TimeoutError):
+                        b.result(timeout=0.25)
+                else:
+                    elapsed = b.result(timeout=5)
+            finally:
+                released.set()
+            a.result(timeout=10)
+            return b.result(timeout=10) if global_lock else elapsed
+
+    old, tenant = measure(True), measure(False)
+    print(f"locks_local_seconds old={old:.4f} tenant={tenant:.4f}")
+
+
+def test_synthetic_pilot_is_reproducible():
+    from io import StringIO
+    from scripts.synthetic_pilot import generate
+
+    a, b = StringIO(), StringIO()
+    generate(a)
+    generate(b)
+    assert a.getvalue() == b.getvalue()
+    assert "DEMO-RET-" in a.getvalue()
+    parsed = parse_import(a.getvalue().encode(), ".csv", 1000,
+                          {**MAPPING, "category": "categoria", "transaction_id": "tx"})
+    assert parsed["quality"]["invalid_rows"] == 0
+    assert len(parsed["records"]) > 360
+
+
+def test_purge_archived_dataset_requires_owner_retention_and_monthly_accounting(accounts):
+    from datetime import datetime, timezone
+    from app.models.orm import EnterpriseDataset, EnterpriseDatasetImport
+
+    app, account = accounts
+    repo = app.config["REPOSITORY"]
+    owner, key, _ = account("owner")
+    other, okey, _ = account("other")
+    path = _setup(owner, key, "alpha")
+    _setup(other, okey, "beta")
+    dataset_id = int(path.rsplit("/", 1)[1])
+    preview = _post_file(owner, path + "/preview", key, mapping=json.dumps(MAPPING)).json
+    assert _post_file(owner, path + "/imports", key, preview_token=preview["preview_token"]).status_code == 201
+    assert owner.delete(path, headers=key).status_code == 204
+    assert owner.post(path + "/purge", headers=key, json={"confirm_id": dataset_id}).status_code == 409
+    assert other.post(path + "/purge", headers=okey, json={"confirm_id": dataset_id}).status_code == 404
+    old = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    with repo._Session.begin() as session:
+        session.execute(sa.update(EnterpriseDataset).where(EnterpriseDataset.id == dataset_id).values(updated_at=old))
+    assert owner.post(path + "/purge", headers=key, json={"confirm_id": dataset_id}).status_code == 409
+    with repo._Session.begin() as session:
+        session.execute(sa.update(EnterpriseDatasetImport).values(uploaded_at=old))
+    assert owner.post(path + "/purge", headers=key, json={"confirm_id": dataset_id}).status_code == 204
+    assert owner.post(path + "/purge", headers=key, json={"confirm_id": dataset_id}).status_code == 404

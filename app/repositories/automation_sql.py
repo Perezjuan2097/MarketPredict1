@@ -13,8 +13,9 @@ from app.models.orm import (
     EnterpriseDatasetSchema as Schema, EnterpriseForecastRun as Run, EnterpriseJob as Job, Organization,
 )
 from app.repositories.base import ConflictError
+from app.repositories.commercial_sql import QuotaExceeded, enforce_quota
 from app.repositories.organization_policy import OrganizationAccessDenied, OrganizationNotFound, PERMISSIONS
-from app.repositories.organization_sql import lock_identity_writes
+from app.repositories.organization_sql import lock_identity_writes, lock_tenant_writes
 from app.services.automation_tasks import next_slot
 
 LEASE = 30
@@ -30,12 +31,14 @@ def job_view(row, detail=False):
     return {"id": row.id, "kind": row.kind, "state": row.state, "parameters": row.parameters,
             "attempts": row.attempts, "max_attempts": row.max_attempts, "error_code": row.error_code,
             "created_at": row.created_at.isoformat(), "finished_at": row.finished_at,
+            "started_at": row.started_at, "request_id": row.request_id,
             "available_at": row.available_at, **({"result": row.result} if detail else {})}
 
 
 def _schedule_view(row):
     return {"id": row.id, "kind": row.kind, "parameters": row.parameters, "cadence": row.cadence,
-            "enabled": row.enabled, "next_at": row.next_at, "actor_id": row.actor_id}
+            "enabled": row.enabled, "next_at": row.next_at, "actor_id": row.actor_id,
+            "last_outcome": row.last_outcome, "last_version": row.last_version}
 
 
 def _rule_view(row):
@@ -54,7 +57,7 @@ class AutomationSQL:
             raise OrganizationNotFound("Recurso no encontrado.")
         return row
 
-    def _enqueue(self, session, dataset, version, actor, kind, params, key, now):
+    def _enqueue(self, session, dataset, version, actor, kind, params, key, now, request_id=None):
         fingerprint = sha256(json.dumps([dataset.id, version.id, kind, params], sort_keys=True,
                                          separators=(",", ":")).encode()).hexdigest()
         existing = session.scalar(select(Job).where(Job.organization_id == dataset.organization_id,
@@ -67,19 +70,21 @@ class AutomationSQL:
             Job.organization_id == dataset.organization_id, Job.state.in_(ACTIVE)))
         if pending >= MAX_PENDING:
             raise QueueFull("La organización alcanzó el límite de trabajos activos.")
+        if kind == "forecast":
+            enforce_quota(session, dataset.organization_id, "forecasts")
         row = Job(organization_id=dataset.organization_id, dataset_id=dataset.id, version_id=version.id,
                   actor_id=actor, kind=kind, parameters=params, idempotency_key=key, fingerprint=fingerprint,
-                  state="pending", attempts=0, max_attempts=3, available_at=now)
+                  state="pending", attempts=0, max_attempts=3, available_at=now, request_id=request_id)
         session.add(row)
         session.flush()
         return row
 
-    def enqueue_job(self, actor, slug, dataset_id, kind, params, key):
+    def enqueue_job(self, actor, slug, dataset_id, kind, params, key, request_id=None):
         with self._Session.begin() as session:
-            lock_identity_writes(session)
+            lock_tenant_writes(session, slug)
             dataset = self._dataset_access(session, actor, slug, dataset_id, "forecast_run")
             version = self._selected_version(session, dataset, params["version"])
-            row = self._enqueue(session, dataset, version, actor, kind, params, f"manual:{actor}:{key}", int(time()))
+            row = self._enqueue(session, dataset, version, actor, kind, params, f"manual:{actor}:{key}", int(time()), request_id)
             return job_view(row)
 
     def get_job(self, actor, slug, dataset_id, job_id):
@@ -89,7 +94,7 @@ class AutomationSQL:
 
     def cancel_job(self, actor, slug, dataset_id, job_id):
         with self._Session.begin() as session:
-            lock_identity_writes(session)
+            lock_tenant_writes(session, slug)
             dataset = self._dataset_access(session, actor, slug, dataset_id, "forecast_run")
             job = self._resources_row(session, Job, dataset, job_id)
             if job.actor_id != actor:
@@ -101,13 +106,15 @@ class AutomationSQL:
 
     def manage_schedule(self, actor, slug, dataset_id, *, schedule_id=None, enabled=None, config=None):
         with self._Session.begin() as session:
-            lock_identity_writes(session)
+            lock_tenant_writes(session, slug)
             dataset = self._dataset_access(session, actor, slug, dataset_id, "dataset_manage")
             now = int(time())
             if schedule_id is not None:
                 row = self._resources_row(session, Schedule, dataset, schedule_id)
                 if enabled:
                     self._dataset_access(session, row.actor_id, slug, dataset_id, "dataset_manage")
+                    if not row.enabled:
+                        enforce_quota(session, dataset.organization_id, "automations")
                 row.enabled = enabled
                 if enabled:
                     row.next_at = next_slot(now, row.parameters["hour_utc"], row.parameters["weekday"])
@@ -115,8 +122,13 @@ class AutomationSQL:
                 count = session.scalar(select(func.count()).select_from(Schedule).where(*self._resource_scope(Schedule, dataset)))
                 if count >= 30:
                     raise ConflictError("Se alcanzó el límite de automatizaciones de este dataset.")
-                version = self._selected_version(session, dataset, config["parameters"]["version"])
+                enforce_quota(session, dataset.organization_id, "automations")
                 params = config["parameters"]
+                version = self._selected_version(session, dataset, None if params.get("version_policy") == "latest"
+                                                 else params["version"])
+                if version is None:
+                    raise OrganizationNotFound("Importa primero una versión validada.")
+                params = {**params, "version": version.version}
                 row = Schedule(organization_id=dataset.organization_id, dataset_id=dataset.id, version_id=version.id,
                                actor_id=actor, kind=config["kind"], parameters=params, cadence=config["cadence"],
                                next_at=next_slot(now, params["hour_utc"], params["weekday"]), enabled=True)
@@ -140,16 +152,46 @@ class AutomationSQL:
                 row.next_at = next_slot(now, row.parameters["hour_utc"], row.parameters["weekday"])
                 try:
                     dataset = self._dataset_access(session, row.actor_id, slug, row.dataset_id, "dataset_manage")
-                    version = self._selected_version(session, dataset, row.parameters["version"])
+                    latest = row.parameters.get("version_policy") == "latest"
+                    version = self._selected_version(session, dataset, None if latest else row.parameters["version"])
+                    if version is None:
+                        row.last_outcome = "no_valid_version"
+                        continue
+                    effective = {key: value for key, value in row.parameters.items()
+                                 if key not in ("hour_utc", "weekday", "version_policy")}
+                    effective["version"] = version.version
+                    row.last_version = version.version
+                    if row.kind == "forecast" and self._same_forecast(session, dataset, version, effective):
+                        row.last_outcome = "unchanged"
+                        continue
+                    key = f"schedule:{row.id}:{slot}"
                     self._enqueue(session, dataset, version, row.actor_id, row.kind,
-                                  {**row.parameters, "schedule_id": row.id}, f"schedule:{row.id}:{slot}", now)
+                                  {**effective, "schedule_id": row.id}, key, now, key)
+                    row.last_outcome = "queued"
                     created += 1
                 except (OrganizationNotFound, OrganizationAccessDenied):
                     row.enabled = False
+                except QuotaExceeded:
+                    row.last_outcome = "quota_reached"
                 except QueueFull:
                     # Leave this slot eligible, but allow other tenants to schedule.
                     row.next_at = slot
         return created
+
+    def _same_forecast(self, session, dataset, version, parameters):
+        # Compare the effective work, not the schedule identity or UTC slot.
+        rows = session.scalars(select(Job.parameters).where(
+            *self._resource_scope(Job, dataset), Job.version_id == version.id, Job.kind == "forecast",
+            Job.state.in_(("pending", "running", "completed"))))
+        schedule_keys = {"schedule_id", "hour_utc", "weekday", "version_policy"}
+        def matches(previous):
+            return {key: value for key, value in previous.items() if key not in schedule_keys} == parameters
+
+        if any(matches(previous) for previous in rows):
+            return True
+        historical = session.scalars(select(Run.parameters).where(
+            *self._resource_scope(Run, dataset), Run.version_id == version.id, Run.state == "ready"))
+        return any(matches(previous) for previous in historical)
 
     def _check_actor(self, session, job, slug):
         dataset = self._dataset_access(session, job.actor_id, slug, job.dataset_id, "forecast_run")
@@ -190,6 +232,7 @@ class AutomationSQL:
                     continue
                 job.state, job.lease_token, job.lease_until = "running", uuid4().hex, now + LEASE
                 job.attempts += 1
+                job.started_at = now
                 return {**job_view(job), "lease_token": job.lease_token, "slug": slug,
                         "actor_id": job.actor_id, "dataset_id": job.dataset_id}
         return None
@@ -313,7 +356,7 @@ class AutomationSQL:
 
     def add_alert_rule(self, actor, slug, dataset_id, values):
         with self._Session.begin() as session:
-            lock_identity_writes(session)
+            lock_tenant_writes(session, slug)
             dataset = self._dataset_access(session, actor, slug, dataset_id, "dataset_manage")
             if session.scalar(select(func.count()).select_from(Rule).where(*self._resource_scope(Rule, dataset))) >= 30:
                 raise ConflictError("Se alcanzó el límite de reglas de este dataset.")
@@ -324,7 +367,7 @@ class AutomationSQL:
 
     def update_alert_resource(self, actor, slug, dataset_id, model, identifier, value):
         with self._Session.begin() as session:
-            lock_identity_writes(session)
+            lock_tenant_writes(session, slug)
             dataset = self._dataset_access(session, actor, slug, dataset_id, "dataset_manage")
             row = self._resources_row(session, model, dataset, identifier)
             if model is Rule:

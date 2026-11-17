@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Operación empresarial · MarketPredict</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/commercial.js" defer></script>
+</head>
+<body>
+<header class="topbar"><div class="topbar-left"><a class="brand" href="/admin/">← Administración</a></div></header>
+<main id="commercialPanel" data-csrf="{{ csrf }}" data-writable="{{ 'true' if writable else 'false' }}">
+    <section class="dashboard-panel">
+        <div class="panel-heading"><h1>Operación empresarial</h1><button id="commercialRefresh" type="button" class="secondary-button">Actualizar</button></div>
+        <p id="commercialMessage" role="status"></p>
+        <p id="commercialServices"></p>
+        <h2>Organizaciones y consumo</h2><div id="commercialOrganizations" class="table-scroll"></div>
+        <button id="commercialNext" type="button" class="secondary-button" hidden>Siguiente página</button>
+        <button id="commercialFirst" type="button" class="secondary-button" hidden>Primera página</button>
+        <h2>Planes</h2><div id="commercialPlans"></div>
+        <h2>Trabajos recientes</h2><div id="commercialJobs" class="table-scroll"></div>
+        <h2>Actividad administrativa</h2><ul id="commercialEvents"></ul>
+    </section>
+</main>
+</body>
+</html>

@@ -68,3 +68,22 @@ jobs:
       - run: >-
           python -m pytest -q -rs tests/test_repository_contract.py tests/test_identity_migration.py
           tests/test_account.py tests/test_security_1c.py tests/test_organizations.py tests/test_enterprise_datasets.py
+      - name: Isolated commercial staging smoke
+        run: |
+          python - <<'PY'
+          import os
+          import subprocess
+          import sys
+          from sqlalchemy import create_engine
+          from sqlalchemy.engine import make_url
+
+          url = make_url(os.environ["TEST_POSTGRES_URL"])
+          if url.host != "127.0.0.1" or url.database != "marketpredict_test":
+              raise RuntimeError("Expected the local CI service database")
+          admin = create_engine(url, isolation_level="AUTOCOMMIT")
+          with admin.connect() as conn:
+              conn.exec_driver_sql("CREATE DATABASE marketpredict_sprint5_staging")
+          admin.dispose()
+          env = {**os.environ, "DATABASE_URL": url.set(database="marketpredict_sprint5_staging").render_as_string(hide_password=False)}
+          subprocess.run([sys.executable, "-m", "scripts.staging_smoke"], env=env, check=True, timeout=240)
+          PY

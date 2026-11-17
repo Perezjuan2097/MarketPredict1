@@ -11,6 +11,7 @@
     <div class="topbar-left"><a href="/" class="brand"><span class="brand-mark">M</span><span>MarketPredict</span></a></div>
     <div class="topbar-right">
         {% if view == "panel" %}
+        <a class="secondary-button" href="{{ url_for('commercial.panel') }}">Operación empresarial</a>
         <form method="post" action="{{ url_for('admin.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-button" type="submit">Cerrar sesión</button></form>
         {% endif %}
     </div>

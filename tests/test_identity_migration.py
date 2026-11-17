@@ -74,7 +74,14 @@ def test_postgres_repairs_stamped_partial_installation(connection, monkeypatch):
     command.stamp(cfg, "20261115_identity_keys")
     command.upgrade(cfg, "head")
     command.upgrade(cfg, "head")
-    assert MigrationContext.configure(connection).get_current_revision() == "20261122_enterprise_automation"
+    assert MigrationContext.configure(connection).get_current_revision() == "20261123_enterprise_commercial"
+    assert tuple(connection.exec_driver_sql("SELECT name FROM enterprise_plans ORDER BY name").scalars()) == (
+        "Enterprise", "Pilot", "Professional", "Starter")
+    for table in ("enterprise_plans", "enterprise_plan_assignments", "enterprise_worker_heartbeats",
+                  "enterprise_commercial_events"):
+        assert connection.exec_driver_sql(
+            f"SELECT relrowsecurity FROM pg_class WHERE oid = '{table}'::regclass"
+        ).scalar_one()
     assert sa.inspect(connection).has_table("auth_sessions")
     assert sa.inspect(connection).has_table("forecast_emission_saves")
     assert connection.exec_driver_sql(

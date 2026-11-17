@@ -1,5 +1,7 @@
 """Organization-scoped dataset persistence and descriptive aggregates."""
-from sqlalchemy import func, insert, select
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import delete, func, insert, select
 
 from app.models.orm import (
     EnterpriseDataset as Dataset, EnterpriseDatasetImport as Import, EnterpriseDatasetQuality as Quality,
@@ -8,7 +10,8 @@ from app.models.orm import (
 )
 from app.repositories.base import ConflictError
 from app.repositories.organization_policy import OrganizationNotFound
-from app.repositories.organization_sql import lock_identity_writes
+from app.repositories.commercial_sql import _plan, enforce_import_quota, enforce_quota, event
+from app.repositories.organization_sql import lock_tenant_writes
 from app.services.dataset_imports import amount, contract_for
 
 
@@ -40,8 +43,9 @@ class DatasetSQL:
 
     def create_dataset(self, actor, slug, name):
         with self._Session.begin() as session:
-            lock_identity_writes(session)
+            lock_tenant_writes(session, slug)
             org, _ = self._organization_access(session, actor, slug, "dataset_manage")
+            enforce_quota(session, org.id, "datasets")
             row = Dataset(organization_id=org.id, owner_id=actor, name=name, archived=False,
                           currency=session.get(OrganizationSettings, org.id).currency)
             session.add(row)
@@ -50,7 +54,7 @@ class DatasetSQL:
 
     def update_dataset(self, actor, slug, dataset_id, *, name=None, archive=False):
         with self._Session.begin() as session:
-            lock_identity_writes(session)
+            lock_tenant_writes(session, slug)
             dataset = self._dataset_access(session, actor, slug, dataset_id,
                                            "dataset_delete" if archive else "dataset_manage")
             if archive:
@@ -58,6 +62,45 @@ class DatasetSQL:
             else:
                 dataset.name = name
             return _dataset(dataset)
+
+    def purge_archived_dataset(self, actor, slug, dataset_id):
+        from app.models.orm import (
+            EnterpriseAlert, EnterpriseAlertRule, EnterpriseAutomation, EnterpriseForecastRun, EnterpriseJob,
+        )
+        with self._Session.begin() as session:
+            lock_tenant_writes(session, slug)
+            org, _ = self._organization_access(session, actor, slug, "dataset_delete")
+            dataset = session.scalar(select(Dataset).where(
+                Dataset.organization_id == org.id, Dataset.id == dataset_id, Dataset.archived.is_(True)))
+            if dataset is None:
+                raise OrganizationNotFound("Dataset archivado no encontrado.")
+            now = datetime.now(timezone.utc)
+            month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            _, limits = _plan(session, org.id, lock=True)
+            archived = dataset.updated_at
+            if archived.tzinfo is None:
+                archived = archived.replace(tzinfo=timezone.utc)
+            if archived + timedelta(days=limits["retention_days"]) > now:
+                raise ConflictError("El dataset todavía está dentro del período de retención.")
+            version_ids = self._versions(dataset).with_only_columns(Version.id)
+            if session.scalar(select(Import.version_id).where(
+                    Import.organization_id == org.id, Import.version_id.in_(version_ids),
+                    Import.uploaded_at >= month).limit(1)) is not None:
+                raise ConflictError("Hay importaciones del período de cuota vigente.")
+            from sqlalchemy import or_
+            if session.scalar(select(EnterpriseJob.id).where(
+                    EnterpriseJob.organization_id == org.id, EnterpriseJob.dataset_id == dataset.id,
+                    or_(EnterpriseJob.state.in_(("pending", "running")),
+                        (EnterpriseJob.kind == "forecast") & (EnterpriseJob.created_at >= month))).limit(1)) is not None:
+                raise ConflictError("Hay trabajos activos o pronósticos del período de cuota vigente.")
+            for model in (EnterpriseAlert, EnterpriseAlertRule, EnterpriseJob, EnterpriseAutomation,
+                          EnterpriseForecastRun):
+                session.execute(delete(model).where(model.organization_id == org.id, model.dataset_id == dataset.id))
+            for model in (Row, Quality, Schema, Import):
+                session.execute(delete(model).where(model.organization_id == org.id, model.version_id.in_(version_ids)))
+            session.execute(delete(Version).where(Version.organization_id == org.id, Version.dataset_id == dataset.id))
+            session.delete(dataset)
+            event(session, "archived_dataset_purged", actor, org.id, str(dataset_id))
 
     def dataset_import_scope(self, actor, slug, dataset_id):
         with self._Session() as session:
@@ -68,7 +111,7 @@ class DatasetSQL:
 
     def save_dataset_import(self, actor, slug, dataset_id, scope, provenance, parsed):
         with self._Session.begin() as session:
-            lock_identity_writes(session)
+            lock_tenant_writes(session, slug)
             dataset = self._dataset_access(session, actor, slug, dataset_id, "dataset_import")
             if scope["organization_id"] != dataset.organization_id:
                 raise OrganizationNotFound("Dataset no encontrado.")
@@ -78,6 +121,7 @@ class DatasetSQL:
             current = last.version if last else 0
             if current != scope["base_version"]:
                 raise ConflictError("El dataset cambió. Genera una nueva vista previa.")
+            enforce_import_quota(session, dataset.organization_id, parsed["records"])
             version = Version(organization_id=dataset.organization_id, dataset_id=dataset.id,
                               version=current + 1, status="ready")
             session.add(version)

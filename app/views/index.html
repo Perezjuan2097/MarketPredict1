@@ -425,6 +425,7 @@
                                     <label>Trabajo<select name="kind"><option value="forecast">Pronóstico (usa el formulario anterior)</option><option value="indicators">Actualizar indicadores</option><option value="evaluation">Evaluar pronóstico vencido</option><option value="report">Generar reporte</option></select></label>
                                     <label>Identificador de pronóstico (evaluación o reporte)<input name="run_id" type="number" min="1"></label>
                                     <label>Fechas sin actividad para evaluación (AAAA-MM-DD, separadas por coma)<input name="zero_dates" maxlength="200"></label>
+                                    <label>Versión para automatizar<select name="version_policy"><option value="fixed">Fija</option><option value="latest">Última validada</option></select></label>
                                     <label>Frecuencia<select name="cadence"><option value="daily">Diaria</option><option value="weekly">Semanal</option></select></label>
                                     <label>Hora UTC<input name="hour" type="number" min="0" max="23" value="7"></label>
                                     <label>Día semanal (0 = lunes)<input name="weekday" type="number" min="0" max="6" value="0"></label>

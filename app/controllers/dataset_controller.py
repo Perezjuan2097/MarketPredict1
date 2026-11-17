@@ -98,6 +98,16 @@ def archive(repo, actor, slug, dataset_id):
     return "", 204
 
 
+@dataset_bp.post("/<int:dataset_id>/purge")
+@dataset_guarded
+def purge(repo, actor, slug, dataset_id):
+    confirmed = json_object().get("confirm_id")
+    if type(confirmed) is not int or confirmed != dataset_id:
+        raise InvalidInput("Confirma el identificador exacto del dataset.")
+    repo.purge_archived_dataset(actor, slug, dataset_id)
+    return "", 204
+
+
 @dataset_bp.get("/<int:dataset_id>/versions")
 @dataset_guarded
 def history(repo, actor, slug, dataset_id):

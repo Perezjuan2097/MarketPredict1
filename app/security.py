@@ -10,7 +10,7 @@ from hashlib import sha256
 from ipaddress import ip_address, ip_network
 from threading import Lock
 
-from flask import abort, current_app, jsonify, request, session
+from flask import abort, current_app, g, jsonify, request, session
 from werkzeug.exceptions import HTTPException
 
 log = logging.getLogger("marketpredict")
@@ -93,7 +93,7 @@ def client_ip():
 
 def audit(event, user_id=None, target_id=None):
     log.info("security_event=%s endpoint=%s actor_id=%s target_id=%s",
-             event, request.endpoint, user_id, target_id)
+             event, request.endpoint, user_id, target_id, extra={"request_id": getattr(g, "request_id", None)})
 
 
 def json_object():

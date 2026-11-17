@@ -489,6 +489,8 @@ class EnterpriseAutomation(Base):
     parameters: Mapped[dict] = mapped_column(JSON, nullable=False)
     cadence: Mapped[str] = mapped_column(String(8), nullable=False)
     next_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    last_outcome: Mapped[Optional[str]] = mapped_column(String(24))
+    last_version: Mapped[Optional[int]] = mapped_column(Integer)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False)
     created_at: Mapped[datetime] = _created()
     __table_args__ = (_automation_version_fk(), Index("ix_enterprise_automations_due", "enabled", "next_at"))
@@ -515,6 +517,8 @@ class EnterpriseJob(Base):
     lease_token: Mapped[Optional[str]] = mapped_column(String(40))
     created_at: Mapped[datetime] = _created()
     finished_at: Mapped[Optional[int]] = mapped_column(BigInteger)
+    started_at: Mapped[Optional[int]] = mapped_column(BigInteger)
+    request_id: Mapped[Optional[str]] = mapped_column(String(64))
     __table_args__ = (
         _automation_version_fk(),
         UniqueConstraint("organization_id", "idempotency_key"),
@@ -558,3 +562,33 @@ class EnterpriseAlert(Base):
         UniqueConstraint("rule_id", "event_key"),
         Index("ix_enterprise_alerts_scope", "organization_id", "dataset_id", "state"),
     )
+
+
+class EnterprisePlan(Base):
+    __tablename__ = "enterprise_plans"
+    name: Mapped[str] = mapped_column(String(20), primary_key=True)
+    limits: Mapped[dict] = mapped_column(JSON, nullable=False)
+
+
+class EnterpriseSubscription(Base):
+    """Administrative assignment of limits. No billing data."""
+    __tablename__ = "enterprise_plan_assignments"
+    organization_id: Mapped[int] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), primary_key=True)
+    plan_name: Mapped[str] = mapped_column(ForeignKey("enterprise_plans.name"), nullable=False)
+
+
+class EnterpriseWorkerHeartbeat(Base):
+    __tablename__ = "enterprise_worker_heartbeats"
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    state: Mapped[str] = mapped_column(String(12), nullable=False)
+    seen_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+
+class CommercialEvent(Base):
+    __tablename__ = "enterprise_commercial_events"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    kind: Mapped[str] = mapped_column(String(40), nullable=False)
+    actor_id: Mapped[Optional[int]] = mapped_column(Integer)
+    organization_id: Mapped[Optional[int]] = mapped_column(Integer)
+    reference: Mapped[Optional[str]] = mapped_column(String(40))
+    created_at: Mapped[datetime] = _created()

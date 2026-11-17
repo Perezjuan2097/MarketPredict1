@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+# Select this alternate path only for the explicitly approved isolated rehearsal.
+services:
+  - type: web
+    name: marketpredict-s5-staging-web
+    runtime: python
+    plan: starter
+    autoDeployTrigger: 'off'
+    buildCommand: pip install -c constraints-py312.txt -r requirements.txt
+    startCommand: gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 1 --threads 4
+    healthCheckPath: /api/ready
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: AUTO_CREATE_TABLES
+        value: 'false'
+      - key: ENTERPRISE_FORECAST_CONCURRENCY
+        value: '1'
+  - type: worker
+    name: marketpredict-s5-staging-worker
+    runtime: python
+    plan: standard
+    autoDeployTrigger: 'off'
+    buildCommand: pip install -c constraints-py312.txt -r requirements.txt
+    startCommand: python -m scripts.enterprise_worker
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: ENTERPRISE_FORECAST_CONCURRENCY
+        value: '1'
+      - key: ENTERPRISE_WORKER_MEMORY_MIB
+        value: '768'
+databases:
+  - name: marketpredict-s5-staging-db
+    databaseName: marketpredict_sprint5_staging
+    plan: basic-256mb
+    postgresMajorVersion: '17'
+    ipAllowList: []
