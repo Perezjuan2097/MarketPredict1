@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 from app.repositories.base import DUE_STATUSES, ConflictError, DuplicateError, NotFoundError, identity_key, q2
+from app.repositories.base import AdminAccessDenied, has_admin_role, validate_admin_change
 
 
 def _now():
@@ -41,11 +42,26 @@ class MemoryRepository:
                 return dict(u)
         return None
 
-    def set_user_blocked(self, user_id, blocked):
+    def list_users(self, after_id, limit):
         with self._lock:
-            if user_id not in self.users:
+            fields = ("id", "username", "role", "is_blocked")
+            ids = sorted(uid for uid in self.users if uid > after_id)[:limit]
+            return [{field: self.users[uid][field] for field in fields} for uid in ids]
+
+    def admin_update_user(self, user_id, actor_id, *, role=None, blocked=None):
+        with self._lock:
+            actor = self.users.get(actor_id)
+            if actor_id is not None and not has_admin_role(actor):
+                raise AdminAccessDenied()
+            target = self.users.get(user_id)
+            if target is None:
                 return False
-            self.users[user_id]["is_blocked"] = blocked
+            active = sum(has_admin_role(user) for user in self.users.values())
+            validate_admin_change(actor, target, role=role, blocked=blocked, active_admins=active)
+            if role is not None:
+                target["role"] = role
+            if blocked is not None:
+                target["is_blocked"] = blocked
             return True
 
     def touch_login(self, user_id):

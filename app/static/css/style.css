@@ -1209,7 +1209,7 @@ body.dark-mode .panel-heading h2 { color: var(--text); }
     color: var(--text);
     box-shadow: var(--shadow);
 }
-.account-menu button {
+.account-menu :is(button, a) {
     display: block;
     width: 100%;
     padding: 8px 10px;
@@ -1220,8 +1220,9 @@ body.dark-mode .panel-heading h2 { color: var(--text); }
     cursor: pointer;
     font: inherit;
     text-align: left;
+    text-decoration: none;
 }
-.account-menu button:hover, .account-menu button:focus-visible { background: var(--border); }
+.account-menu :is(button, a):is(:hover, :focus-visible) { background: var(--border); }
 .account-menu-error:not(:empty) { padding: 8px 10px; }
 #accountTitle { scroll-margin-top: 150px; }
 .auth-dialog { border: 1px solid var(--border, #dfe5ec); border-radius: 16px; padding: 22px; width: min(420px, 92vw);

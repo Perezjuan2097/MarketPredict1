@@ -23,11 +23,11 @@
         {% endwith %}
         {% if view == "login" %}
             {% if not configured %}
-            <div class="empty-state">El acceso administrativo está desactivado. Defina la variable de entorno <code>ADMIN_TOKEN</code> para habilitarlo.</div>
+            <div class="empty-state">El acceso de recuperación está desactivado. Inicia sesión con tu cuenta administradora en MarketPredict.</div>
             {% else %}
             <form method="post" class="community-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="password" name="token" placeholder="Token de administrador" autocomplete="current-password" required>
+                <label>Token de recuperación<input type="password" name="token" autocomplete="current-password" required></label>
                 <button class="primary-button" type="submit">Entrar</button>
             </form>
             {% endif %}
@@ -40,9 +40,47 @@
                 <label>Versión del modelo<input name="version" value="{{ cfg.model_version }}" maxlength="40" required></label>
                 <button class="primary-button" type="submit">Guardar configuración</button>
             </form>
-            <p class="note">Los usuarios, la moderación, el estado de las APIs y las ejecuciones de modelos se añadirán en las fases 4 a 6.</p>
         {% endif %}
     </section>
+    {% if view == "panel" %}
+    <section class="dashboard-panel" aria-labelledby="adminUsersTitle">
+        <h2 id="adminUsersTitle">Usuarios</h2>
+        {% if not accounts_available %}
+        <p>El almacenamiento de cuentas no está disponible.</p>
+        {% elif users %}
+        <div class="table-scroll">
+            <table class="table">
+                <thead><tr><th>ID</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td><td>{{ user.username }}</td><td>{{ user.role }}</td>
+                    <td>{{ "Bloqueado" if user.is_blocked else "Activo" }}</td>
+                    <td>
+                        {% if user.id != actor_id %}
+                        <form method="post" action="{{ url_for('admin.block_user', uid=user.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="blocked" value="{{ 'false' if user.is_blocked else 'true' }}">
+                            <button class="secondary-button" type="submit">{{ "Desbloquear" if user.is_blocked else "Bloquear" }}</button>
+                        </form>
+                        <form method="post" action="{{ url_for('admin.role_user', uid=user.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="role" value="{{ 'user' if user.role == 'admin' else 'admin' }}">
+                            <button class="secondary-button" type="submit">{{ "Cambiar a usuario" if user.role == "admin" else "Promover a administrador" }}</button>
+                        </form>
+                        {% else %}Tu cuenta{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if next_user %}<a href="{{ url_for('admin.panel', after=next_user) }}">Usuarios siguientes</a>{% endif %}
+        {% else %}
+        <p>No hay más usuarios.</p>
+        {% endif %}
+    </section>
+    {% endif %}
 </main>
 </body>
 </html>

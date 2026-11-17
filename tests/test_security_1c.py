@@ -103,6 +103,42 @@ def test_session_expiration_and_cookie_flags(app):
     assert client.get("/api/me/portfolios", base_url="https://localhost").status_code == 401
 
 
+def test_admin_account_uses_live_role_and_role_changes_require_csrf(app, caplog):
+    existing, member, recovery, spare = (app.test_client() for _ in range(4))
+    admin, admin_headers = register(existing, "role_admin")
+    regular, regular_headers = register(member, "role_member")
+    extra, _ = register(spare, "role_spare")
+    repo = app.config["REPOSITORY"]
+    path = lambda uid: f"/admin/api/users/{uid}/role"
+    assert existing.get("/admin/").status_code == 302
+    assert member.post(path(regular["id"]), headers=regular_headers, json={"role": "admin"}).status_code == 403
+    assert member.get("/admin/api/status").status_code == 403
+    recovery_headers = admin_login(recovery)
+    assert recovery.get("/api/auth/me").json["user"] is None
+    assert recovery.post(path(admin["id"]), json={"role": "admin"}).status_code == 403
+    assert recovery.post(path(admin["id"]), headers=recovery_headers, json={"role": "owner"}).status_code == 400
+    with caplog.at_level("INFO", logger="marketpredict"):
+        assert recovery.post(path(admin["id"]), headers=recovery_headers, json={"role": "admin"}).status_code == 200
+    assert "security_event=account_role_admin" in caplog.text
+    assert existing.get("/admin/").status_code == 200
+    assert b"adminUsersTitle" in existing.get("/admin/").data
+    assert repo.get_user(admin["id"])["password_hash"].encode() not in existing.get("/admin/").data
+    assert existing.get("/api/auth/me").json["can_access_broker"] is False
+    assert existing.post(path(admin["id"]), headers=admin_headers, json={"role": "user"}).status_code == 409
+    assert recovery.post(path(admin["id"]), headers=recovery_headers, json={"role": "user"}).status_code == 409
+    assert recovery.post(f"/admin/api/users/{admin['id']}/block", headers=recovery_headers,
+                         json={"blocked": True}).status_code == 409
+    assert existing.post(path(extra["id"]), data={"role": "admin", "csrf_token": admin_headers["X-CSRF-Token"]}).status_code == 302
+    assert spare.get("/admin/api/status").status_code == 200
+    assert spare.get("/api/auth/me").json["user"]["role"] == "admin"
+    assert recovery.post(path(admin["id"]), headers=recovery_headers, json={"role": "user"}).status_code == 200
+    assert existing.get("/admin/api/status").status_code == 403
+    assert existing.get("/api/auth/me").json["user"]["id"] == admin["id"]
+    assert recovery.post(f"/admin/api/users/{regular['id']}/block", headers=recovery_headers,
+                         json={"blocked": True}).status_code == 200
+    assert member.get("/api/auth/me").json["user"] is None
+
+
 def test_block_and_unblock_require_admin_and_revoke_copied_grant(app, caplog):
     member, administrator = app.test_client(), app.test_client()
     user, headers = register(member, "member")

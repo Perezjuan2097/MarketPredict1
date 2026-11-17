@@ -35,6 +35,7 @@
             <button type="button" id="authButton" class="start-button">Empiece</button>
             <div id="accountMenu" class="account-menu" hidden>
                 <button id="accountMenuProfile" type="button" data-i18n="myAccount">Mi cuenta</button>
+                <a id="accountMenuAdmin" href="{{ url_for('admin.panel') }}" data-i18n="administration" hidden>Administración</a>
                 <button id="accountMenuLogout" type="button" data-i18n="signOut">Cerrar sesión</button>
             </div>
             <div id="accountMenuError" class="account-menu-error" role="alert"></div>
@@ -263,7 +264,6 @@
                 <button class="primary-button" type="button" data-goto="summary" data-focus="#report">Generar informe del activo</button>
                 <button class="secondary-button" type="button" data-goto="community">Ir a la comunidad</button>
                 <button class="secondary-button" type="button" data-goto="cuenta">Mi cuenta</button>
-                <a class="secondary-button" href="/admin/login" style="text-decoration:none">Panel de administración</a>
             </div>
             <p class="panel-description" style="margin-top:16px">Las predicciones son estimaciones estadísticas y no constituyen asesoría financiera.</p>
         </div>

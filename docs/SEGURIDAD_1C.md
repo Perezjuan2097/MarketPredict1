@@ -16,20 +16,28 @@
 
 - Las cuentas mantienen sus credenciales y hashes existentes. Las sesiones viejas
   requieren nuevo inicio de sesión. La concesión de usuario vence a los siete días y
-  la administrativa a una hora en el servidor. No hay renovación automática.
+  la de recuperación administrativa a una hora en el servidor. No hay renovación automática.
   La cookie usa `HttpOnly`, `SameSite=Lax` y `Secure` en producción.
 - Las mutaciones de cuenta, administración, comunidad, historial y la generación
   de informes comprueban CSRF. `/api/analyze` sigue siendo un cálculo público sin
   escritura persistente. Las operaciones privadas existentes comprueban la cuenta
   en el servidor. Una cartera ajena responde como un recurso no encontrado.
-- Administración conserva el inicio con `ADMIN_TOKEN`, separado de las cuentas
-  ordinarias. Cambiar ese secreto invalida sus concesiones. Usar un valor aleatorio
-  de alta entropía y una `SECRET_KEY` independiente. El endpoint protegido
-  `POST /admin/api/users/<id>/block` acepta `{"blocked": true}` o `false` y exige
-  sesión administrativa y CSRF. Bloquear revoca las sesiones de la cuenta.
+- Una cuenta activa con rol `admin` usa su sesión habitual para entrar a
+  `/admin/`. El servidor consulta el rol y estado vigentes. El acceso de
+  recuperación con `ADMIN_TOKEN` tiene su propia concesión, sin ID de usuario.
+  Cambiar ese secreto invalida las concesiones de recuperación.
+- El panel permite consultar cuentas y cambiar el rol o estado de otras cuentas.
+  Las operaciones exigen sesión administrativa y CSRF. Las rutas
+  `POST /admin/api/users/<id>/block` y `POST /admin/api/users/<id>/role`
+  aceptan respectivamente `{"blocked": true}` o `false`, y
+  `{"role": "admin"}` o `"user"`. El repositorio revalida al administrador
+  y protege al último administrador activo dentro de la misma transacción.
+  Bloquear revoca las sesiones de la cuenta. Cambiar el rol conserva la sesión
+  y la autorización cambia en la siguiente solicitud.
 - `BROKER_USER_IDS` es una lista de IDs de cuentas comprobadas por el operador.
   Revisar esa lista antes de cada restauración o sustitución de la base. Los valores
-  de `BROKER_USERS` ya no conceden acceso. La cuenta administrativa mantiene acceso.
+  de `BROKER_USERS` ya no conceden acceso. La sesión de recuperación conserva
+  su acceso al bróker. Una cuenta con rol `admin` se rige también por la lista.
 - `TRUSTED_PROXY_CIDRS` está vacía por defecto. Configurar exclusivamente las redes
   de proxies que controlen el encadenamiento de IP y evitar acceso directo a la app.
   Una cabecera malformada o demasiado larga se ignora. Mientras no se configure un
@@ -43,6 +51,58 @@
   contraseñas, tokens, correo, IP ni datos de cartera. El almacenamiento y la retención
   de logs quedan a cargo del operador. No se promete protección absoluta contra
   enumeración por registro, cuya respuesta de alta exitosa sigue siendo distinta.
+
+## Activación inicial de una cuenta administradora
+
+El esquema ya dispone de `public.users.role`. La activación inicial requiere
+un cambio de datos autorizado por el operador.
+
+1. Confirma el proyecto de Supabase y comprueba por TLS que la revisión actual es
+   `20261117_auth_sessions`. Busca el nombre exacto y contrasta el ID con el
+   registro de la cuenta autorizada.
+
+   ```sql
+   BEGIN READ ONLY;
+   SELECT version_num FROM public.alembic_version;
+   SELECT id, role, is_blocked
+   FROM public.users
+   WHERE username COLLATE "C" = 'Juan_Perez';
+   ROLLBACK;
+   ```
+
+2. Tras recibir autorización explícita para ese ID, sustituye
+   `<ID_CONFIRMADO>` por el entero verificado. Ejecuta el bloque en una única
+   transacción. Si la fila falta o está bloqueada, PostgreSQL aborta la operación.
+   Una cuenta ya promovida permanece en ese rol.
+
+   ```sql
+   BEGIN;
+   SET LOCAL lock_timeout = '5s';
+   LOCK TABLE public.users IN SHARE ROW EXCLUSIVE MODE;
+   DO $activation$
+   DECLARE
+       account_id integer := <ID_CONFIRMADO>;
+   BEGIN
+       IF NOT EXISTS (
+           SELECT 1 FROM public.users
+           WHERE id = account_id AND username COLLATE "C" = 'Juan_Perez'
+             AND NOT is_blocked AND role IN ('user', 'admin')
+       ) THEN
+           RAISE EXCEPTION 'La cuenta confirmada no está disponible para activación';
+       END IF;
+
+       UPDATE public.users
+       SET role = 'admin'
+       WHERE id = account_id AND role = 'user';
+   END;
+   $activation$;
+   COMMIT;
+   ```
+
+3. Comprueba en solo lectura que ese ID tiene rol `admin` y sigue activo.
+   Registra el ID y la hora de la intervención en el registro operativo.
+   Con la versión que integra roles publicada, recarga MarketPredict y abre
+   **Administración** desde el menú de la cuenta. La sesión habitual se conserva.
 
 ## Dependencias
 

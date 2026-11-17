@@ -16,6 +16,24 @@ class NotFoundError(Exception):
     pass
 
 
+class AdminAccessDenied(Exception):
+    pass
+
+
+def has_admin_role(user):
+    return bool(user and user["role"] == "admin" and not user["is_blocked"])
+
+
+def validate_admin_change(actor, target, *, role, blocked, active_admins):
+    if role is not None and role not in ("user", "admin"):
+        raise ValueError("Rol no válido.")
+    if actor and actor["id"] == target["id"] and (
+            (role is not None and role != target["role"]) or blocked is True):
+        raise ConflictError("No puedes cambiar tu propio rol ni bloquear tu cuenta.")
+    if has_admin_role(target) and active_admins < 2 and (role == "user" or blocked is True):
+        raise ConflictError("Debe quedar al menos un administrador activo.")
+
+
 def identity_key(value):
     """Clave Unicode uniforme para memoria y SQL. El campo visible conserva su grafía."""
     return value.strip().lower()

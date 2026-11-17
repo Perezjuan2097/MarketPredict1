@@ -3,14 +3,14 @@ from flask import Blueprint, current_app, jsonify
 
 from app.repositories import factory
 from app.security import api_error, audit
-from app.session_store import is_admin, user_id
+from app.session_store import is_recovery_admin, user_id
 from app.services.broker_service import AlpacaPaper, BrokerUnavailable, allowed_users, user_allowed
 
 broker_bp = Blueprint("broker", __name__)
 
 
 def broker_access_allowed(user):
-    return is_admin() or user_allowed(user)
+    return is_recovery_admin() or user_allowed(user)
 
 
 def _current_user():

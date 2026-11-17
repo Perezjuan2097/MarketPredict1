@@ -4,9 +4,10 @@ import os
 from uuid import uuid4
 import tempfile
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 
-from app.repositories.base import ConflictError, DuplicateError, NotFoundError
+from app.repositories.base import AdminAccessDenied, ConflictError, DuplicateError, NotFoundError
 from app.repositories.memory import MemoryRepository
 
 HAS_SA = importlib.util.find_spec("sqlalchemy") is not None
@@ -37,6 +38,29 @@ class RepoContract:
             self.repo.create_user("nuevo", "ANA@x.co", "h")
         self.assertEqual(self.repo.find_user("ANA@X.CO")["id"], self.u1["id"])
         self.assertEqual(self.repo.find_user("Beto")["id"], self.u2["id"])
+
+    def test_admin_changes_recheck_actor_and_preserve_an_active_admin(self):
+        first, second = self.u1["id"], self.u2["id"]
+        for uid in (first, second):
+            self.assertTrue(self.repo.admin_update_user(uid, None, role="admin"))
+
+        def demote(actor, target):
+            try:
+                return self.repo.admin_update_user(target, actor, role="user")
+            except AdminAccessDenied:
+                return False
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            changes = [executor.submit(demote, first, second), executor.submit(demote, second, first)]
+            self.assertEqual(sorted(task.result(timeout=10) for task in changes), [False, True])
+        users = self.repo.list_users(0, 50)
+        active = [user["id"] for user in users if user["role"] == "admin" and not user["is_blocked"]]
+        self.assertEqual(len(active), 1)
+        with self.assertRaises(ConflictError):
+            self.repo.admin_update_user(active[0], None, blocked=True)
+        with self.assertRaises(ConflictError):
+            self.repo.admin_update_user(active[0], None, role="user")
+        self.assertTrue(all("password_hash" not in user for user in users))
         self.assertIsNone(self.repo.find_user("nadie"))
         self.assertEqual(self.repo.get_user(self.u1["id"])["username"], "ana")
         self.assertIsNone(self.repo.get_user(9999))

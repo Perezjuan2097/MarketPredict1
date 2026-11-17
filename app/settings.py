@@ -30,7 +30,7 @@ class Settings:
         self.SESSION_COOKIE_SAMESITE = "Lax"
         self.SESSION_COOKIE_SECURE = env == "production"
         self.MAX_CONTENT_LENGTH = 1 * 1024 * 1024  # 1 MB por petición
-        self.ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "")  # provisional hasta tener roles en BD (Fase 4)
+        self.ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "")  # acceso independiente de recuperación
         self.RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "120"))
         self.PERMANENT_SESSION_LIFETIME = timedelta(days=7)
         self.ADMIN_SESSION_LIFETIME = timedelta(hours=1)

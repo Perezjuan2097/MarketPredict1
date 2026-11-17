@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const translations = {
         es: {
             products: "Productos", community: "Comunidad", markets: "Mercados", results: "Resultados", brokers: "Brókers", more: "Más",
+            myAccount: "Mi cuenta", administration: "Administración", signOut: "Cerrar sesión",
             searchPlaceholder: "Buscar activos, símbolos o mercados", start: "Empiece", summary: "Resumen", news: "Noticias",
             technical: "Datos técnicos", seasonal: "Estacionales", components: "Componentes", options: "Opciones",
             analyzeTitle: "Analiza el comportamiento de un activo", analyze: "Analizar", historical: "Comportamiento histórico",
@@ -24,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         en: {
             products: "Products", community: "Community", markets: "Markets", results: "Results", brokers: "Brokers", more: "More",
+            myAccount: "My account", administration: "Administration", signOut: "Sign out",
             searchPlaceholder: "Search assets, symbols or markets", start: "Get started", summary: "Summary", news: "News",
             technical: "Technical data", seasonal: "Seasonal", components: "Components", options: "Options",
             analyzeTitle: "Analyze an asset's behavior", analyze: "Analyze", historical: "Historical performance",
@@ -613,6 +615,7 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.removeAttribute("aria-expanded");
         }
         $('[data-nav="brokers"]').hidden = !canAccessBroker;
+        $("#accountMenuAdmin").hidden = currentUser?.role !== "admin";
         if (exists("#accountLoggedOut")) $("#accountLoggedOut").hidden = !!currentUser;
         if (exists("#accountContent")) $("#accountContent").hidden = !currentUser;
         if (exists("#logoutButton")) $("#logoutButton").hidden = !currentUser;
@@ -772,6 +775,7 @@ document.addEventListener("DOMContentLoaded", () => {
             activateTab("cuenta");
             $("#accountTitle")?.focus();
         });
+        $("#accountMenuAdmin").addEventListener("click", () => setAccountMenu(false));
         $("#accountMenuLogout")?.addEventListener("click", () => {
             setAccountMenu(false, true);
             return logout();

@@ -9,7 +9,7 @@ const script = fs.readFileSync(path.join(app, "static/js/script.js"), "utf8");
 const page = fs.readFileSync(path.join(app, "views/index.html"), "utf8");
 const styles = fs.readFileSync(path.join(app, "static/css/style.css"), "utf8");
 
-async function fixture({ authenticated = true, brokerAllowed = false, hash = "", logoutOk = true } = {}) {
+async function fixture({ authenticated = true, brokerAllowed = false, hash = "", logoutOk = true, role = "user" } = {}) {
     const fixtureState = { focused: null, requests: [] };
 
     function element(attributes = {}) {
@@ -46,6 +46,7 @@ async function fixture({ authenticated = true, brokerAllowed = false, hash = "",
     const trigger = element();
     const menu = element({ hidden: "" });
     const profile = element();
+    const administration = element({ href: "/admin/", hidden: "" });
     const signOut = element();
     const error = element({ role: "alert" });
     const title = element({ tabindex: "-1" });
@@ -56,10 +57,11 @@ async function fixture({ authenticated = true, brokerAllowed = false, hash = "",
     const brokerLink = element({ href: "#brokers", hidden: "" });
     brokerLink.dataset.nav = "brokers";
     summary.classList.add("active-panel");
-    const wrapper = { contains: (target) => [trigger, menu, profile, signOut, error].includes(target) };
+    const wrapper = { contains: (target) => [trigger, menu, profile, administration, signOut, error].includes(target) };
     const nodes = {
         "#authButton": trigger, "#accountMenu": menu, "#accountMenuProfile": profile,
         "#accountMenuLogout": signOut, "#accountMenuError": error, "#accountDisclosure": wrapper,
+        "#accountMenuAdmin": administration,
         "#accountTitle": title, "#tabCuenta": account, "#tabSummary": summary, "#tabBrokers": brokerPanel,
         "#brokerContent": brokerContent, '[data-nav="brokers"]': brokerLink, "#pfEmpty": element(), "#pfArea": element()
     };
@@ -75,7 +77,7 @@ async function fixture({ authenticated = true, brokerAllowed = false, hash = "",
         ".main-nav a[data-nav]": [brokerLink]
     }[selector] || []);
     const responses = {
-        "/api/auth/me": [true, { user: authenticated ? { username: "Fixture" } : null,
+        "/api/auth/me": [true, { user: authenticated ? { username: "Fixture", role } : null,
             csrf: "fixture-csrf", persistence: true, can_access_broker: brokerAllowed }],
         "/api/auth/logout": [logoutOk, { csrf: "new-csrf" }],
         "/api/me/portfolios": [true, { portfolios: [] }],
@@ -96,7 +98,7 @@ async function fixture({ authenticated = true, brokerAllowed = false, hash = "",
     await document.emit("DOMContentLoaded");
     await new Promise(setImmediate);
     return { fixtureState, trigger, menu, profile, signOut, title, error, account, summary,
-        brokerPanel, brokerLink, dialog, document };
+        brokerPanel, brokerLink, administration, dialog, document };
 }
 
 test("the template uses native buttons and a hidden disclosure with an alert", () => {
@@ -194,4 +196,19 @@ test("broker deep link is fail-closed and anonymous account opens login", async 
     assert.equal(allowed.brokerLink.hidden, false);
     assert.equal(allowed.brokerPanel.classList.contains("active-panel"), true);
     assert.equal(allowed.fixtureState.requests.filter(({ url }) => url === "/api/broker/status").length, 1);
+});
+
+test("only an account administrator sees the administration link", async () => {
+    const anonymous = await fixture({ authenticated: false, brokerAllowed: true });
+    const member = await fixture();
+    assert.equal(anonymous.administration.hidden, true);
+    assert.equal(member.administration.hidden, true);
+    const admin = await fixture({ role: "admin" });
+    await admin.trigger.emit("click");
+    assert.equal(admin.administration.hidden, false);
+    await admin.administration.emit("click");
+    assert.equal(admin.menu.hidden, true);
+    await admin.trigger.emit("click");
+    await admin.signOut.emit("click");
+    assert.equal(admin.administration.hidden, true);
 });

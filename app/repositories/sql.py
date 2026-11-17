@@ -2,12 +2,13 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
 from app.models import orm
 from app.repositories.base import DUE_STATUSES, ConflictError, DuplicateError, NotFoundError, identity_key, q2
+from app.repositories.base import AdminAccessDenied, has_admin_role, validate_admin_change
 
 
 def _iso(value):
@@ -79,14 +80,38 @@ class SQLRepository:
                                                      orm.User.email_key == ident))).scalar_one_or_none()
             return _user(u) if u else None
 
-    def set_user_blocked(self, user_id, blocked):
-        from sqlalchemy import delete
+    def list_users(self, after_id, limit):
+        with self._Session() as s:
+            return [dict(row) for row in s.execute(
+                select(orm.User.id, orm.User.username, orm.User.role, orm.User.is_blocked)
+                .where(orm.User.id > after_id).order_by(orm.User.id).limit(limit)
+            ).mappings()]
 
+    def admin_update_user(self, user_id, actor_id, *, role=None, blocked=None):
         with self._Session.begin() as s:
-            result = s.execute(update(orm.User).where(orm.User.id == user_id).values(is_blocked=blocked))
-            if result.rowcount and blocked:
+            conn = s.connection()
+            # Serialize the authorization check and last-admin invariant across workers.
+            if conn.dialect.name == "postgresql":
+                conn.exec_driver_sql("LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE")
+            elif conn.dialect.name == "sqlite":
+                conn.exec_driver_sql("BEGIN IMMEDIATE")
+            actor = s.get(orm.User, actor_id) if actor_id is not None else None
+            actor_data = _user(actor) if actor else None
+            if actor_id is not None and not has_admin_role(actor_data):
+                raise AdminAccessDenied()
+            target = s.get(orm.User, user_id)
+            if target is None:
+                return False
+            active = s.scalar(select(func.count()).select_from(orm.User).where(
+                orm.User.role == "admin", orm.User.is_blocked.is_(False)))
+            validate_admin_change(actor_data, _user(target), role=role, blocked=blocked, active_admins=active)
+            if role is not None:
+                target.role = role
+            if blocked is not None:
+                target.is_blocked = blocked
+            if blocked:
                 s.execute(delete(orm.auth_sessions).where(orm.auth_sessions.c.user_id == user_id))
-            return bool(result.rowcount)
+            return True
 
     def touch_login(self, user_id):
         with self._Session() as s:

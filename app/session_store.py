@@ -93,6 +93,8 @@ def end_session():
 def start_session(*, user_id=None, admin=False):
     from secrets import token_urlsafe
 
+    if admin and user_id is not None:
+        raise ValueError("Una sesión de recuperación no puede pertenecer a una cuenta.")
     end_session()
     sid = token_urlsafe(32)
     lifetime = current_app.permanent_session_lifetime
@@ -119,7 +121,20 @@ def user_id():
     return grant["user_id"] if grant else None
 
 
-def is_admin():
+def is_recovery_admin():
     token = current_app.config.get("ADMIN_TOKEN")
-    return bool(token and (grant := auth_grant()) and grant["admin_key"]
+    return bool(token and (grant := auth_grant()) and grant["user_id"] is None and grant["admin_key"]
                 and compare_digest(grant["admin_key"], _admin_key(token)))
+
+
+def is_admin():
+    if is_recovery_admin():
+        return True
+    from app.repositories.base import has_admin_role
+    from app.repositories.factory import get_repo
+
+    uid = user_id()
+    if uid is None:
+        return False
+    repo = get_repo(current_app)
+    return bool(repo and has_admin_role(repo.get_user(uid)))
