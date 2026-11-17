@@ -9,17 +9,28 @@ log = logging.getLogger("marketpredict")
 
 def enable_rls(engine):
     """En PostgreSQL/Supabase activa Row Level Security en nuestras tablas (idempotente). Sin políticas,
-    la clave pública de Supabase no puede leer ni escribir; el backend (rol postgres) sigue funcionando."""
+    la clave pública de Supabase no puede leer ni escribir; el backend (rol postgres) sigue funcionando.
+
+    Falla cerrado: si no se puede activar, el error se propaga y la aplicación no usa esas tablas. Antes sólo
+    se registraba y las tablas recién creadas quedaban expuestas a ``anon``/``authenticated`` en Supabase."""
     if engine.dialect.name != "postgresql":
         return
     from sqlalchemy import text
     from app.models.orm import Base
-    try:
-        with engine.begin() as conn:
-            for name in Base.metadata.tables:  # nombres propios, no entrada de usuario
-                conn.execute(text(f'ALTER TABLE public."{name}" ENABLE ROW LEVEL SECURITY'))
-    except Exception as exc:
-        log.error("No se pudo activar RLS: %s", type(exc).__name__)
+    with engine.begin() as conn:
+        for name in Base.metadata.tables:  # nombres propios, no entrada de usuario
+            conn.execute(text(f'ALTER TABLE public."{name}" ENABLE ROW LEVEL SECURITY'))
+
+
+def auto_create_allowed(app, engine):
+    """En producción con PostgreSQL el esquema lo gobierna Alembic. ``create_all`` allí crea tablas sin
+    registrar la revisión, que es como la base de producción quedó con tablas Enterprise en 20261117."""
+    if not app.config.get("AUTO_CREATE_TABLES"):
+        return False
+    if engine.dialect.name == "postgresql" and app.config.get("ENV") == "production":
+        log.warning("AUTO_CREATE_TABLES se ignora en producción con PostgreSQL; aplique migraciones Alembic.")
+        return False
+    return True
 
 
 def get_repo(app):
@@ -31,7 +42,7 @@ def get_repo(app):
             from app.models.orm import Base
             from app.repositories.sql import SQLRepository
             engine = get_engine()
-            if app.config.get("AUTO_CREATE_TABLES"):
+            if auto_create_allowed(app, engine):
                 Base.metadata.create_all(engine)  # solo crea tablas que faltan; nunca borra ni altera datos
                 enable_rls(engine)
             with engine.connect() as conn:
