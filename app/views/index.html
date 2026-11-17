@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>MarketPredict</title>
     <link rel="stylesheet" href="/static/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+    <script src="/static/vendor/chartjs-4.5.0/chart.umd.min.js"></script>
 </head>
 <body>
 <header class="topbar">
@@ -16,7 +16,7 @@
             <a href="#comunidad" data-nav="community" data-i18n="community">Comunidad</a>
             <a href="#mercados" data-nav="mercados" data-i18n="markets">Mercados</a>
             <a href="#resultados" data-nav="resultados" data-i18n="results">Resultados</a>
-            <a href="#brokers" data-nav="brokers" data-i18n="brokers">Brókers</a>
+            <a href="#brokers" data-nav="brokers" data-i18n="brokers" hidden>Brókers</a>
             <a href="#mas" data-nav="mas" data-i18n="more">Más</a>
         </nav>
     </div>
@@ -31,7 +31,14 @@
     <div class="topbar-right">
         <button class="language" id="languageToggle" type="button">ES <span>⌄</span></button>
         <button class="profile-button" id="themeToggle" type="button" aria-label="Cambiar tema">◯</button>
-        <button type="button" id="authButton" class="start-button">Empiece</button>
+        <div id="accountDisclosure" class="account-disclosure">
+            <button type="button" id="authButton" class="start-button">Empiece</button>
+            <div id="accountMenu" class="account-menu" hidden>
+                <button id="accountMenuProfile" type="button" data-i18n="myAccount">Mi cuenta</button>
+                <button id="accountMenuLogout" type="button" data-i18n="signOut">Cerrar sesión</button>
+            </div>
+            <div id="accountMenuError" class="account-menu-error" role="alert"></div>
+        </div>
     </div>
 </header>
 
@@ -266,7 +273,7 @@
     <section id="tabCuenta" class="tab-panel">
         <div class="dashboard-panel">
             <div class="panel-heading">
-                <div><span class="panel-kicker">MI CUENTA</span><h2 id="accountTitle">Mi cuenta</h2>
+                <div><span class="panel-kicker">MI CUENTA</span><h2 id="accountTitle" tabindex="-1">Mi cuenta</h2>
                 <p class="panel-description">Tus predicciones y tu portafolio simulado quedan guardados en tu cuenta. Dinero virtual: no hay conexión con ningún bróker.</p></div>
                 <button id="logoutButton" class="secondary-button" type="button" hidden>Cerrar sesión</button>
             </div>

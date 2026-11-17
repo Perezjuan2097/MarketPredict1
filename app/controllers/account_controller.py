@@ -5,6 +5,7 @@ from functools import wraps
 
 from flask import Blueprint, current_app, jsonify, request
 
+from app.controllers.broker_controller import broker_access_allowed
 from app.repositories import factory
 from app.repositories.base import ConflictError, identity_key
 from app.security import InvalidInput, api_error, audit, check_csrf_header, client_ip, csrf_token, json_object, limiter
@@ -68,12 +69,14 @@ def me():
     if uid is not None and (not user or user.get("is_blocked")):
         end_session()
         user = None
-    return jsonify(user=account_service.public_user(user) if user else None, csrf=csrf_token(), persistence=repo is not None)
+    return jsonify(user=account_service.public_user(user) if user else None, csrf=csrf_token(),
+                   persistence=repo is not None, can_access_broker=broker_access_allowed(user))
 
 
 def _start_session(user):
     start_session(user_id=user["id"])
-    return jsonify(user=account_service.public_user(user), csrf=csrf_token())
+    return jsonify(user=account_service.public_user(user), csrf=csrf_token(),
+                   can_access_broker=broker_access_allowed(user))
 
 
 @account_bp.post("/api/auth/register")

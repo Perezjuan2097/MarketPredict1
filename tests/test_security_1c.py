@@ -38,13 +38,56 @@ def admin_login(client):
 
 def test_logout_revokes_copied_cookie_and_disables_caching(app):
     owner, copy = app.test_client(), app.test_client()
-    _, headers = register(owner, "owner")
+    user, headers = register(owner, "owner")
     copy.set_cookie("session", owner.get_cookie("session").value)
     assert copy.get("/api/me/portfolios").status_code == 200
-    assert owner.post("/api/auth/logout", headers=headers).status_code == 200
+    assert owner.post("/api/auth/logout", json={}).status_code == 403
+    assert owner.get("/api/auth/me").json["user"]["id"] == user["id"]
+    response = owner.post("/api/auth/logout", headers=headers)
+    assert response.status_code == 200
+    assert response.json["csrf"] != headers["X-CSRF-Token"]
+    assert owner.get("/api/auth/me").json["user"] is None
     denied = copy.get("/api/me/portfolios")
     assert denied.status_code == 401
     assert denied.headers["Cache-Control"] == "no-store"
+
+
+def test_broker_permission_uses_the_endpoint_policy_without_contacting_alpaca(app, monkeypatch):
+    from app.services import broker_service
+
+    anonymous, allowed, denied, admin = (app.test_client() for _ in range(4))
+    allowed_user, allowed_csrf = register(allowed, "allowed")
+    register(denied, "denied")
+    admin_login(admin)
+    monkeypatch.setattr(broker_service, "allowed_users", lambda: {allowed_user["id"]})
+    monkeypatch.setattr(broker_service.AlpacaPaper, "configured", property(lambda self: True))
+    calls = []
+
+    def snapshot(_self):
+        calls.append(True)
+        return {"account": {}, "paper": True}
+
+    monkeypatch.setattr(broker_service.AlpacaPaper, "snapshot", snapshot)
+    for client, expected in ((anonymous, False), (denied, False), (allowed, True), (admin, True)):
+        assert client.get("/api/auth/me").json["can_access_broker"] is expected
+    assert calls == []
+
+    for client, status in ((anonymous, 401), (denied, 403)):
+        response = client.get("/api/broker/status")
+        assert response.status_code == status
+        assert response.json["authorized"] is False
+        assert "account" not in response.json
+    assert calls == []
+    for client in (allowed, admin):
+        assert client.get("/api/broker/status").json["authorized"] is True
+    assert len(calls) == 2
+
+    logout = allowed.post("/api/auth/logout", headers=allowed_csrf)
+    login = allowed.post("/api/auth/login", json={"identifier": "allowed", "password": "Example-password-123"},
+                         headers={"X-CSRF-Token": logout.json["csrf"]})
+    assert login.status_code == 200
+    assert login.json["can_access_broker"] is True
+    assert len(calls) == 2
 
 
 def test_session_expiration_and_cookie_flags(app):

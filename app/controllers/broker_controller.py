@@ -9,6 +9,10 @@ from app.services.broker_service import AlpacaPaper, BrokerUnavailable, allowed_
 broker_bp = Blueprint("broker", __name__)
 
 
+def broker_access_allowed(user):
+    return is_admin() or user_allowed(user)
+
+
 def _current_user():
     uid = user_id()
     repo = factory.get_repo(current_app) if uid is not None else None
@@ -29,7 +33,7 @@ def broker_status():
         return jsonify({**base, "authorized": False,
                         "message": "Bróker sin configurar: faltan ALPACA_API_KEY y ALPACA_API_SECRET."})
     user = _current_user()
-    if not (is_admin() or user_allowed(user)):
+    if not broker_access_allowed(user):
         audit("broker_access_denied", user_id())
         msg = ("Inicie sesión con un usuario autorizado para ver la cuenta del bróker."
                if allowed_users() else "Solo el administrador puede ver la cuenta del bróker.")

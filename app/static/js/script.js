@@ -348,6 +348,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function activateTab(tab) {
+        if (tab === "brokers" && !canAccessBroker) return;
         $$(".context-tab").forEach((button) => button.classList.toggle("active", button.dataset.tab === tab));
         $$(".tab-panel").forEach((panel) => panel.classList.remove("active-panel"));
         const panel = tab === "summary" ? $("#tabSummary") : $(`#tab${tab.charAt(0).toUpperCase()}${tab.slice(1)}`);
@@ -429,11 +430,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function loadBroker() {
         const box = $("#brokerContent");
-        if (!box) return;
+        if (!box || !canAccessBroker) return;
+        const principal = currentUser;
         box.innerHTML = `<div class="empty-state">Consultando Alpaca (paper trading)...</div>`;
         try {
             const response = await fetch("/api/broker/status");
             const d = await response.json();
+            if (!canAccessBroker || currentUser !== principal) return;
             if (!d.authorized) {
                 box.innerHTML = `<div class="empty-state">${escapeHTML(d.error || d.message || "Bróker no disponible.")}</div>`;
                 return;
@@ -451,7 +454,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? `<table class="table"><thead><tr><th>Fecha</th><th>Activo</th><th>Lado</th><th>Cantidad</th><th>Precio</th><th>Estado</th></tr></thead><tbody>${d.orders.map((o) => `<tr><td>${formatDateTime(o.submitted_at)}</td><td>${escapeHTML(o.symbol)}</td><td>${escapeHTML(o.side === "buy" ? "Compra" : "Venta")}</td><td>${escapeHTML(o.qty ?? "—")}</td><td>${o.filled_avg_price ? m(o.filled_avg_price) : "—"}</td><td>${escapeHTML(o.status)}</td></tr>`).join("")}</tbody></table>`
                 : `<div class="empty-state">No hay órdenes recientes.</div>`;
             box.innerHTML = `<div class="metric-grid">${cards.map(([k, v]) => `<article class="card"><small>${escapeHTML(k)}</small><strong>${escapeHTML(v)}</strong></article>`).join("")}</div><h3>Posiciones</h3>${positions}<h3>Órdenes recientes</h3>${orders}<p class="note">${escapeHTML(d.broker)} · cuenta simulada, sin dinero real.</p>`;
-        } catch { box.innerHTML = `<div class="empty-state">No fue posible consultar el bróker.</div>`; }
+        } catch {
+            if (canAccessBroker && currentUser === principal) {
+                box.innerHTML = `<div class="empty-state">No fue posible consultar el bróker.</div>`;
+            }
+        }
     }
 
     async function loadMarkets() {
@@ -555,6 +562,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let csrfToken = "";
     let currentUser = null;
     let persistenceOn = true;
+    let canAccessBroker = false;
+    let logoutPending = false;
     let selectedPortfolio = null;
     const STATUS_LABEL = { pendiente: "Pendiente", en_evaluacion: "En evaluación", cumplida: "Cumplida", no_cumplida: "No cumplida", invalidada: "Invalidada" };
     const DIRECTION_LABEL = { alcista: "Alcista", bajista: "Bajista", neutral: "Neutral" };
@@ -571,13 +580,39 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function loadSession() {
-        try { const d = await api("GET", "/api/auth/me"); currentUser = d.user; csrfToken = d.csrf; persistenceOn = d.persistence; } catch (error) { currentUser = null; }
+        try {
+            const d = await api("GET", "/api/auth/me");
+            currentUser = d.user;
+            csrfToken = d.csrf;
+            persistenceOn = d.persistence;
+            canAccessBroker = d.can_access_broker === true;
+        } catch {
+            currentUser = null;
+            canAccessBroker = false;
+        }
         updateAuthUI();
+    }
+
+    function setAccountMenu(open, restoreFocus = false) {
+        const btn = $("#authButton");
+        const menu = $("#accountMenu");
+        menu.hidden = !open;
+        if (currentUser) btn.setAttribute("aria-expanded", String(open));
+        if (restoreFocus) btn.focus();
     }
 
     function updateAuthUI() {
         const btn = $("#authButton");
         if (btn) btn.textContent = currentUser ? currentUser.username : (language === "es" ? "Empiece" : "Get started");
+        if (currentUser) {
+            btn.setAttribute("aria-controls", "accountMenu");
+            btn.setAttribute("aria-expanded", String(!$("#accountMenu").hidden));
+        } else {
+            setAccountMenu(false);
+            btn.removeAttribute("aria-controls");
+            btn.removeAttribute("aria-expanded");
+        }
+        $('[data-nav="brokers"]').hidden = !canAccessBroker;
         if (exists("#accountLoggedOut")) $("#accountLoggedOut").hidden = !!currentUser;
         if (exists("#accountContent")) $("#accountContent").hidden = !currentUser;
         if (exists("#logoutButton")) $("#logoutButton").hidden = !currentUser;
@@ -615,19 +650,37 @@ document.addEventListener("DOMContentLoaded", () => {
         submit.disabled = true;
         try {
             const data = await api("POST", url, body);
-            currentUser = data.user; form.reset(); closeAuth(); updateAuthUI(); activateTab("cuenta");
+            currentUser = data.user;
+            canAccessBroker = data.can_access_broker === true;
+            form.reset(); closeAuth(); updateAuthUI(); activateTab("cuenta");
             await loadHistory();
         } catch (error) { $("#authError").textContent = error.message; }
         finally { submit.disabled = false; }
     }
 
     async function logout() {
-        try { await api("POST", "/api/auth/logout", {}); } catch (error) { setStatus(error.message); return; }
+        if (logoutPending) return;
+        const errorBox = $("#accountMenuError");
+        errorBox.textContent = "";
+        logoutPending = true;
+        try {
+            await api("POST", "/api/auth/logout", {});
+        } catch {
+            errorBox.textContent = language === "es"
+                ? "No se pudo cerrar sesión. Inténtalo de nuevo."
+                : "Could not sign out. Please try again.";
+            return;
+        } finally {
+            logoutPending = false;
+        }
         selectedPortfolio = null;
         for (const selector of ["#predList", "#pfSelect", "#pfSummary", "#pfPositions", "#pfTrades", "#brokerContent"]) {
             $(selector)?.replaceChildren();
         }
-        currentUser = null; updateAuthUI(); activateTab("summary");
+        currentUser = null;
+        canAccessBroker = false;
+        updateAuthUI();
+        activateTab("summary");
         await loadHistory();
     }
 
@@ -707,7 +760,31 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function bindAccountEvents() {
-        $("#authButton")?.addEventListener("click", () => (currentUser ? activateTab("cuenta") : openAuth("login")));
+        const menu = $("#accountMenu");
+        $("#authButton")?.addEventListener("click", () => {
+            if (!currentUser) return openAuth("login");
+            if (logoutPending) return;
+            $("#accountMenuError").textContent = "";
+            setAccountMenu(menu.hidden);
+        });
+        $("#accountMenuProfile")?.addEventListener("click", () => {
+            setAccountMenu(false);
+            activateTab("cuenta");
+            $("#accountTitle")?.focus();
+        });
+        $("#accountMenuLogout")?.addEventListener("click", () => {
+            setAccountMenu(false, true);
+            return logout();
+        });
+        document.addEventListener("click", (event) => {
+            if (!menu.hidden && !$("#accountDisclosure").contains(event.target)) setAccountMenu(false);
+        });
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && !menu.hidden) {
+                event.preventDefault();
+                setAccountMenu(false, true);
+            }
+        });
         $("#accountLoginBtn")?.addEventListener("click", () => openAuth("login"));
         $("#authClose")?.addEventListener("click", closeAuth);
         $("#authTabLogin")?.addEventListener("click", () => switchAuthMode("login"));
@@ -805,7 +882,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }));
         if (exists("#runModels")) $("#runModels").addEventListener("click", runModels);
         const initial = $$(".main-nav a[data-nav]").find((a) => a.getAttribute("href") === location.hash);
-        if (initial) activateTab(initial.dataset.nav);
+        if (initial && initial.dataset.nav !== "brokers") activateTab(initial.dataset.nav);
 
         $$(".period").forEach((button) => button.addEventListener("click", async () => {
             if (!marketData) return;
@@ -894,6 +971,7 @@ document.addEventListener("DOMContentLoaded", () => {
         bindEvents();
         applyLanguage();
         await loadSession();
+        if (location.hash === "#brokers" && canAccessBroker) activateTab("brokers");
         await loadHistory();
         try { await loadMarketData("AAPL", "1D", false); } catch (error) { setStatus(error.message); }
     }
