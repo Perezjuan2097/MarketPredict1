@@ -1,14 +1,12 @@
 """Private enterprise forecast API."""
 from datetime import datetime, timezone
-from importlib.util import find_spec
 import math
 from unicodedata import normalize
 
-from flask import Blueprint, current_app, jsonify
+from flask import Blueprint, jsonify
 
 from app.controllers.dataset_controller import dataset_guarded
 from app.controllers.organization_controller import _page
-from app.repositories.forecast_sql import ForecastBusy
 from app.security import InvalidInput, json_object
 from app.services import enterprise_forecast as engine
 
@@ -36,6 +34,8 @@ def _configuration(body):
     days = (end - start).days + 1
     if end >= datetime.now(timezone.utc).date() or not 1 <= days <= engine.MAX_DAYS:
         raise InvalidInput("Usa una ventana histórica de hasta 730 días, con la última fecha ya cerrada.")
+    if days < engine.MIN_TRAIN + engine.ORIGINS * horizon:
+        raise InvalidInput("Historial insuficiente para el horizonte y los bloques de evaluación.")
     zero = body.get("zero_dates", [])
     if not isinstance(zero, list) or len(zero) > engine.MAX_DAYS:
         raise InvalidInput("La lista de fechas sin actividad no es válida.")
@@ -52,27 +52,9 @@ def _configuration(body):
 @forecast_bp.post("")
 @dataset_guarded
 def create_forecast(repo, actor, slug, dataset_id):
-    params, start, end, zero = _configuration(json_object())
-    rows, origin = repo.forecast_input(actor, slug, dataset_id, params, start, end)
-    dates, series, transformations = engine.prepare(rows, start, end, zero)
-    if len(series) < engine.MIN_TRAIN + engine.ORIGINS * params["horizon"]:
-        raise InvalidInput("Historial insuficiente para el horizonte y los bloques de evaluación.")
-    origin.update(transformations)
-    origin["engine_version"] = engine.ENGINE_VERSION
-    params["arima_enabled"] = bool(current_app.config["ENTERPRISE_FORECAST_ARIMA"] and find_spec("statsmodels"))
-    try:
-        run_id = repo.reserve_forecast(actor, slug, dataset_id, params, origin,
-                                       current_app.config["ENTERPRISE_FORECAST_CONCURRENCY"])
-    except ForecastBusy as exc:
-        return jsonify(error=str(exc)), 429, {"Retry-After": "60"}
-    try:
-        result = engine.evaluate(dates, series, params["horizon"], arima=params["arima_enabled"],
-                                 scenario_pct=params["scenario_pct"])
-        run = repo.finish_forecast(actor, slug, dataset_id, run_id, result)
-    except Exception:
-        repo.fail_forecast(actor, origin["organization_id"], run_id)
-        raise
-    return jsonify(run=run), 201
+    from app.controllers.automation_controller import enqueue
+
+    return enqueue(repo, actor, slug, dataset_id, "forecast", json_object())
 
 
 @forecast_bp.get("")

@@ -468,3 +468,93 @@ class EnterpriseForecastRun(Base):
         Index("ix_enterprise_forecast_capacity", "state", "lease_until"),
         Index("ix_enterprise_forecast_actor", "requested_by", "created_epoch"),
     )
+
+
+def _automation_version_fk():
+    return ForeignKeyConstraint(
+        ["organization_id", "dataset_id", "version_id"],
+        ["enterprise_dataset_versions.organization_id", "enterprise_dataset_versions.dataset_id",
+         "enterprise_dataset_versions.id"],
+    )
+
+
+class EnterpriseAutomation(Base):
+    __tablename__ = "enterprise_automations"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    organization_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    dataset_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    version_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    actor_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    parameters: Mapped[dict] = mapped_column(JSON, nullable=False)
+    cadence: Mapped[str] = mapped_column(String(8), nullable=False)
+    next_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    created_at: Mapped[datetime] = _created()
+    __table_args__ = (_automation_version_fk(), Index("ix_enterprise_automations_due", "enabled", "next_at"))
+
+
+class EnterpriseJob(Base):
+    __tablename__ = "enterprise_jobs"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    organization_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    dataset_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    version_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    actor_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    state: Mapped[str] = mapped_column(String(12), nullable=False)
+    parameters: Mapped[dict] = mapped_column(JSON, nullable=False)
+    result: Mapped[Optional[dict]] = mapped_column(JSON)
+    error_code: Mapped[Optional[str]] = mapped_column(String(40))
+    idempotency_key: Mapped[str] = mapped_column(String(140), nullable=False)
+    fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False)
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False)
+    available_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    lease_until: Mapped[Optional[int]] = mapped_column(BigInteger)
+    lease_token: Mapped[Optional[str]] = mapped_column(String(40))
+    created_at: Mapped[datetime] = _created()
+    finished_at: Mapped[Optional[int]] = mapped_column(BigInteger)
+    __table_args__ = (
+        _automation_version_fk(),
+        UniqueConstraint("organization_id", "idempotency_key"),
+        CheckConstraint("state IN ('pending','running','completed','failed','canceled')", name="ck_enterprise_job_state"),
+        Index("ix_enterprise_jobs_due", "state", "available_at"),
+        Index("ix_enterprise_jobs_lease", "state", "lease_until"),
+        Index("ix_enterprise_jobs_scope", "organization_id", "dataset_id", "id"),
+    )
+
+
+class EnterpriseAlertRule(Base):
+    __tablename__ = "enterprise_alert_rules"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    organization_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    dataset_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    comparison: Mapped[str] = mapped_column(String(8), nullable=False)
+    threshold: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False)
+    severity: Mapped[str] = mapped_column(String(8), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    __table_args__ = (
+        ForeignKeyConstraint(["organization_id", "dataset_id"], ["enterprise_datasets.organization_id", "enterprise_datasets.id"]),
+        UniqueConstraint("organization_id", "dataset_id", "id"),
+    )
+
+
+class EnterpriseAlert(Base):
+    __tablename__ = "enterprise_alerts"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    organization_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    dataset_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    rule_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    event_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    state: Mapped[str] = mapped_column(String(12), nullable=False)
+    evidence: Mapped[dict] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = _created()
+    __table_args__ = (
+        ForeignKeyConstraint(["organization_id", "dataset_id", "rule_id"],
+                             ["enterprise_alert_rules.organization_id", "enterprise_alert_rules.dataset_id",
+                              "enterprise_alert_rules.id"]),
+        UniqueConstraint("rule_id", "event_key"),
+        Index("ix_enterprise_alerts_scope", "organization_id", "dataset_id", "state"),
+    )

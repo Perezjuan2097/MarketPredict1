@@ -147,7 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function analyzeAsset(query) {
         setStatus("Consultando y procesando datos...");
-        const response = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ symbol: query }) });
+        const response = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify({ symbol: query }) });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "No fue posible analizar el activo.");
         current = data;
@@ -575,7 +575,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const STATUS_LABEL = { pendiente: "Pendiente", en_evaluacion: "En evaluación", cumplida: "Cumplida", no_cumplida: "No cumplida", invalidada: "Invalidada" };
     const DIRECTION_LABEL = { alcista: "Alcista", bajista: "Bajista", neutral: "Neutral" };
 
-    async function api(method, url, body) {
+    async function api(method, url, body, headers = {}) {
         const options = { method, headers: { "Content-Type": "application/json" } };
         if (method !== "GET") options.headers["X-CSRF-Token"] = csrfToken;
         if (body instanceof FormData) {

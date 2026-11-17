@@ -416,6 +416,34 @@
                                 <div id="forecastPoints" class="table-scroll"></div>
                                 <div id="forecastModels" class="table-scroll"></div>
                             </div>
+                            <section id="enterpriseAutomation" aria-labelledby="automationTitle">
+                                <h5 id="automationTitle">Monitoreo y automatizaciones</h5>
+                                <button id="automationRefresh" class="secondary-button" type="button">Actualizar monitoreo</button>
+                                <p id="automationMessage" role="status"></p>
+                                <p id="automationSummary"></p>
+                                <form id="automationJobForm" class="account-form">
+                                    <label>Trabajo<select name="kind"><option value="forecast">Pronóstico (usa el formulario anterior)</option><option value="indicators">Actualizar indicadores</option><option value="evaluation">Evaluar pronóstico vencido</option><option value="report">Generar reporte</option></select></label>
+                                    <label>Identificador de pronóstico (evaluación o reporte)<input name="run_id" type="number" min="1"></label>
+                                    <label>Fechas sin actividad para evaluación (AAAA-MM-DD, separadas por coma)<input name="zero_dates" maxlength="200"></label>
+                                    <label>Frecuencia<select name="cadence"><option value="daily">Diaria</option><option value="weekly">Semanal</option></select></label>
+                                    <label>Hora UTC<input name="hour" type="number" min="0" max="23" value="7"></label>
+                                    <label>Día semanal (0 = lunes)<input name="weekday" type="number" min="0" max="6" value="0"></label>
+                                    <button type="submit" value="manual" class="secondary-button">Enviar a cola</button>
+                                    <button id="automationSchedule" type="submit" value="schedule" class="secondary-button">Programar</button>
+                                </form>
+                                <form id="automationRuleForm" class="account-form">
+                                    <label>Señal<select name="kind"><option value="sales_change">Variación de ventas (%)</option><option value="demand_change">Variación de demanda (%)</option><option value="metric_degradation">Deterioro de WAPE (pp)</option><option value="stale_data">Antigüedad de datos (días)</option><option value="run_failure">Fallo de ejecución</option></select></label>
+                                    <label>Límite<select name="comparison"><option value="above">Igual o superior</option><option value="below">Igual o inferior</option></select></label>
+                                    <label>Umbral<input name="threshold" type="number" min="-100000" max="100000" step="any" value="10" required></label>
+                                    <label>Severidad<select name="severity"><option value="info">Informativa</option><option value="warning">Advertencia</option><option value="critical">Crítica</option></select></label>
+                                    <button type="submit" class="secondary-button">Crear regla</button>
+                                </form>
+                                <h6>Trabajos pendientes y recientes</h6><div id="automationJobs"></div>
+                                <h6>Automatizaciones</h6><div id="automationSchedules"></div>
+                                <h6>Reglas de alerta</h6><div id="automationRules"></div>
+                                <h6>Alertas activas</h6><div id="automationAlerts"></div>
+                                <h6>Reportes privados</h6><div id="automationReports"></div>
+                            </section>
                         </section>
                     </div>
                 </section>
@@ -458,6 +486,7 @@
     </form>
 </dialog>
 
+<script src="/static/js/enterprise-automation.js"></script>
 <script src="/static/js/enterprise-forecasts.js"></script>
 <script src="/static/js/enterprise-datasets.js"></script>
 <script src="/static/js/script.js"></script>

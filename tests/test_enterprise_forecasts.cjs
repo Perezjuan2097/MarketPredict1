@@ -46,7 +46,9 @@ test("forecasts submit a fixed dataset version and render real metrics separatel
     const url = "/api/me/organizations/acme/datasets/7/forecasts";
     const { panel, get } = fixture(async (method, path, body) => {
         requests.push({ method, path, body });
-        return path.endsWith("?after=0") ? { runs: [] } : { run: result };
+        if (path.endsWith("?after=0")) return { runs: [] };
+        if (method === "POST") return { job: { id: 7, state: "completed", result: { run_id: 8 } } };
+        return { run: result };
     });
     await panel.open(url, 4, ["forecast_run"]);
     await get("forecastForm").emit("submit");

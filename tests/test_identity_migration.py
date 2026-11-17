@@ -74,7 +74,7 @@ def test_postgres_repairs_stamped_partial_installation(connection, monkeypatch):
     command.stamp(cfg, "20261115_identity_keys")
     command.upgrade(cfg, "head")
     command.upgrade(cfg, "head")
-    assert MigrationContext.configure(connection).get_current_revision() == "20261121_enterprise_forecasts"
+    assert MigrationContext.configure(connection).get_current_revision() == "20261122_enterprise_automation"
     assert sa.inspect(connection).has_table("auth_sessions")
     assert sa.inspect(connection).has_table("forecast_emission_saves")
     assert connection.exec_driver_sql(

@@ -291,10 +291,20 @@ def test_forecast_api_persists_accepted_runs_and_revokes_access(accounts):
     assert alice.post(members, headers=key, json={"username": "reader", "role": "viewer"}).status_code == 201
     assert viewer.post(endpoint, headers=vkey, json=params).status_code == 403
 
-    response = alice.post(endpoint, headers=key, json={**params, "scenario_pct": 10})
-    assert response.status_code == 201, response.json
-    assert response.headers["Cache-Control"] == "no-store"
-    run = response.json["run"]
+    from app.services.automation_tasks import compute
+
+    def generate(configuration):
+        response = alice.post(endpoint, headers=key, json=configuration)
+        assert response.status_code == 202, response.json
+        assert response.headers["Cache-Control"] == "no-store"
+        repo = app.config["REPOSITORY"]
+        job = repo.claim_job(1)
+        assert job["id"] == response.json["job"]["id"]
+        assert repo.complete_job(job["id"], job["lease_token"], compute(repo, job))
+        detail = alice.get(path + "/automation/jobs/" + str(job["id"])).json["job"]
+        return alice.get(endpoint + "/" + str(detail["result"]["run_id"])).json["run"]
+
+    run = generate({**params, "scenario_pct": 10})
     assert run["state"] == "ready"
     origin = run["provenance"]
     assert origin["contract"] == "sales-daily-v2"
@@ -312,8 +322,7 @@ def test_forecast_api_persists_accepted_runs_and_revokes_access(accounts):
     assert other.get(other_path + "/forecasts/" + str(run["id"])).status_code == 404
     assert alice.delete(members + "/" + str(viewer_id), headers=key).status_code == 204
     assert viewer.get(detail).status_code == 404
-    units = alice.post(endpoint, headers=key, json={**params, "target": "quantity", "group_by": "category",
-                                                    "group": "Retail"}).json["run"]
+    units = generate({**params, "target": "quantity", "group_by": "category", "group": "Retail"})
     assert units["result"]["history"][0]["value"] == 2.0
 
 
@@ -360,3 +369,170 @@ def test_forecast_capacity_is_persistent_and_rechecks_membership_on_finish(repo)
     repo.fail_forecast(actor, origin["organization_id"], run)
     with pytest.raises(ForecastBusy, match="cuatro"):
         repo.reserve_forecast(actor, "example", dataset, params, origin, 2)
+
+
+def test_automation_queue_fences_workers_handles_retry_cancel_and_revocation(accounts):
+    from time import time
+
+    app, account = accounts
+    repo = app.config["REPOSITORY"]
+    owner, key, _ = account("alice")
+    worker, wkey, worker_id = account("worker")
+    path = _setup(owner, key, "alpha")
+    preview = _post_file(owner, path + "/preview", key, mapping=json.dumps(MAPPING)).json
+    assert _post_file(owner, path + "/imports", key, preview_token=preview["preview_token"]).status_code == 201
+    base = path + "/automation"
+    assert owner.post(BASE + "/alpha/members", headers=key, json={"username": "worker", "role": "member"}).status_code == 201
+    body = {"kind": "indicators", "version": 1}
+    headers = {**wkey, "Idempotency-Key": "attempt"}
+    first = worker.post(base + "/jobs", headers=headers, json=body)
+    assert first.status_code == 202
+    job_id = first.json["job"]["id"]
+    assert worker.post(base + "/jobs", headers=headers, json=body).json["job"]["id"] == job_id
+    assert worker.post(base + "/jobs", headers=headers, json={**body, "kind": "report"}).status_code == 409
+    now = int(time()) + 1
+    barrier = Barrier(2)
+
+    def take():
+        barrier.wait(timeout=5)
+        return repo.claim_job(2, now)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        a, b = pool.submit(take), pool.submit(take)
+        claimed = [a.result(timeout=10), b.result(timeout=10)]
+    assert claimed.count(None) == 1
+    job = next(job for job in claimed if job is not None)
+    assert repo.renew_job(job_id, job["lease_token"], now + 4)
+    assert not repo.claim_job(2, now + 31)
+    assert not repo.claim_job(2, now + 35)
+    retry = repo.claim_job(2, now + 40)
+    assert retry["id"] == job_id and retry["attempts"] == 2
+    assert not repo.complete_job(job_id, job["lease_token"], {}, now + 40)
+    assert worker.delete(base + f"/jobs/{job_id}", headers=wkey).json["job"]["state"] == "canceled"
+    assert not repo.renew_job(job_id, retry["lease_token"], now + 41)
+
+    second = worker.post(base + "/jobs", headers={**wkey, "Idempotency-Key": "two"}, json=body).json["job"]
+    reserved = repo.claim_job(2, now + 42)
+    assert reserved["id"] == second["id"]
+    assert owner.delete(BASE + "/alpha/members/" + str(worker_id), headers=key).status_code == 204
+    assert not repo.complete_job(second["id"], reserved["lease_token"], {}, now + 43)
+    assert owner.get(base + f"/jobs/{second['id']}").json["job"]["state"] == "canceled"
+    assert worker.get(base + f"/jobs/{second['id']}").status_code == 404
+
+
+def test_schedules_alerts_reports_and_actuals_use_fixed_dataset_versions(accounts):
+    from app.services.automation_tasks import compute
+
+    app, account = accounts
+    repo = app.config["REPOSITORY"]
+    owner, key, _ = account("alice")
+    outsider, outsider_key, _ = account("bobby")
+    app.config["DATASET_MAX_BYTES"] = 4096
+    path, forecast_params = _forecast_fixture(owner, key, "alpha")
+    foreign = _setup(outsider, outsider_key, "beta")
+    base = path + "/automation"
+
+    def request(kind, token, **params):
+        response = owner.post(base + "/jobs", headers={**key, "Idempotency-Key": token},
+                              json={"kind": kind, "version": 1, **params})
+        assert response.status_code == 202, response.json
+        return response.json["job"]["id"]
+
+    def complete(now=None):
+        job = repo.claim_job(2, now)
+        assert repo.complete_job(job["id"], job["lease_token"], compute(repo, job), now)
+        return owner.get(base + f"/jobs/{job['id']}").json["job"]
+
+    schedule = owner.post(base + "/schedules", headers=key, json={
+        "kind": "indicators", "version": 1, "cadence": "weekly", "weekday": 2, "hour_utc": 7,
+    }).json["schedule"]
+    assert owner.post(base + "/rules", headers=key, json={
+        "kind": "stale_data", "comparison": "above", "threshold": 0, "severity": "warning",
+    }).status_code == 201
+    assert repo.schedule_due(schedule["next_at"]) == 1
+    assert repo.schedule_due(schedule["next_at"]) == 0
+    indicators = complete(schedule["next_at"])
+    assert indicators["result"]["metrics"]["records"] == 83
+    assert indicators["result"]["origin"]["version"] == 1
+    assert owner.patch(base + f"/schedules/{schedule['id']}", headers=key, json={"enabled": False}).status_code == 200
+    request("indicators", "repeat")
+    complete()
+    assert len(owner.get(base).json["alerts"]) == 1
+
+    request("forecast", "forecast", **forecast_params)
+    forecast = complete()
+    run_id = forecast["result"]["run_id"]
+    request("evaluation", "missing", run_id=run_id)
+    missing = complete()["result"]
+    assert missing["outcome"] == "pending_actuals" and "metrics" not in missing
+    request("evaluation", "with-zero", run_id=run_id, zero_dates=["2025-03-24", "2025-03-25"])
+    actual = complete()["result"]
+    assert actual["outcome"] == "evaluated"
+    assert len(actual["actuals"]) == 3 and 0 <= actual["metrics"]["coverage"] <= 1
+
+    report_id = request("report", "report", run_id=run_id)
+    report = complete()
+    assert report["result"]["forecast_run"]["id"] == run_id
+    assert report["result"]["risks"] and report["result"]["alerts"]
+    assert report["result"]["evaluation"]["result"]["outcome"] == "evaluated"
+    csv = owner.get(base + f"/reports/{report_id}/csv")
+    pdf = owner.get(base + f"/reports/{report_id}/pdf")
+    assert csv.status_code == pdf.status_code == 200
+    assert b"source_sha256" in csv.data and b"forecast_run.result.interval.coverage_final" in csv.data
+    assert pdf.data.startswith(b"%PDF-1.4") and b"startxref" in pdf.data and "attachment" in pdf.headers["Content-Disposition"]
+    assert outsider.get(base + f"/reports/{report_id}/pdf").status_code == 404
+    assert outsider.get(foreign + f"/automation/reports/{report_id}/csv").status_code == 404
+
+
+def test_queue_failure_backoff_is_bounded_and_alert_is_terminal(accounts):
+    from time import time
+
+    app, account = accounts
+    repo = app.config["REPOSITORY"]
+    owner, key, _ = account("alice")
+    path = _setup(owner, key, "alpha")
+    preview = _post_file(owner, path + "/preview", key, mapping=json.dumps(MAPPING)).json
+    assert _post_file(owner, path + "/imports", key, preview_token=preview["preview_token"]).status_code == 201
+    base = path + "/automation"
+    assert owner.post(base + "/rules", headers=key, json={
+        "kind": "run_failure", "comparison": "above", "threshold": 0, "severity": "critical",
+    }).status_code == 201
+    response = owner.post(base + "/jobs", headers=key, json={"kind": "indicators", "version": 1})
+    assert response.status_code == 202
+    now = int(time()) + 1
+    for attempt, offset in enumerate((0, 5, 15), 1):
+        claim = repo.claim_job(1, now + offset)
+        assert claim["attempts"] == attempt
+        repo.fail_job(claim["id"], claim["lease_token"], "timeout", True, now + offset)
+        alerts = owner.get(base).json["alerts"]
+        assert len(alerts) == (1 if attempt == 3 else 0)
+    assert owner.get(base).json["jobs"][0]["state"] == "failed"
+    identifier = alerts[0]["id"]
+    assert owner.patch(base + f"/alerts/{identifier}", headers=key, json={}).status_code == 204
+    assert owner.get(base).json["alerts"] == []
+
+def test_postgres_worker_process_executes_outside_flask(repo):
+    import subprocess
+    import sys
+
+    with repo._Session() as session:
+        if session.bind.dialect.name != "postgresql":
+            pytest.skip("worker PostgreSQL")
+        schema = session.scalar(sa.text("SELECT current_schema()"))
+        url = session.bind.url.update_query_dict({"options": "-csearch_path=" + schema})
+    user = repo.create_user("owner", "owner@example.test", "unused")["id"]
+    repo.create_organization(user, "Example", "example")
+    dataset = repo.create_dataset(user, "example", "Ventas")["id"]
+    scope = repo.dataset_import_scope(user, "example", dataset)
+    source, fingerprint = import_identity(CSV, ".csv", MAPPING)
+    repo.save_dataset_import(user, "example", dataset, scope,
+                             {"mapping": MAPPING, "sha256": source, "fingerprint": fingerprint, "format": "csv"},
+                             parse_import(CSV, ".csv", 10, MAPPING))
+    job = repo.enqueue_job(user, "example", dataset, "indicators", {"version": 1}, "worker-test")
+    env = {**os.environ, "DATABASE_URL": url.render_as_string(hide_password=False)}
+    result = subprocess.run([sys.executable, "-m", "scripts.enterprise_worker", "--once"], env=env, capture_output=True,
+                            text=True, timeout=40)
+    assert result.returncode == 0
+    ready = repo.get_job(user, "example", dataset, job["id"])
+    assert ready["state"] == "completed", ready["error_code"]
+    assert ready["result"]["metrics"]["sales"] == "32.5"

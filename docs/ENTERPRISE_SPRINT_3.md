@@ -1,5 +1,7 @@
 # MarketPredict Enterprise · Sprint 3 — Predicción empresarial
 
+Desde el Sprint 4, el POST de pronóstico encola un trabajo y devuelve HTTP 202. Los GET de historial y detalle conservan el acceso a las ejecuciones guardadas. Ver [Automatización](ENTERPRISE_SPRINT_4.md).
+
 ## Uso y alcance
 
 En **Empresas → Datos empresariales**, elige dataset y versión. En **Predicciones empresariales** indica ingresos o unidades, nivel de agregación, inicio, último día completo y horizonte de 1–14 días. El nivel por fecha usa el total. Producto y categoría filtran un valor exacto y agregan sus filas por fecha. Una ejecución genera una serie. La interfaz muestra historia, estimación por día, bandas, comparación de modelos y un escenario opcional. El historial permite recuperar ejecuciones sin recalcular.

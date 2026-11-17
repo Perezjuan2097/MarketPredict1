@@ -9,6 +9,9 @@ window.createEnterpriseForecastPanel = function (api) {
     let scope = null;
     let chart = null;
     let readRequest = 0;
+    let jobTimer = null;
+    const monitoring = window.createEnterpriseAutomationPanel?.(api, readConfiguration);
+
 
     function add(host, tag, value) {
         const el = document.createElement(tag);
@@ -40,6 +43,9 @@ window.createEnterpriseForecastPanel = function (api) {
     }
 
     function reset() {
+        if (jobTimer !== null) clearTimeout(jobTimer);
+        jobTimer = null;
+        monitoring?.reset();
         scope = null;
         readRequest++;
         panel.hidden = true;
@@ -72,6 +78,7 @@ window.createEnterpriseForecastPanel = function (api) {
             "Se usará la versión " + version + ". Selecciona otro dataset o versión en Datos empresariales.";
         form.hidden = !permissions.includes("forecast_run");
         panel.hidden = false;
+        monitoring?.open(url.replace(/\/forecasts$/, "/automation"), version, permissions);
         node("forecastMore").hidden = true;
         add(history, "option", "Selecciona una ejecución").value = "";
         try { await loadHistory(context); }
@@ -146,28 +153,68 @@ window.createEnterpriseForecastPanel = function (api) {
         node("forecastGroup").hidden = allDates;
         form.elements.group.required = !allDates;
     });
+    function readConfiguration(version) {
+        const body = Object.fromEntries(new FormData(form));
+        body.version = version;
+        body.horizon = Number(body.horizon);
+        body.zero_dates = body.zero_dates.split(",").map(value => value.trim()).filter(Boolean);
+        body.scenario_pct = body.scenario_pct === "" ? null : Number(body.scenario_pct);
+        return body;
+    }
+
+    async function showJob(context, job) {
+        if (scope !== context) return;
+        info.textContent = "Trabajo #" + job.id + " · " + ({
+            pending: "pendiente", running: "ejecutando", completed: "completado",
+            failed: "fallido", canceled: "cancelado",
+        }[job.state] || job.state) + (job.error_code ? " · " + job.error_code : "");
+        if (job.state === "pending" || job.state === "running") {
+            jobTimer = setTimeout(async () => {
+                if (scope !== context) return;
+                try {
+                    const path = context.url.replace(/\/forecasts$/, "/automation/jobs/");
+                    const response = await api("GET", path + job.id);
+                    await showJob(context, response.job);
+                } catch (error) {
+                    context.running = false;
+                    if (scope === context) info.textContent = error.message;
+                }
+            }, 4000);
+        } else {
+            context.running = false;
+            monitoring?.refresh();
+            if (job.state === "completed" && job.result?.run_id) {
+                const { run } = await api("GET", context.url + "/" + job.result.run_id);
+                if (scope !== context) return;
+                readRequest++;
+                addRun(run);
+                history.value = run.id;
+                render(run);
+            }
+        }
+    }
+
     form.addEventListener("submit", async event => {
         event.preventDefault();
         const context = scope;
         if (!context || context.running) return;
-        const body = Object.fromEntries(new FormData(form));
-        body.version = context.version;
-        body.horizon = Number(body.horizon);
-        body.zero_dates = body.zero_dates.split(",").map(value => value.trim()).filter(Boolean);
-        body.scenario_pct = body.scenario_pct === "" ? null : Number(body.scenario_pct);
+        const body = readConfiguration(context.version);
+        const serialized = JSON.stringify(body);
+        if (context.requestBody !== serialized) {
+            context.requestBody = serialized;
+            context.key = globalThis.crypto?.randomUUID?.();
+        }
         context.running = true;
-        info.textContent = "Evaluando el historial y calculando el pronóstico…";
+        info.textContent = "Enviando el trabajo a la cola…";
         try {
-            const { run } = await api("POST", context.url, body);
-            if (scope !== context) return;
-            readRequest++;
-            addRun(run);
-            history.value = run.id;
-            render(run);
+            const headers = context.key ? { "Idempotency-Key": context.key } : {};
+            const { job } = await api("POST", context.url, body, headers);
+            context.requestBody = null;
+            await showJob(context, job);
+            monitoring?.refresh();
         } catch (error) {
-            if (scope === context) info.textContent = error.message;
-        } finally {
             context.running = false;
+            if (scope === context) info.textContent = error.message;
         }
     });
     history.addEventListener("change", async () => {
