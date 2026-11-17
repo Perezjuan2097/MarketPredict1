@@ -212,9 +212,9 @@
             <table class="table"><thead><tr><th>Módulo</th><th>Estado</th><th>Descripción</th></tr></thead><tbody>
                 <tr><td><strong>Análisis y gráficos</strong></td><td><span class="pill">Disponible</span></td><td>Histórico, indicadores, tendencia, estacionalidad y componentes.</td></tr>
                 <tr><td><strong>Resumen para todos</strong></td><td><span class="pill">Disponible</span></td><td>Explicación en lenguaje sencillo de cada análisis, con su nivel de confiabilidad y un glosario.</td></tr>
-                <tr><td><strong>Probabilidad de subida</strong></td><td><span class="pill">Disponible</span></td><td>Regresión logística y bosque aleatorio de clasificación, calibrados fuera de muestra contra la frecuencia histórica.</td></tr>
-                <tr><td><strong>Modelo de riesgo</strong></td><td><span class="pill">Disponible</span></td><td>Pronóstico de volatilidad (HAR + VIX) con rango de precio del 90 % y su acierto histórico.</td></tr>
-                <tr><td><strong>Contexto de mercado</strong></td><td><span class="pill">Disponible</span></td><td>VIX, S&amp;P 500, tasa a 10 años y dólar como variables de los modelos.</td></tr>
+                <tr><td><strong>Probabilidad de subida</strong></td><td><span class="pill">Disponible</span></td><td>Regresión logística y bosque aleatorio de clasificación, comparados por Brier con la frecuencia histórica. La tabla muestra frecuencias observadas por tramo.</td></tr>
+                <tr><td><strong>Modelo de riesgo</strong></td><td><span class="pill">Disponible</span></td><td>Pronóstico de volatilidad con HAR o la referencia del último mes, usando datos del activo. Muestra un rango del 90 % nominal y su cobertura histórica.</td></tr>
+                <tr><td><strong>Contexto de mercado</strong></td><td><span class="pill">Inactivo</span></td><td>VIX, S&amp;P 500, tasa a 10 años y dólar están preparados para ensayos del motor. Las predicciones de la aplicación usan el historial del activo.</td></tr>
                 <tr><td><strong>Consenso de precio</strong></td><td><span class="pill">Disponible</span></td><td>Ridge, Random Forest y XGBoost con validación walk-forward, referencias simples y Monte Carlo.</td></tr>
                 <tr><td><strong>Pulso de noticias</strong></td><td><span class="pill">Disponible</span></td><td>Tono de los titulares recientes. Informativo: no validado como predictor.</td></tr>
                 <tr><td><strong>Resultados de validación</strong></td><td><span class="pill">Disponible</span></td><td>Prueba del motor en 11 activos de distintos mercados (pestaña Resultados).</td></tr>
@@ -290,7 +290,7 @@
                     <label class="wide">Justificación (opcional)<textarea name="rationale" rows="2" maxlength="2000"></textarea></label>
                     <button class="primary-button" type="submit">Publicar predicción</button>
                 </form>
-                <p class="panel-description">El precio de referencia lo fija el servidor con el último cierre disponible. Una predicción publicada no se puede editar; solo invalidar mientras está pendiente.</p>
+                <p class="panel-description">El precio de referencia lo fija el servidor con el último cierre disponible. Una predicción publicada solo se puede invalidar mientras esté pendiente. Abrir Mi cuenta o pulsar Actualizar resultados solicita la evaluación de los pronósticos vencidos.</p>
                 <div class="vote-actions"><button id="evaluateBtn" class="secondary-button" type="button">Actualizar resultados</button></div>
                 <div id="predList" class="table-scroll"></div>
 

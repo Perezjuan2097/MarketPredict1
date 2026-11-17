@@ -98,7 +98,9 @@ def run(df, horizon, vix=None, n_splits=5, *, trading_days=252):
         "range_90": {"low_price": round(ref * np.exp(-k * h_vol), 6), "high_price": round(ref * np.exp(k * h_vol), 6),
                      "historical_coverage": round(used["coverage_90"], 4),
                      "coverage_if_normal": round(used["coverage_90_normal"], 4), "multiplier": round(k, 3),
-                     "method": "Volatilidad prevista × multiplicador calibrado con errores reales (colas gruesas)"},
+                     "method": ("Volatilidad prevista × multiplicador empírico (con mínimo normal)"
+                                if used["n_calibration"] >= 10 else
+                                "Volatilidad prevista × 1,645 (aproximación normal por muestra insuficiente)")},
         "risk_level": level, "vol_percentile": round(pctl, 3) if pctl is not None else None,
         "scores": {k: {kk: round(vv, 5) if isinstance(vv, float) else vv for kk, vv in v.items()} for k, v in scores.items()},
     }

@@ -35,19 +35,25 @@ def build(result):
     else:
         points.append("Los modelos de precio no superaron a las referencias simples, así que no se muestra un precio objetivo.")
 
-    # 2) Riesgo (la parte más fiable)
+    context = result.get("context_used") or []
+    if context:
+        points.append("Datos de contexto disponibles al corte: " + ", ".join(context) + ".")
+    else:
+        points.append("Contexto externo inactivo en esta predicción (VIX, S&P 500, tasa a 10 años y dólar).")
+
+    # 2) Riesgo
     if risk:
         rg = risk["range_90"]
         cov = rg.get("historical_coverage")
         points.append(f"Riesgo: el precio se suele mover cerca de ±{risk['expected_move_pct']:.1f} % en {ses}. "
-                      f"Rango probable (90 %): {rg['low_price']:,.2f} a {rg['high_price']:,.2f}. "
-                      + (f"En el pasado este rango acertó {_p(cov)} de las veces. " if cov is not None else "")
+                      f"Rango de riesgo (90 % nominal): {rg['low_price']:,.2f} a {rg['high_price']:,.2f}. "
+                      + (f"Cobertura observada en la evaluación histórica: {_p(cov)}. " if cov is not None else "")
                       + f"Nivel de riesgo actual: {risk['risk_level'].lower()} comparado con su historia.")
     if mc.get("prob_loss_gt_10pct") is not None and mc["prob_loss_gt_10pct"] > 0.01:
         points.append(f"Escenario malo: en las simulaciones, {_p(mc['prob_loss_gt_10pct'])} de los casos pierden más de 10 %.")
 
     reliability = ("Media" if prob.get("has_edge") or cons.get("status") == "ok"
-                   else "Baja para la dirección; buena para el riesgo" if risk.get("beats_reference")
+                   else "Baja para la dirección; el modelo de riesgo redujo el error en selección" if risk.get("beats_reference")
                    else "Baja")
     if verdict == "neutral":
         headline = "Sin ventaja clara en la dirección"
@@ -64,11 +70,11 @@ def build(result):
 
 
 GLOSSARY = {
-    "Probabilidad de subida": "Porcentaje de veces que, en situaciones parecidas, el precio terminó más alto.",
+    "Probabilidad de subida": "Estimación del modelo o frecuencia histórica de referencia. Los tramos observados sirven para diagnosticar la estimación.",
     "Referencia simple": "Una regla tonta (\"el precio no cambia\" o \"sube lo de siempre\"). Si un modelo no le gana, no aporta.",
     "Walk-forward": "Se entrena con el pasado y se prueba con el 'futuro' que el modelo no vio, como en la vida real.",
     "Volatilidad": "Cuánto se mueve el precio normalmente. Más volatilidad = más riesgo y más incertidumbre.",
-    "Intervalo 90 %": "Rango donde el precio debería quedar 9 de cada 10 veces si el modelo está bien calibrado.",
+    "Intervalo 90 %": "El 90 % indica el nivel nominal. La cobertura observada debe medirse para cada método y horizonte.",
     "Brier score": "Error de una probabilidad (0 es perfecto). Se compara con la referencia para ver si el modelo aporta.",
     "VIX": "Índice del 'miedo' del mercado de EE. UU.: sube cuando los inversores esperan movimientos fuertes.",
 }

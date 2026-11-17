@@ -190,7 +190,7 @@ def run_all(data, symbol, horizon=5, seed=0, n_splits=5, context=None, *, calend
         cons["interval"] = {"level": 0.90, "low_price": round(reference * float(np.exp(c - z * r)), 6),
                             "high_price": round(reference * float(np.exp(c + z * r)), 6)}
 
-    # 4) Probabilidad de subida (calibrada) y riesgo (volatilidad): lo más útil para decidir
+    # 4) Probabilidad de subida y riesgo (volatilidad).
     try:
         prob = probability.run(X, y, x_now, horizon, seed=seed, n_splits=n_splits,
                                holdout_start=holdout_start if len(holdout_indices) else None)
@@ -254,7 +254,7 @@ def run_all(data, symbol, horizon=5, seed=0, n_splits=5, context=None, *, calend
             else "El tramo final no interviene en la selección del consenso.",
             "Validación walk-forward cronológica con purga del horizonte: ningún modelo se entrena con información posterior a la fecha de predicción.",
             "Un modelo solo recibe peso si supera a las referencias simples (último precio y retorno medio).",
-            "Los intervalos suponen errores aproximadamente normales; en mercados reales las colas son más pesadas.",
+            "Los rangos individuales usan una aproximación normal basada en su propio error. El rango del consenso usa el promedio ponderado de los errores individuales y su cobertura es desconocida.",
             "Modelos opcionales: " + ", ".join(f"{k} ({'activo' if v['enabled'] else 'inactivo: ' + v['requires']})" for k, v in registry.optional_status().items()) + ". Pendientes: " + ", ".join(registry.PENDING) + ".",
         ],
     }

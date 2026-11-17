@@ -7,10 +7,10 @@ Plataforma académica de análisis y predicción de activos financieros (Flask, 
 |---|---|
 | 0 Auditoría | Hecha (ver `docs/DIAGNOSTICO.md`) |
 | 1 Estabilización | **Base hecha**: fábrica de app única, configuración por entorno, admin protegido, validación, límites, cabeceras, pruebas. Pendiente: BD Supabase |
-| 3 Predicción | **Parcial**: Ridge, Random Forest, referencias, Monte Carlo, consenso, walk-forward (ver `docs/MODELOS.md`). XGBoost, ARIMA y SARIMA están escritos pero **sin verificar** (requieren `requirements-ml.txt`); pendiente LSTM y la evaluación automática |
-| 3b Decisión | **Hecha**: probabilidad de subida calibrada, modelo de riesgo (volatilidad), contexto de mercado (VIX, S&P 500, tasas, dólar), pulso de noticias, resumen en lenguaje sencillo, prueba de significancia (Diebold-Mariano) y pestaña *Resultados* multiactivo |
+| 3 Predicción | **Parcial**: Ridge, Random Forest, referencias, Monte Carlo, consenso, walk-forward (ver `docs/MODELOS.md`). XGBoost, ARIMA y SARIMA se ejercitan en CI con `requirements-ml.txt`. La evaluación periódica sigue pendiente |
+| 3b Decisión | **Hecha**: probabilidad estimada de subida con diagnóstico histórico, modelo de riesgo (volatilidad), contexto externo preparado pero inactivo, pulso de noticias, resumen en lenguaje sencillo, prueba de significancia (Diebold-Mariano) y pestaña *Resultados* multiactivo |
 | Navegación | Menú superior funcional (Productos, Comunidad, Mercados, Brókers, Más) |
-| 4–5 Cuentas | **Parcial** (ver `docs/CUENTAS.md`): registro/login, predicciones guardadas con evaluación automática y portafolio simulado. Lógica probada; capa SQL pendiente de verificar en Supabase |
+| 4–5 Cuentas | **Parcial** (ver `docs/CUENTAS.md`): registro/login, guardado SQL explícito y solicitud de evaluación al abrir Mi cuenta o pulsar Actualizar resultados. Historial JSON separado y portafolio simulado |
 | 2, 4–8 | Pendientes |
 
 ## Instalación rápida y verificación

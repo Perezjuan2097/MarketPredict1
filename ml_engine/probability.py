@@ -1,12 +1,13 @@
-"""Probabilidad de que el precio SUBA en `horizon` sesiones, con su calibración fuera de muestra.
+"""Probabilidad de que el precio SUBA en `horizon` sesiones, con frecuencias observadas por tramo fuera de muestra.
 
 Idea para principiantes: en vez de prometer "va a subir", el sistema dice "hay un 56 % de probabilidad"
 y muestra si, en el pasado, cuando dijo 56 % realmente subió ~56 % de las veces.
 
 Validación: los mismos bloques walk-forward (con purga del horizonte) que el motor de retornos.
 Referencia: la frecuencia histórica de subidas del periodo de entrenamiento ("casi siempre sube un poco
-más de la mitad de las veces"). Un modelo solo se usa si mejora el Brier score de esa referencia de forma
-estadísticamente significativa (Diebold-Mariano con Newey-West): mejorar "por suerte" no cuenta.
+más de la mitad de las veces"). Un modelo solo se usa si mejora el Brier score de esa referencia y supera
+el filtro de Diebold-Mariano con Newey-West. Los tramos sirven para
+diagnosticar las estimaciones y no se usan para recalibrarlas.
 """
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier

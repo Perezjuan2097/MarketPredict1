@@ -165,6 +165,13 @@ class TestNuevosEndpoints(BaseCase):
         self.assertEqual(j["data_source"], "demo")
         self.assertEqual(j["horizon_days"], 5)
         self.assertIn("consensus", j)
+        self.assertEqual(j["context_used"], [])
+        self.assertTrue(any("Contexto externo inactivo" in point for point in j["explanation"]["points"]))
+        self.assertTrue(any("su cobertura es desconocida" in note for note in j["notes"]))
+        self.assertIn("calibration", j["probability"]["models"][0])
+        for model in j["models"]:
+            if model["status"] == "ok":
+                self.assertEqual(set(model["interval"]), {"level", "method", "low_price", "high_price"})
 
     def test_models_validaciones(self):
         self.assertEqual(self.c.get("/api/models/AAPL?horizon=abc").status_code, 400)
