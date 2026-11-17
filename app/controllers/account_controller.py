@@ -4,6 +4,7 @@ from decimal import Decimal
 from functools import wraps
 
 from flask import Blueprint, current_app, jsonify, request
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from app.controllers.broker_controller import broker_access_allowed
 from app.repositories import factory
@@ -53,6 +54,8 @@ def guarded(auth=True):
                 return view(repo, user, *args, **kwargs)
             except InvalidInput as exc:
                 return jsonify(error=str(exc)), 400
+            except RequestEntityTooLarge:
+                raise
             except OrganizationNotFound as exc:
                 return jsonify(error=str(exc)), 404
             except OrganizationAccessDenied as exc:

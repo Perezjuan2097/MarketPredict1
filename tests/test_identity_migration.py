@@ -74,7 +74,7 @@ def test_postgres_repairs_stamped_partial_installation(connection, monkeypatch):
     command.stamp(cfg, "20261115_identity_keys")
     command.upgrade(cfg, "head")
     command.upgrade(cfg, "head")
-    assert MigrationContext.configure(connection).get_current_revision() == "20261119_organizations"
+    assert MigrationContext.configure(connection).get_current_revision() == "20261120_enterprise_datasets"
     assert sa.inspect(connection).has_table("auth_sessions")
     assert sa.inspect(connection).has_table("forecast_emission_saves")
     assert connection.exec_driver_sql(
@@ -176,3 +176,38 @@ def test_postgres_rls_denies_unprivileged_role(connection):
             assert connection.exec_driver_sql(f"SELECT count(*) FROM {table}").scalar_one() == 0
             assert connection.exec_driver_sql(f"UPDATE {table} SET {column} = 'changed'").rowcount == 0
         savepoint.rollback()
+
+def test_dataset_schema_guards_tenant_relations_and_preserves_rows(connection):
+    _legacy(connection)
+    migration = import_module("migrations.versions.20261120_enterprise_datasets")
+    with Operations.context(MigrationContext.configure(connection)):
+        import_module("migrations.versions.20261119_organizations").upgrade()
+        migration.upgrade()
+        migration.upgrade()
+        assert set(migration.TABLES) <= set(sa.inspect(connection).get_table_names())
+        if connection.dialect.name == "postgresql":
+            for table in migration.TABLES:
+                assert connection.exec_driver_sql(
+                    f"SELECT relrowsecurity FROM pg_class WHERE oid = '{table}'::regclass"
+                ).scalar_one()
+        connection.exec_driver_sql(
+            "INSERT INTO organizations (id, name, slug) VALUES (1, 'Alpha', 'alpha'), (2, 'Beta', 'beta')"
+        )
+        connection.exec_driver_sql(
+            "INSERT INTO enterprise_datasets (id, organization_id, owner_id, name, currency) "
+            "VALUES (10, 1, 4, 'Ventas', 'USD')"
+        )
+        fks = sa.inspect(connection).get_foreign_keys("enterprise_dataset_versions")
+        assert fks[0]["constrained_columns"] == ["organization_id", "dataset_id"]
+        if connection.dialect.name == "postgresql":
+            with pytest.raises(sa.exc.IntegrityError), connection.begin_nested():
+                connection.exec_driver_sql(
+                    "INSERT INTO enterprise_dataset_versions (organization_id, dataset_id, version, status) "
+                    "VALUES (2, 10, 1, 'ready')"
+                )
+        with pytest.raises(RuntimeError, match="mientras tengan datos"):
+            migration.downgrade()
+        connection.exec_driver_sql("DELETE FROM enterprise_datasets")
+        migration.downgrade()
+    assert sa.inspect(connection).has_table("organizations")
+    assert connection.exec_driver_sql("SELECT id FROM users").scalar_one() == 4

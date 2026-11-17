@@ -356,6 +356,45 @@
                     <div id="enterpriseMembers" class="table-scroll"></div>
                     <button id="enterpriseMoreMembers" type="button" class="secondary-button" hidden>Cargar más miembros</button>
                 </section>
+                <section id="enterpriseDatasets" aria-labelledby="datasetsTitle" hidden>
+                    <h4 id="datasetsTitle">Datos empresariales</h4>
+                    <p id="datasetMessage" role="status"></p>
+                    <form id="datasetCreate" class="account-form">
+                        <label>Nombre del dataset<input name="name" maxlength="100" required></label>
+                        <button type="submit" class="secondary-button">Crear dataset</button>
+                    </form>
+                    <div class="tracking-actions">
+                        <label>Dataset <select id="datasetSelect"></select></label>
+                        <button id="datasetMore" type="button" class="secondary-button" hidden>Cargar más datasets</button>
+                    </div>
+                    <div id="datasetDetail" hidden>
+                        <form id="datasetRename" class="account-form">
+                            <label>Nombre<input name="name" maxlength="100" required></label>
+                            <button type="submit" class="secondary-button">Renombrar</button>
+                            <button type="button" id="datasetArchive" class="secondary-button">Archivar dataset</button>
+                        </form>
+                        <div id="datasetImport">
+                            <h5>Importar una versión</h5>
+                            <label>Archivo CSV o Excel <input id="datasetFile" type="file" accept=".csv,.xlsx"></label>
+                            <button id="datasetInspect" type="button" class="secondary-button">Leer columnas</button>
+                            <form id="datasetMapping" class="account-form" hidden>
+                                <div id="datasetFields"></div>
+                                <button type="submit" class="secondary-button">Validar y previsualizar</button>
+                            </form>
+                            <div id="datasetPreview" class="table-scroll"></div>
+                            <button id="datasetConfirm" type="button" class="primary-button" hidden>Confirmar importación</button>
+                        </div>
+                        <h5>Indicadores e historial de versiones</h5>
+                        <label>Versión <select id="datasetVersion"></select></label>
+                        <button id="datasetMoreVersions" type="button" class="secondary-button" hidden>Cargar más versiones</button>
+                        <p id="datasetQuality"></p>
+                        <div id="datasetMetrics" class="metric-grid"></div>
+                        <div id="datasetSeries" class="table-scroll"></div>
+                        <h5>Registros de la versión</h5>
+                        <div id="datasetRows" class="table-scroll"></div>
+                        <button id="datasetMoreRows" type="button" class="secondary-button" hidden>Cargar más registros</button>
+                    </div>
+                </section>
             </div>
         </div>
     </section>
@@ -395,6 +434,7 @@
     </form>
 </dialog>
 
+<script src="/static/js/enterprise-datasets.js"></script>
 <script src="/static/js/script.js"></script>
 </body>
 </html>

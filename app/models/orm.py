@@ -7,7 +7,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import (JSON, BigInteger, Boolean, CheckConstraint, Column, Date, DateTime, ForeignKey,
+from sqlalchemy import (JSON, BigInteger, Boolean, CheckConstraint, Column, Date, DateTime, ForeignKey, ForeignKeyConstraint,
                         Index, Integer, Numeric, String, Table, Text, UniqueConstraint, func)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, validates
 
@@ -356,3 +356,87 @@ class AuditLog(Base):
     ip: Mapped[Optional[str]] = mapped_column(String(45))
     created_at: Mapped[datetime] = _created()
     __table_args__ = (Index("ix_audit_actor", "actor_id", "created_at"), Index("ix_audit_action", "action", "created_at"))
+
+
+# Enterprise datasets. Every child carries an organization key checked by composite foreign keys.
+class EnterpriseDataset(Audit, Base):
+    __tablename__ = "enterprise_datasets"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    organization_id: Mapped[int] = mapped_column(ForeignKey("organizations.id", ondelete="RESTRICT"), nullable=False)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    archived: Mapped[bool] = mapped_column(Boolean, server_default="0", nullable=False)
+    __table_args__ = (UniqueConstraint("organization_id", "id"),)
+
+
+class EnterpriseDatasetVersion(Base):
+    __tablename__ = "enterprise_dataset_versions"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    organization_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    dataset_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(12), nullable=False)
+    created_at: Mapped[datetime] = _created()
+    __table_args__ = (
+        ForeignKeyConstraint(["organization_id", "dataset_id"], ["enterprise_datasets.organization_id", "enterprise_datasets.id"]),
+        UniqueConstraint("organization_id", "dataset_id", "version"),
+        UniqueConstraint("organization_id", "id"),
+        CheckConstraint("status = 'ready' AND version > 0", name="ck_enterprise_version_ready"),
+    )
+
+
+class EnterpriseDatasetSchema(Base):
+    __tablename__ = "enterprise_dataset_schemas"
+    organization_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    version_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    contract: Mapped[str] = mapped_column(String(40), nullable=False)
+    mapping: Mapped[dict] = mapped_column(JSON, nullable=False)
+    __table_args__ = (
+        ForeignKeyConstraint(["organization_id", "version_id"],
+                             ["enterprise_dataset_versions.organization_id", "enterprise_dataset_versions.id"]),
+    )
+
+
+class EnterpriseDatasetImport(Base):
+    __tablename__ = "enterprise_dataset_imports"
+    organization_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    version_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    uploaded_by: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    source_format: Mapped[str] = mapped_column(String(5), nullable=False)
+    source_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    uploaded_at: Mapped[datetime] = _created()
+    __table_args__ = (
+        ForeignKeyConstraint(["organization_id", "version_id"],
+                             ["enterprise_dataset_versions.organization_id", "enterprise_dataset_versions.id"]),
+    )
+
+
+class EnterpriseDatasetQuality(Base):
+    __tablename__ = "enterprise_dataset_quality"
+    organization_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    version_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    counts: Mapped[dict] = mapped_column(JSON, nullable=False)
+    __table_args__ = (
+        ForeignKeyConstraint(["organization_id", "version_id"],
+                             ["enterprise_dataset_versions.organization_id", "enterprise_dataset_versions.id"]),
+    )
+
+
+class EnterpriseDatasetRow(Base):
+    __tablename__ = "enterprise_dataset_rows"
+    organization_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    version_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    row_number: Mapped[int] = mapped_column(Integer, primary_key=True)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    product: Mapped[str] = mapped_column(String(160), nullable=False)
+    category: Mapped[Optional[str]] = mapped_column(String(160))
+    quantity: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    price: Mapped[Optional[int]] = mapped_column(BigInteger)
+    revenue: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    __table_args__ = (
+        ForeignKeyConstraint(["organization_id", "version_id"],
+                             ["enterprise_dataset_versions.organization_id", "enterprise_dataset_versions.id"]),
+        Index("ix_enterprise_dataset_rows_date", "organization_id", "version_id", "date"),
+    )

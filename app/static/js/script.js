@@ -578,7 +578,10 @@ document.addEventListener("DOMContentLoaded", () => {
     async function api(method, url, body) {
         const options = { method, headers: { "Content-Type": "application/json" } };
         if (method !== "GET") options.headers["X-CSRF-Token"] = csrfToken;
-        if (body !== undefined) options.body = JSON.stringify(body);
+        if (body instanceof FormData) {
+            delete options.headers["Content-Type"];
+            options.body = body;
+        } else if (body !== undefined) options.body = JSON.stringify(body);
         const response = await fetch(url, options);
         const data = await response.json().catch(() => ({}));
         if (!response.ok) { const error = new Error(data.error || "No fue posible completar la solicitud."); error.status = response.status; throw error; }
@@ -775,6 +778,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
+    const datasets = window.createDatasetPanel?.(api);
     const ENTERPRISE_API = "/api/me/organizations";
     const ORGANIZATION_ROLES = ["owner", "admin", "member", "viewer"];
     const ENTERPRISE_PAGE_SIZE = 50;
@@ -784,6 +788,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let enterpriseAfter = 0;
 
     function clearEnterprise() {
+        datasets?.reset();
         enterpriseRequest++;
         enterpriseOrgs = [];
         enterpriseMembers = [];
@@ -840,6 +845,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const slug = $("#enterpriseSelect").value;
         const dashboard = $("#enterpriseDashboard");
         if (!more) {
+            datasets?.reset();
             dashboard.hidden = true;
             enterpriseMembers = [];
         }
@@ -878,9 +884,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     roleField + '<button type="button" data-revoke>Revocar acceso</button></form>';
             }).join("");
             dashboard.hidden = false;
+            if (!more) datasets?.open(url + "/datasets", organization.permissions);
         } catch (error) {
             if (requestId !== enterpriseRequest) return;
             dashboard.hidden = true;
+            datasets?.reset();
             $("#enterpriseMessage").textContent = error.message;
         }
     }
