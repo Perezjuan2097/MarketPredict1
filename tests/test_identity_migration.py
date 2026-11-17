@@ -74,7 +74,7 @@ def test_postgres_repairs_stamped_partial_installation(connection, monkeypatch):
     command.stamp(cfg, "20261115_identity_keys")
     command.upgrade(cfg, "head")
     command.upgrade(cfg, "head")
-    assert MigrationContext.configure(connection).get_current_revision() == "20261120_enterprise_datasets"
+    assert MigrationContext.configure(connection).get_current_revision() == "20261121_enterprise_forecasts"
     assert sa.inspect(connection).has_table("auth_sessions")
     assert sa.inspect(connection).has_table("forecast_emission_saves")
     assert connection.exec_driver_sql(
@@ -161,18 +161,31 @@ def test_postgres_rls_denies_unprivileged_role(connection):
         with Operations.context(MigrationContext.configure(connection)):
             import_module("migrations.versions.20261118_forecast_saves").upgrade()
             import_module("migrations.versions.20261119_organizations").upgrade()
+            import_module("migrations.versions.20261120_enterprise_datasets").upgrade()
+            import_module("migrations.versions.20261121_enterprise_forecasts").upgrade()
         connection.exec_driver_sql("INSERT INTO organizations (id, name, slug) VALUES (1, 'Fixture', 'fixture')")
+        connection.exec_driver_sql(
+            "INSERT INTO enterprise_datasets (id, organization_id, owner_id, name, currency) VALUES (10, 1, 4, 'Ventas', 'USD')"
+        )
+        connection.exec_driver_sql(
+            "INSERT INTO enterprise_dataset_versions (id, organization_id, dataset_id, version, status) VALUES (20, 1, 10, 1, 'ready')"
+        )
+        connection.exec_driver_sql(
+            "INSERT INTO enterprise_forecast_runs (organization_id, dataset_id, version_id, requested_by, state, "
+            "created_epoch, lease_until, parameters, provenance) VALUES (1, 10, 20, 4, 'ready', 1, 2, '{}', '{}')"
+        )
         connection.exec_driver_sql(
             "INSERT INTO forecast_emission_saves (user_id, emission_id, prediction_ids) VALUES (4, 'test', '[]')"
         )
         schema = connection.dialect.identifier_preparer.quote_identifier(
             connection.exec_driver_sql("SELECT current_schema()").scalar_one())
         connection.exec_driver_sql(f"GRANT USAGE ON SCHEMA {schema} TO {role}")
-        for table in ("organizations", "forecast_emission_saves"):
+        for table in ("organizations", "forecast_emission_saves", "enterprise_forecast_runs"):
             assert connection.exec_driver_sql(f"SELECT count(*) FROM {table}").scalar_one() == 1
             connection.exec_driver_sql(f"GRANT SELECT, UPDATE ON {table} TO {role}")
         connection.exec_driver_sql(f"SET LOCAL ROLE {role}")
-        for table, column in (("organizations", "name"), ("forecast_emission_saves", "emission_id")):
+        for table, column in (("organizations", "name"), ("forecast_emission_saves", "emission_id"),
+                              ("enterprise_forecast_runs", "state")):
             assert connection.exec_driver_sql(f"SELECT count(*) FROM {table}").scalar_one() == 0
             assert connection.exec_driver_sql(f"UPDATE {table} SET {column} = 'changed'").rowcount == 0
         savepoint.rollback()
@@ -211,3 +224,47 @@ def test_dataset_schema_guards_tenant_relations_and_preserves_rows(connection):
         migration.downgrade()
     assert sa.inspect(connection).has_table("organizations")
     assert connection.exec_driver_sql("SELECT id FROM users").scalar_one() == 4
+
+
+def test_forecast_migration_preserves_sales_rows_and_enforces_version_scope(connection):
+    _legacy(connection)
+    revision = import_module("migrations.versions.20261121_enterprise_forecasts")
+    with Operations.context(MigrationContext.configure(connection)):
+        import_module("migrations.versions.20261119_organizations").upgrade()
+        import_module("migrations.versions.20261120_enterprise_datasets").upgrade()
+        connection.exec_driver_sql("INSERT INTO organizations (id, name, slug) VALUES (1, 'Fixture', 'fixture')")
+        connection.exec_driver_sql(
+            "INSERT INTO enterprise_datasets (id, organization_id, owner_id, name, currency) "
+            "VALUES (10, 1, 4, 'Ventas', 'USD'), (11, 1, 4, 'Otros', 'USD')"
+        )
+        connection.exec_driver_sql(
+            "INSERT INTO enterprise_dataset_versions (id, organization_id, dataset_id, version, status) "
+            "VALUES (20, 1, 10, 1, 'ready')"
+        )
+        connection.exec_driver_sql(
+            "INSERT INTO enterprise_dataset_rows (organization_id, version_id, row_number, date, product, quantity, revenue) "
+            "VALUES (1, 20, 2, '2025-01-01', 'A', 20000, 40000)"
+        )
+        revision.upgrade()
+        revision.upgrade()
+        assert connection.exec_driver_sql(
+            "SELECT quantity, revenue, transaction_id FROM enterprise_dataset_rows"
+        ).one() == (20000, 40000, None)
+        keys = sa.inspect(connection).get_foreign_keys("enterprise_forecast_runs")
+        assert any(k["constrained_columns"] == ["organization_id", "dataset_id", "version_id"]
+                   for k in keys)
+        if connection.dialect.name == "postgresql":
+            assert connection.exec_driver_sql(
+                "SELECT relrowsecurity FROM pg_class WHERE oid = 'enterprise_forecast_runs'::regclass"
+            ).scalar_one()
+            with pytest.raises(sa.exc.IntegrityError), connection.begin_nested():
+                connection.exec_driver_sql(
+                    "INSERT INTO enterprise_forecast_runs (organization_id, dataset_id, version_id, requested_by, state, "
+                    "created_epoch, lease_until, parameters, provenance) VALUES (1, 11, 20, 4, 'running', 1, 2, '{}', '{}')"
+                )
+        connection.exec_driver_sql("UPDATE enterprise_dataset_rows SET transaction_id = 'TX1'")
+        with pytest.raises(RuntimeError, match="Conserve el esquema"):
+            revision.downgrade()
+        connection.exec_driver_sql("UPDATE enterprise_dataset_rows SET transaction_id = NULL")
+        revision.downgrade()
+    assert connection.exec_driver_sql("SELECT product FROM enterprise_dataset_rows").scalar_one() == "A"

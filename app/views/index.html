@@ -393,6 +393,30 @@
                         <h5>Registros de la versión</h5>
                         <div id="datasetRows" class="table-scroll"></div>
                         <button id="datasetMoreRows" type="button" class="secondary-button" hidden>Cargar más registros</button>
+                        <section id="enterpriseForecasts" aria-labelledby="forecastTitle" hidden>
+                            <h4 id="forecastTitle">Predicciones empresariales</h4>
+                            <p id="forecastVersion"></p>
+                            <form id="forecastForm" class="account-form">
+                                <label>Variable<select name="target"><option value="revenue">Ingresos</option><option value="quantity">Unidades</option></select></label>
+                                <label>Agrupación<select name="group_by"><option value="date">Total por fecha</option><option value="product">Producto por fecha</option><option value="category">Categoría por fecha</option></select></label>
+                                <label id="forecastGroup" hidden>Producto o categoría exactos<input name="group" maxlength="160"></label>
+                                <label>Desde<input name="start" type="date" required></label>
+                                <label>Último día completo<input name="complete_through" type="date" required></label>
+                                <label>Horizonte en días<input name="horizon" type="number" min="1" max="14" value="3" required></label>
+                                <label>Fechas sin actividad (AAAA-MM-DD; separadas por coma)<textarea name="zero_dates" maxlength="9000" rows="2"></textarea></label>
+                                <label>Ajuste porcentual del escenario (opcional)<input name="scenario_pct" type="number" min="-100" max="100" step="0.1"></label>
+                                <button type="submit" class="primary-button">Generar pronóstico</button>
+                            </form>
+                            <p id="forecastMessage" role="status"></p>
+                            <label>Historial de ejecuciones <select id="forecastHistory"></select></label>
+                            <button id="forecastMore" class="secondary-button" type="button" hidden>Cargar más ejecuciones</button>
+                            <div id="forecastResult" hidden>
+                                <p id="forecastQuality"></p>
+                                <canvas id="forecastChart" height="150" role="img" aria-label="Historia y pronóstico. Los valores proyectados aparecen también en la tabla."></canvas>
+                                <div id="forecastPoints" class="table-scroll"></div>
+                                <div id="forecastModels" class="table-scroll"></div>
+                            </div>
+                        </section>
                     </div>
                 </section>
             </div>
@@ -434,6 +458,7 @@
     </form>
 </dialog>
 
+<script src="/static/js/enterprise-forecasts.js"></script>
 <script src="/static/js/enterprise-datasets.js"></script>
 <script src="/static/js/script.js"></script>
 </body>

@@ -12,11 +12,18 @@ from app.security import InvalidInput
 from app.services.dataset_files import ExcelNumber, read_table
 
 CONTRACT = "sales-daily-v1"
-FIELDS = ("date", "product", "quantity", "price", "revenue", "category")
+TRANSACTION_CONTRACT = "sales-daily-v2"
+FIELDS = ("date", "product", "quantity", "price", "revenue", "category", "transaction_id")
+
 REQUIRED = {"date", "product", "quantity"}
 SCALE = 10000
 MAX_SCALED = 10**14
 PREVIEW_SECONDS = 900
+
+
+
+def contract_for(mapping):
+    return TRANSACTION_CONTRACT if mapping and "transaction_id" in mapping else CONTRACT
 
 
 def _signer(secret):
@@ -25,7 +32,7 @@ def _signer(secret):
 
 
 def sign_preview(secret, scope, mapping, digest):
-    return _signer(secret).dumps({"scope": scope, "mapping": mapping, "digest": digest, "contract": CONTRACT})
+    return _signer(secret).dumps({"scope": scope, "mapping": mapping, "digest": digest, "contract": contract_for(mapping)})
 
 
 def verify_preview(secret, token):
@@ -84,7 +91,8 @@ def _value(field, raw):
 
 def _preview_record(row):
     return {"date": row["date"].isoformat(), "product": row["product"], "category": row["category"],
-            **{key: amount(row[key]) for key in ("quantity", "price", "revenue")}}
+            **{key: amount(row[key]) for key in ("quantity", "price", "revenue")},
+            **({"transaction_id": row["transaction_id"]} if row["transaction_id"] is not None else {})}
 
 
 def parse_import(data, extension, max_rows, mapping=None):
@@ -107,7 +115,7 @@ def parse_import(data, extension, max_rows, mapping=None):
             raw = values[index]
             if not _text(raw).strip():
                 quality["missing_cells"][field] += 1
-                if field in REQUIRED:
+                if field in REQUIRED or field == "transaction_id":
                     issues.append((field, "missing"))
                 continue
             try:
@@ -147,6 +155,6 @@ def parse_import(data, extension, max_rows, mapping=None):
 
 def import_identity(data, extension, mapping):
     source = sha256(data).hexdigest()
-    fingerprint = sha256(json.dumps([CONTRACT, extension, source, mapping], sort_keys=True,
+    fingerprint = sha256(json.dumps([contract_for(mapping), extension, source, mapping], sort_keys=True,
                                     separators=(",", ":")).encode()).hexdigest()
     return source, fingerprint

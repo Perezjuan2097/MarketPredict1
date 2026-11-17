@@ -381,6 +381,7 @@ class EnterpriseDatasetVersion(Base):
     __table_args__ = (
         ForeignKeyConstraint(["organization_id", "dataset_id"], ["enterprise_datasets.organization_id", "enterprise_datasets.id"]),
         UniqueConstraint("organization_id", "dataset_id", "version"),
+        Index("ux_enterprise_version_scope", "organization_id", "dataset_id", "id", unique=True),
         UniqueConstraint("organization_id", "id"),
         CheckConstraint("status = 'ready' AND version > 0", name="ck_enterprise_version_ready"),
     )
@@ -431,6 +432,7 @@ class EnterpriseDatasetRow(Base):
     row_number: Mapped[int] = mapped_column(Integer, primary_key=True)
     date: Mapped[date] = mapped_column(Date, nullable=False)
     product: Mapped[str] = mapped_column(String(160), nullable=False)
+    transaction_id: Mapped[Optional[str]] = mapped_column(String(160))
     category: Mapped[Optional[str]] = mapped_column(String(160))
     quantity: Mapped[int] = mapped_column(BigInteger, nullable=False)
     price: Mapped[Optional[int]] = mapped_column(BigInteger)
@@ -439,4 +441,30 @@ class EnterpriseDatasetRow(Base):
         ForeignKeyConstraint(["organization_id", "version_id"],
                              ["enterprise_dataset_versions.organization_id", "enterprise_dataset_versions.id"]),
         Index("ix_enterprise_dataset_rows_date", "organization_id", "version_id", "date"),
+    )
+
+
+
+class EnterpriseForecastRun(Base):
+    __tablename__ = "enterprise_forecast_runs"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    organization_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    dataset_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    version_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    requested_by: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    state: Mapped[str] = mapped_column(String(12), nullable=False)
+    created_at: Mapped[datetime] = _created()
+    created_epoch: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    lease_until: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    parameters: Mapped[dict] = mapped_column(JSON, nullable=False)
+    provenance: Mapped[dict] = mapped_column(JSON, nullable=False)
+    result: Mapped[Optional[dict]] = mapped_column(JSON)
+    __table_args__ = (
+        ForeignKeyConstraint(["organization_id", "dataset_id", "version_id"],
+                             ["enterprise_dataset_versions.organization_id", "enterprise_dataset_versions.dataset_id",
+                              "enterprise_dataset_versions.id"]),
+        CheckConstraint("state IN ('running','ready','failed')", name="ck_enterprise_forecast_state"),
+        Index("ix_enterprise_forecast_dataset", "organization_id", "dataset_id", "id"),
+        Index("ix_enterprise_forecast_capacity", "state", "lease_until"),
+        Index("ix_enterprise_forecast_actor", "requested_by", "created_epoch"),
     )

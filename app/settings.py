@@ -31,6 +31,8 @@ class Settings:
         self.SESSION_COOKIE_SECURE = env == "production"
         self.MAX_CONTENT_LENGTH = 1 * 1024 * 1024  # 1 MB por petición
         self.DATASET_MAX_BYTES = int(os.getenv("DATASET_MAX_BYTES", "750000"))
+        self.ENTERPRISE_FORECAST_ARIMA = _bool("ENTERPRISE_FORECAST_ARIMA")
+        self.ENTERPRISE_FORECAST_CONCURRENCY = int(os.getenv("ENTERPRISE_FORECAST_CONCURRENCY", "1"))
         self.DATASET_MAX_ROWS = int(os.getenv("DATASET_MAX_ROWS", "10000"))
         self.ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "")  # acceso independiente de recuperación
         self.RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "120"))
@@ -44,6 +46,8 @@ class Settings:
         for key, value in (overrides or {}).items():
             setattr(self, key, value)
 
+        if not 1 <= self.ENTERPRISE_FORECAST_CONCURRENCY <= 4:
+            raise ValueError("El límite de pronósticos empresariales debe estar entre 1 y 4.")
         if not 1 <= self.DATASET_MAX_BYTES <= 900000 or not 1 <= self.DATASET_MAX_ROWS <= 50000:
             raise ValueError("Los límites de importación están fuera del intervalo permitido.")
 

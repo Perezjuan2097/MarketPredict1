@@ -248,3 +248,115 @@ def test_import_rolls_back_and_duplicate_concurrent_confirm_is_idempotent(repo):
     assert repo.dataset_summary(user, "example", dataset, None)["metrics"]["records"] == 2
     with pytest.raises(ConflictError):
         repo.save_dataset_import(user, "example", dataset, scope, {**provenance, "fingerprint": "different"}, parsed)
+
+
+def _forecast_fixture(client, headers, slug):
+    from datetime import date, timedelta
+
+    path = _setup(client, headers, slug)
+    start = date(2025, 1, 1)
+    lines = ["fecha,producto,cantidad,precio,tx,categoria"]
+    for i in range(82):
+        day = start + timedelta(days=i)
+        lines.append(f"{day},A,{1 + i % 7},2,t{i},Retail")
+    lines.append(f"{start},A,1,2,extra,Retail")
+    data = ("\n".join(lines) + "\n").encode()
+    mapping = {**MAPPING, "transaction_id": "tx", "category": "categoria"}
+    response = _post_file(client, path + "/preview", headers, data=data, mapping=json.dumps(mapping))
+    assert response.status_code == 200, response.json
+    preview = response.json
+    assert preview["contract"] == "sales-daily-v2"
+    assert preview["quality"]["duplicate_rows"] == 0
+    assert _post_file(client, path + "/imports", headers, data=data,
+                      preview_token=preview["preview_token"]).status_code == 201
+    return path, {"version": 1, "target": "revenue", "group_by": "product", "group": "A", "horizon": 3,
+                  "start": start.isoformat(), "complete_through": (start + timedelta(days=80)).isoformat()}
+
+
+def test_forecast_api_persists_accepted_runs_and_revokes_access(accounts):
+    app, account = accounts
+    app.config["DATASET_MAX_BYTES"] = 4096
+    alice, key, _ = account("alice")
+    viewer, vkey, viewer_id = account("reader")
+    other, other_key, _ = account("other")
+    path, params = _forecast_fixture(alice, key, "alpha")
+    endpoint = path + "/forecasts"
+    other_path = _setup(other, other_key, "beta")
+    assert other.get(endpoint).status_code == 404
+    assert app.test_client().get(endpoint).status_code == 401
+    assert alice.post(endpoint, json=params).status_code == 403
+    assert alice.post(endpoint, headers=key, json={**params, "horizon": 15}).status_code == 400
+    assert alice.post(endpoint, headers=key, json={**params, "start": "2025-03-01"}).status_code == 400
+    members = BASE + "/alpha/members"
+    assert alice.post(members, headers=key, json={"username": "reader", "role": "viewer"}).status_code == 201
+    assert viewer.post(endpoint, headers=vkey, json=params).status_code == 403
+
+    response = alice.post(endpoint, headers=key, json={**params, "scenario_pct": 10})
+    assert response.status_code == 201, response.json
+    assert response.headers["Cache-Control"] == "no-store"
+    run = response.json["run"]
+    assert run["state"] == "ready"
+    origin = run["provenance"]
+    assert origin["contract"] == "sales-daily-v2"
+    assert origin["source_sha256"] == alice.get(path + "/versions").json["versions"][0]["source_sha256"]
+    assert origin["observations_excluded_after_cutoff"]
+    assert len(origin["series_sha256"]) == 64 and origin["version"] == 1
+    result = run["result"]
+    assert result["history"][0]["value"] == 4.0
+    assert len(result["forecast"]) == 3
+    assert len(result["models"]["naive"]["final"]) >= 5
+    assert result["scenario"]["kind"] == "hypothetical"
+    detail = endpoint + "/" + str(run["id"])
+    assert viewer.get(detail).json["run"] == run
+    assert alice.get(endpoint).json["runs"][0]["id"] == run["id"]
+    assert other.get(other_path + "/forecasts/" + str(run["id"])).status_code == 404
+    assert alice.delete(members + "/" + str(viewer_id), headers=key).status_code == 204
+    assert viewer.get(detail).status_code == 404
+    units = alice.post(endpoint, headers=key, json={**params, "target": "quantity", "group_by": "category",
+                                                    "group": "Retail"}).json["run"]
+    assert units["result"]["history"][0]["value"] == 2.0
+
+
+def test_forecast_capacity_is_persistent_and_rechecks_membership_on_finish(repo):
+    from datetime import date
+    from app.repositories.forecast_sql import ForecastBusy
+    from app.repositories.organization_policy import OrganizationNotFound
+
+    actor = repo.create_user("owner", "owner@example.test", "unused")["id"]
+    member = repo.create_user("worker", "worker@example.test", "unused")["id"]
+    repo.create_organization(actor, "Example", "example")
+    repo.change_organization_member(actor, "example", "member", username="worker")
+    dataset = repo.create_dataset(actor, "example", "Ventas")["id"]
+    scope = repo.dataset_import_scope(actor, "example", dataset)
+    parsed = parse_import(CSV, ".csv", 10, MAPPING)
+    source, fingerprint = import_identity(CSV, ".csv", MAPPING)
+    repo.save_dataset_import(actor, "example", dataset, scope,
+                             {"mapping": MAPPING, "sha256": source, "fingerprint": fingerprint, "format": "csv"}, parsed)
+    params = {"target": "revenue", "group_by": "date", "version": 1}
+    _, origin = repo.forecast_input(member, "example", dataset, params, date(2026, 11, 1), date(2026, 11, 2))
+    barrier = Barrier(2)
+
+    def reserve():
+        barrier.wait(timeout=5)
+        try:
+            return repo.reserve_forecast(member, "example", dataset, params, origin, 2)
+        except ForecastBusy:
+            return None
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        a, b = pool.submit(reserve), pool.submit(reserve)
+        results = [a.result(timeout=10), b.result(timeout=10)]
+    assert results.count(None) == 1
+    first = next(run for run in results if run is not None)
+    repo.change_organization_member(actor, "example", None, target_id=member)
+    with pytest.raises(OrganizationNotFound):
+        repo.finish_forecast(member, "example", dataset, first, {})
+    repo.fail_forecast(member, origin["organization_id"], first)
+    assert repo.get_forecast(actor, "example", dataset, first)["state"] == "failed"
+    for _ in range(3):
+        run = repo.reserve_forecast(actor, "example", dataset, params, origin, 2)
+        repo.fail_forecast(actor, origin["organization_id"], run)
+    run = repo.reserve_forecast(actor, "example", dataset, params, origin, 2)
+    repo.fail_forecast(actor, origin["organization_id"], run)
+    with pytest.raises(ForecastBusy, match="cuatro"):
+        repo.reserve_forecast(actor, "example", dataset, params, origin, 2)

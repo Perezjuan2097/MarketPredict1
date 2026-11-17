@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.models import orm
 from app.repositories.dataset_sql import DatasetSQL
+from app.repositories.forecast_sql import ForecastSQL
 from app.repositories.organization_sql import OrganizationSQL, lock_identity_writes
 from app.services.forecast_emissions import prediction_rows
 from app.repositories.base import DUE_STATUSES, ConflictError, DuplicateError, NotFoundError, identity_key, q2
@@ -55,7 +56,7 @@ def _trade(t, symbol):
             "price_source": t.price_source, "executed_at": _iso(t.executed_at)}
 
 
-class SQLRepository(DatasetSQL, OrganizationSQL):
+class SQLRepository(ForecastSQL, DatasetSQL, OrganizationSQL):
     persistent_sessions = True
     def __init__(self, engine):
         self._Session = sessionmaker(engine, expire_on_commit=False)

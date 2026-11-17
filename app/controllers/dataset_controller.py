@@ -11,7 +11,7 @@ from app.controllers.organization_controller import _page
 from app.repositories.base import ConflictError
 from app.repositories.organization_policy import OrganizationNotFound
 from app.security import InvalidInput, json_object
-from app.services.dataset_imports import CONTRACT, import_identity, parse_import, sign_preview, verify_preview
+from app.services.dataset_imports import contract_for, import_identity, parse_import, sign_preview, verify_preview
 
 
 dataset_bp = Blueprint("datasets", __name__, url_prefix="/api/me/organizations/<slug>/datasets")
@@ -120,7 +120,7 @@ def preview(repo, actor, slug, dataset_id):
             raise InvalidInput("El mapeo de columnas no es válido.")
     parsed = parse_import(data, extension, current_app.config["DATASET_MAX_ROWS"], mapping)
     parsed.pop("records", None)
-    parsed["contract"] = CONTRACT
+    parsed["contract"] = contract_for(mapping)
     if mapping is not None and not parsed["quality"]["invalid_rows"]:
         _, fingerprint = import_identity(data, extension, mapping)
         parsed["preview_token"] = sign_preview(current_app.secret_key, scope, mapping, fingerprint)
@@ -137,7 +137,7 @@ def confirm_import(repo, actor, slug, dataset_id):
     if any(scope[key] != active[key] for key in ("organization_id", "dataset_id", "actor")):
         raise OrganizationNotFound("Vista previa no encontrada.")
     sha256, fingerprint = import_identity(data, extension, mapping)
-    if preview["contract"] != CONTRACT or preview["digest"] != fingerprint:
+    if preview["contract"] != contract_for(mapping) or preview["digest"] != fingerprint:
         raise ConflictError("El archivo cambió o la vista previa debe volver a generarse.")
     parsed = parse_import(data, extension, current_app.config["DATASET_MAX_ROWS"], mapping)
     if parsed["quality"]["invalid_rows"]:

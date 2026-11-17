@@ -2,9 +2,10 @@
 window.createDatasetPanel = function (api) {
     const byId = id => document.getElementById(id);
     const panel = byId("enterpriseDatasets");
+    const forecasts = window.createEnterpriseForecastPanel?.(api);
     const fields = {
         date: "Fecha", product: "Producto", quantity: "Cantidad",
-        price: "Precio", revenue: "Ingresos", category: "Categoría",
+        price: "Precio", revenue: "Ingresos", category: "Categoría", transaction_id: "ID transacción",
     };
     const pageSize = 50;
     let scope = null;
@@ -39,6 +40,7 @@ window.createDatasetPanel = function (api) {
     }
 
     function reset() {
+        forecasts?.reset();
         scope = selection = null;
         panel.hidden = true;
         byId("datasetDetail").hidden = true;
@@ -140,7 +142,12 @@ window.createDatasetPanel = function (api) {
         const grid = item.grid = { version: result.version, after: 0 };
         byId("datasetRows").replaceChildren();
         byId("datasetMoreRows").hidden = true;
-        if (grid.version !== null) await loadRows(item, grid);
+        if (grid.version !== null) {
+            forecasts?.open(item.url + "/forecasts", grid.version, scope.permissions);
+            await loadRows(item, grid);
+        } else {
+            forecasts?.reset();
+        }
     }
 
     async function loadRows(item, grid) {
@@ -149,7 +156,7 @@ window.createDatasetPanel = function (api) {
         const host = byId("datasetRows");
         if (rows.length) {
             if (!grid.after) {
-                table(host, ["Fecha", "Producto", "Cantidad", "Precio", "Ingresos", "Categoría"],
+                table(host, Object.values(fields),
                       rows.map(row => Object.keys(fields).map(key => row[key])));
             } else {
                 const body = host.querySelector("tbody");
@@ -164,6 +171,7 @@ window.createDatasetPanel = function (api) {
     }
 
     async function selectDataset() {
+        forecasts?.reset();
         const id = byId("datasetSelect").value;
         selection = null;
         forgetPreview();
@@ -211,7 +219,10 @@ window.createDatasetPanel = function (api) {
             if (scope === context) byId("datasetMessage").textContent = error.message;
         }
     });
-    bind("datasetVersion", "change", (_, item) => loadSummary(item));
+    bind("datasetVersion", "change", (_, item) => {
+        forecasts?.reset();
+        return loadSummary(item);
+    });
     bind("datasetMoreRows", "click", (_, item) => loadRows(item, item.grid));
     bind("datasetMoreVersions", "click", (_, item) => loadVersions(item, item.versions.at(-1)?.version));
     bind("datasetCreate", "submit", async (context, _, event) => {
@@ -232,6 +243,7 @@ window.createDatasetPanel = function (api) {
         if (scope !== context || selection !== item) return;
         byId("datasetDetail").hidden = true;
         selection = null;
+        forecasts?.reset();
         forgetPreview();
         await loadList(context);
     });

@@ -9,7 +9,7 @@ from app.models.orm import (
 from app.repositories.base import ConflictError
 from app.repositories.organization_policy import OrganizationNotFound
 from app.repositories.organization_sql import lock_identity_writes
-from app.services.dataset_imports import CONTRACT, amount
+from app.services.dataset_imports import amount, contract_for
 
 
 def _dataset(row):
@@ -84,7 +84,7 @@ class DatasetSQL:
             session.flush()
             keys = {"organization_id": dataset.organization_id, "version_id": version.id}
             session.add_all([
-                Schema(**keys, contract=CONTRACT, mapping=provenance["mapping"]),
+                Schema(**keys, contract=contract_for(provenance["mapping"]), mapping=provenance["mapping"]),
                 Import(**keys, uploaded_by=actor, source_format=provenance["format"],
                        source_sha256=provenance["sha256"], fingerprint=provenance["fingerprint"]),
                 Quality(**keys, counts=parsed["quality"]),
@@ -128,7 +128,8 @@ class DatasetSQL:
                                       .order_by(Row.row_number).limit(limit))
             return {"version": version.version, "rows": [
                 {"row_number": row.row_number, "date": row.date.isoformat(), "product": row.product,
-                 "category": row.category, **{key: amount(getattr(row, key)) for key in ("quantity", "price", "revenue")}}
+                 "category": row.category, **{key: amount(getattr(row, key)) for key in ("quantity", "price", "revenue")},
+                 **({"transaction_id": row.transaction_id} if row.transaction_id is not None else {})}
                 for row in records
             ]}
 

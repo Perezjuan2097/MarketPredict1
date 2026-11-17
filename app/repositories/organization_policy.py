@@ -12,9 +12,9 @@ class OrganizationAccessDenied(Exception):
 
 ROLES = ("owner", "admin", "member", "viewer")
 PERMISSIONS = {
-    "owner": ("read", "members", "manage_members", "manage_privileged", "write_settings", "dataset_read", "dataset_import", "dataset_manage", "dataset_delete"),
-    "admin": ("read", "members", "manage_members", "write_settings", "dataset_read", "dataset_import", "dataset_manage"),
-    "member": ("read", "members", "dataset_read", "dataset_import"),
+    "owner": ("read", "members", "manage_members", "manage_privileged", "write_settings", "dataset_read", "dataset_import", "dataset_manage", "dataset_delete", "forecast_run"),
+    "admin": ("read", "members", "manage_members", "write_settings", "dataset_read", "dataset_import", "dataset_manage", "forecast_run"),
+    "member": ("read", "members", "dataset_read", "dataset_import", "forecast_run"),
     "viewer": ("read", "dataset_read"),
 }
 
