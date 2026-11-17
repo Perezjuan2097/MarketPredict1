@@ -30,6 +30,44 @@ def lock_tenant_writes(session, slug=None, *, organization_id=None):
     session.scalar(select(Organization.id).where(scope).with_for_update())
 
 
+# Advisory keys for platform-wide queue invariants. Tenant transactions never take them, so a worker waiting on
+# one of them cannot hold up tenant writes, and tenant writes cannot deadlock with the queue.
+QUEUE_CLAIM_LOCK = 0x4D50_0001
+QUEUE_SCHEDULE_LOCK = 0x4D50_0002
+
+
+def lock_queue_writes(session, *, advisory=None, wait=True, timeout_ms=5000):
+    """Worker transactions: exclude global identity changes without excluding tenant writes.
+
+    The previous SHARE ROW EXCLUSIVE lock on ``users`` conflicts with every tenant write. A worker waiting for it
+    behind one long import made PostgreSQL queue all later tenant writes behind the worker. ROW EXCLUSIVE is
+    compatible with tenant writes and still conflicts with ``lock_identity_writes``. Tenant invariants are
+    protected with ``lock_tenant_row``; global queue invariants with an advisory lock. Returns ``False`` when
+    ``wait`` is false and another worker holds ``advisory``.
+    """
+    conn = session.connection()
+    if conn.dialect.name != "postgresql":
+        lock_identity_writes(session)
+        return True
+    conn.exec_driver_sql(f"SET LOCAL lock_timeout = '{int(timeout_ms)}ms'")
+    conn.exec_driver_sql("LOCK TABLE users IN ROW EXCLUSIVE MODE")
+    if advisory is None:
+        return True
+    if wait:
+        conn.exec_driver_sql("SELECT pg_advisory_xact_lock(%s)", (advisory,))
+        return True
+    return bool(conn.exec_driver_sql("SELECT pg_try_advisory_xact_lock(%s)", (advisory,)).scalar())
+
+
+def lock_tenant_row(session, organization_id, *, skip_locked=False):
+    """Take the same organization row lock as ``lock_tenant_writes``. Returns ``False`` if skipped."""
+    if session.connection().dialect.name != "postgresql":
+        return True  # SQLite already holds the single writer lock.
+    query = select(Organization.id).where(Organization.id == organization_id).with_for_update(
+        skip_locked=skip_locked)
+    return session.scalar(query) is not None
+
+
 def _organization(row, role):
     return {"id": row.id, "name": row.name, "slug": row.slug, "status": row.status,
             "role": role, "permissions": list(PERMISSIONS[role])}

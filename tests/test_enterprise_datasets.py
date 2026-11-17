@@ -689,6 +689,53 @@ def test_tenant_write_locks_allow_independent_postgres_organizations(repo):
     print(f"locks_local_seconds old={old:.4f} tenant={tenant:.4f}")
 
 
+def test_worker_queue_neither_waits_for_nor_blocks_other_tenants(accounts):
+    """A long write in one tenant must not stall the worker, nor queue every other tenant behind it."""
+    from threading import Event
+    from time import sleep, time
+    from app.repositories.organization_sql import lock_tenant_writes
+
+    app, account = accounts
+    repo = app.config["REPOSITORY"]
+    with repo._Session() as session:
+        if session.bind.dialect.name != "postgresql":
+            pytest.skip("bloqueos PostgreSQL")
+    owner, key, owner_id = account("owner")
+    for slug in ("alpha", "beta"):  # alpha's job is queued first, so it is the oldest candidate.
+        path = _setup(owner, key, slug)
+        preview = _post_file(owner, path + "/preview", key, mapping=json.dumps(MAPPING)).json
+        assert _post_file(owner, path + "/imports", key, preview_token=preview["preview_token"]).status_code == 201
+        assert owner.post(path + "/automation/jobs", headers=key,
+                          json={"kind": "indicators", "version": 1}).status_code == 202
+    assert owner.post(BASE, headers=key, json={"name": "gamma", "slug": "gamma"}).status_code == 201
+
+    entered, released = Event(), Event()
+
+    def long_import_in_alpha():
+        with repo._Session.begin() as session:
+            lock_tenant_writes(session, "alpha")
+            entered.set()
+            assert released.wait(15)
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        held = pool.submit(long_import_in_alpha)
+        assert entered.wait(5)
+        try:
+            claim = pool.submit(repo.claim_job, 4, int(time()) + 1)
+            sleep(0.2)  # Under the old global lock the claim is now queued and blocks gamma behind it.
+            assert pool.submit(repo.create_dataset, owner_id, "gamma", "Ventas").result(timeout=3)["id"]
+            claimed = claim.result(timeout=3)
+            assert claimed is not None and claimed["slug"] == "beta"  # The busy tenant is skipped, not awaited.
+            assert pool.submit(repo.schedule_due).result(timeout=3) == 0
+            pool.submit(repo.fail_job, claimed["id"], claimed["lease_token"], "timeout", False).result(timeout=3)
+            assert held.running()
+        finally:
+            released.set()
+        held.result(timeout=15)
+    later = repo.claim_job(4, int(time()) + 1)
+    assert later is not None and later["slug"] == "alpha"  # Picked up once the tenant write commits.
+
+
 def test_synthetic_pilot_is_reproducible():
     from io import StringIO
     from scripts.synthetic_pilot import generate

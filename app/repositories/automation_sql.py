@@ -15,7 +15,9 @@ from app.models.orm import (
 from app.repositories.base import ConflictError
 from app.repositories.commercial_sql import QuotaExceeded, enforce_quota
 from app.repositories.organization_policy import OrganizationAccessDenied, OrganizationNotFound, PERMISSIONS
-from app.repositories.organization_sql import lock_identity_writes, lock_tenant_writes
+from app.repositories.organization_sql import (
+    QUEUE_CLAIM_LOCK, QUEUE_SCHEDULE_LOCK, lock_queue_writes, lock_tenant_row, lock_tenant_writes,
+)
 from app.services.automation_tasks import next_slot
 
 LEASE = 30
@@ -140,7 +142,9 @@ class AutomationSQL:
         now = int(time()) if now is None else now
         created = 0
         with self._Session.begin() as session:
-            lock_identity_writes(session)
+            # One scheduler at a time; another worker simply skips this cycle instead of waiting.
+            if not lock_queue_writes(session, advisory=QUEUE_SCHEDULE_LOCK, wait=False):
+                return 0
             full_orgs = (select(Job.organization_id).where(Job.state.in_(ACTIVE))
                          .group_by(Job.organization_id).having(func.count() >= MAX_PENDING))
             rows = session.execute(select(Schedule, Organization.slug).join(
@@ -148,6 +152,12 @@ class AutomationSQL:
                     Schedule.enabled.is_(True), Schedule.next_at <= now, Schedule.organization_id.not_in(full_orgs))
                 .order_by(Schedule.next_at, Schedule.id).limit(30)).all()
             for row, slug in rows:
+                # A tenant busy with a long write keeps its slot for the next cycle; other tenants proceed.
+                if not lock_tenant_row(session, row.organization_id, skip_locked=True):
+                    continue
+                session.refresh(row)  # The tenant may have changed the schedule before we locked it.
+                if not row.enabled or row.next_at > now:
+                    continue
                 slot = row.next_at
                 row.next_at = next_slot(now, row.parameters["hour_utc"], row.parameters["weekday"])
                 try:
@@ -206,11 +216,15 @@ class AutomationSQL:
     def claim_job(self, concurrency, now=None):
         now = int(time()) if now is None else now
         with self._Session.begin() as session:
-            lock_identity_writes(session)
+            # Claimers are serialized by an advisory lock that tenant writes never take, so the global
+            # concurrency limit and "one running job per organization" hold without blocking tenants.
+            lock_queue_writes(session, advisory=QUEUE_CLAIM_LOCK)
             # Lock expired rows before changing tokens; heartbeat uses a conditional UPDATE.
             expired = session.scalars(select(Job).where(Job.state == "running", Job.lease_until <= now)
-                                      .limit(50).with_for_update()).all()
+                                      .limit(50).with_for_update(skip_locked=True)).all()
             for job in expired:
+                if not lock_tenant_row(session, job.organization_id, skip_locked=True):
+                    continue  # Recovered on a later cycle, once the tenant write commits.
                 try:
                     self._check_actor(session, job, session.get(Organization, job.organization_id).slug)
                 except (OrganizationAccessDenied, OrganizationNotFound):
@@ -225,6 +239,11 @@ class AutomationSQL:
                     Job.state == "pending", Job.available_at <= now, Job.organization_id.not_in(running))
                 .order_by(Job.available_at, Job.id).limit(30)).all()
             for job, slug in rows:
+                if not lock_tenant_row(session, job.organization_id, skip_locked=True):
+                    continue  # Do not wait for a busy tenant; another tenant's job can run now.
+                session.refresh(job, with_for_update=True)  # A tenant may have canceled it meanwhile.
+                if job.state != "pending" or job.available_at > now:
+                    continue
                 try:
                     self._check_actor(session, job, slug)
                 except (OrganizationAccessDenied, OrganizationNotFound):
@@ -236,6 +255,15 @@ class AutomationSQL:
                 return {**job_view(job), "lease_token": job.lease_token, "slug": slug,
                         "actor_id": job.actor_id, "dataset_id": job.dataset_id}
         return None
+
+    @staticmethod
+    def _lock_job_tenant(session, job_id):
+        # Publication waits only for writes of the job's own organization, never for other tenants. The lease
+        # leaves at least 25 s after the last renewal; give up earlier so the job is retried, not lost.
+        lock_queue_writes(session, timeout_ms=15000)
+        organization_id = session.scalar(select(Job.organization_id).where(Job.id == job_id))
+        if organization_id is not None:
+            lock_tenant_row(session, organization_id)
 
     @staticmethod
     def _lease_query(job_id, token, now):
@@ -264,7 +292,7 @@ class AutomationSQL:
     def fail_job(self, job_id, token, code, retryable, now=None):
         now = int(time()) if now is None else now
         with self._Session.begin() as session:
-            lock_identity_writes(session)
+            self._lock_job_tenant(session, job_id)
             job = session.scalar(select(Job).where(*self._lease_query(job_id, token, now)).with_for_update())
             if job:
                 slug = session.get(Organization, job.organization_id).slug
@@ -278,7 +306,7 @@ class AutomationSQL:
     def complete_job(self, job_id, token, result, now=None):
         now = int(time()) if now is None else now
         with self._Session.begin() as session:
-            lock_identity_writes(session)
+            self._lock_job_tenant(session, job_id)
             job = session.scalar(select(Job).where(*self._lease_query(job_id, token, now)).with_for_update())
             if job is None:
                 return False
