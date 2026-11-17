@@ -66,6 +66,33 @@ class User(Audit, Base):
                       CheckConstraint("length(username) >= 3", name="ck_users_username_len"))
 
 
+class Organization(Audit, Base):
+    __tablename__ = "organizations"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    slug: Mapped[str] = mapped_column(String(48), unique=True, nullable=False)
+    status: Mapped[str] = mapped_column(String(12), server_default="active", nullable=False)
+    __table_args__ = (CheckConstraint("status IN ('active','suspended')", name="ck_organizations_status"),)
+
+
+class OrganizationMembership(Audit, Base):
+    __tablename__ = "organization_memberships"
+    organization_id: Mapped[int] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), primary_key=True)
+    role: Mapped[str] = mapped_column(String(8), nullable=False)
+    __table_args__ = (
+        CheckConstraint("role IN ('owner','admin','member','viewer')", name="ck_organization_memberships_role"),
+        Index("ix_organization_memberships_user", "user_id", "organization_id"),
+    )
+
+
+class OrganizationSettings(Audit, Base):
+    __tablename__ = "organization_settings"
+    organization_id: Mapped[int] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), primary_key=True)
+    timezone: Mapped[str] = mapped_column(String(64), server_default="UTC", nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), server_default="USD", nullable=False)
+
+
 # ------------------------------------------------------------------ activos y modelos
 class Asset(Audit, Base):
     __tablename__ = "assets"

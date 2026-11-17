@@ -336,9 +336,10 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) { $("#communityPosts").innerHTML = `<div class="empty-state">${escapeHTML(error.message || "No fue posible cargar la comunidad.")}</div>`; }
     }
 
-    const NAV_KEYS = ["productos", "community", "mercados", "resultados", "brokers", "mas"];
+    const NAV_KEYS = ["productos", "community", "mercados", "resultados", "brokers", "mas", "empresas"];
 
     async function loadTab(tab) {
+        if (tab === "empresas") return loadEnterprise();
         if (tab === "mercados") return loadMarkets();
         if (tab === "brokers") return loadBroker();
         if (tab === "cuenta") return loadAccount();
@@ -659,7 +660,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await api("POST", url, body);
             currentUser = data.user;
             canAccessBroker = data.can_access_broker === true;
-            form.reset(); closeAuth(); updateAuthUI(); activateTab("cuenta");
+            form.reset(); closeAuth(); updateAuthUI();
+            activateTab($("#tabEmpresas")?.classList.contains("active-panel") ? "empresas" : "cuenta");
             await loadHistory();
         } catch (error) { $("#authError").textContent = error.message; }
         finally { submit.disabled = false; }
@@ -681,6 +683,7 @@ document.addEventListener("DOMContentLoaded", () => {
             logoutPending = false;
         }
         selectedPortfolio = null;
+        clearEnterprise();
         for (const selector of ["#predList", "#pfSelect", "#pfSummary", "#pfPositions", "#pfTrades", "#brokerContent"]) {
             $(selector)?.replaceChildren();
         }
@@ -771,6 +774,159 @@ document.addEventListener("DOMContentLoaded", () => {
         finally { button.disabled = false; }
     }
 
+
+    const ENTERPRISE_API = "/api/me/organizations";
+    const ORGANIZATION_ROLES = ["owner", "admin", "member", "viewer"];
+    const ENTERPRISE_PAGE_SIZE = 50;
+    let enterpriseRequest = 0;
+    let enterpriseOrgs = [];
+    let enterpriseMembers = [];
+    let enterpriseAfter = 0;
+
+    function clearEnterprise() {
+        enterpriseRequest++;
+        enterpriseOrgs = [];
+        enterpriseMembers = [];
+        if (!exists("#enterpriseDashboard")) return;
+        $("#enterpriseDashboard").hidden = true;
+        $("#enterpriseContent").hidden = true;
+        $("#enterpriseMembers").replaceChildren();
+        $("#enterpriseSelect").replaceChildren();
+        for (const selector of ["#enterpriseName", "#enterpriseRole", "#enterpriseMessage"]) {
+            $(selector).textContent = "";
+        }
+        for (const selector of ["#enterpriseCreate", "#enterpriseSettings", "#enterpriseAdd"]) {
+            $(selector).reset();
+        }
+    }
+
+    async function loadEnterprise(limitToNextPage = false, created = null) {
+        if (!exists("#enterpriseContent")) return;
+        $("#enterpriseSignIn").hidden = !!currentUser;
+        $("#enterpriseContent").hidden = !currentUser;
+        if (!currentUser) return clearEnterprise();
+        const requestId = ++enterpriseRequest;
+        const select = $("#enterpriseSelect");
+        const previous = created?.slug || select.value;
+        const after = limitToNextPage ? enterpriseAfter : 0;
+        if (!limitToNextPage) {
+            enterpriseOrgs = [];
+            $("#enterpriseDashboard").hidden = true;
+            select.innerHTML = '<option value="">Selecciona una organización</option>';
+        }
+        try {
+            const data = await api("GET", ENTERPRISE_API + "?after=" + after);
+            if (requestId !== enterpriseRequest) return;
+            enterpriseOrgs = enterpriseOrgs.filter(org => !data.organizations.some(fetched => fetched.id === org.id));
+            enterpriseOrgs.push(...data.organizations);
+            enterpriseAfter = data.organizations.at(-1)?.id || after;
+            if (created && !enterpriseOrgs.some(org => org.id === created.id)) enterpriseOrgs.push(created);
+            select.innerHTML = '<option value="">Selecciona una organización</option>' +
+                enterpriseOrgs.map(org => '<option value="' + escapeHTML(org.slug) + '">' + escapeHTML(org.name) + '</option>').join("");
+            select.value = enterpriseOrgs.some(org => org.slug === previous) ? previous : "";
+            $("#enterpriseMore").hidden = data.organizations.length < ENTERPRISE_PAGE_SIZE;
+            await loadEnterpriseDashboard();
+        } catch (error) {
+            if (requestId === enterpriseRequest) $("#enterpriseMessage").textContent = error.message;
+        }
+    }
+
+    function roleOptions(roles, current) {
+        return roles.map(role => '<option' + (role === current ? ' selected' : '') + '>' + role + '</option>').join("");
+    }
+
+    async function loadEnterpriseDashboard(more = false) {
+        const requestId = ++enterpriseRequest;
+        const slug = $("#enterpriseSelect").value;
+        const dashboard = $("#enterpriseDashboard");
+        if (!more) {
+            dashboard.hidden = true;
+            enterpriseMembers = [];
+        }
+        if (!slug || !currentUser) return;
+        const url = ENTERPRISE_API + "/" + encodeURIComponent(slug);
+        try {
+            const { organization } = await api("GET", url);
+            if (requestId !== enterpriseRequest) return;
+            const can = permission => organization.permissions.includes(permission);
+            const after = more ? enterpriseMembers.at(-1)?.user_id || 0 : 0;
+            const [{ settings }, { members }] = await Promise.all([
+                api("GET", url + "/settings"),
+                can("members") ? api("GET", url + "/members?after=" + after) : { members: [] },
+            ]);
+            if (requestId !== enterpriseRequest) return;
+            enterpriseMembers.push(...members);
+            $("#enterpriseName").textContent = organization.name;
+            $("#enterpriseRole").textContent = "Rol: " + organization.role;
+            const form = $("#enterpriseSettings");
+            form.elements.timezone.value = settings.timezone;
+            form.elements.currency.value = settings.currency;
+            form.elements.timezone.readOnly = form.elements.currency.readOnly = !can("write_settings");
+            form.querySelector("button").hidden = !can("write_settings");
+            $("#enterpriseDirectory").hidden = !can("members");
+            $("#enterpriseAdd").hidden = !can("manage_members");
+            $("#enterpriseMoreMembers").hidden = !can("members") || members.length < ENTERPRISE_PAGE_SIZE;
+            const roles = can("manage_privileged") ? ORGANIZATION_ROLES : ["member", "viewer"];
+            $("#enterpriseNewRole").innerHTML = roleOptions(roles);
+            $("#enterpriseMembers").innerHTML = enterpriseMembers.map(member => {
+                const name = escapeHTML(member.username);
+                const label = name + " · " + escapeHTML(member.role) + (member.blocked ? " · cuenta bloqueada" : "");
+                if (!can("manage_members") || !roles.includes(member.role)) return '<p>' + label + '</p>';
+                const roleField = member.blocked ? "" : '<label>Rol<select name="role">' +
+                    roleOptions(roles, member.role) + '</select></label><button type="submit">Actualizar rol</button>';
+                return '<form class="account-form" data-member="' + member.user_id + '"><div>' + label + '</div>' +
+                    roleField + '<button type="button" data-revoke>Revocar acceso</button></form>';
+            }).join("");
+            dashboard.hidden = false;
+        } catch (error) {
+            if (requestId !== enterpriseRequest) return;
+            dashboard.hidden = true;
+            $("#enterpriseMessage").textContent = error.message;
+        }
+    }
+
+    async function changeEnterprise(method, path, body) {
+        const user = currentUser;
+        const slug = $("#enterpriseSelect").value;
+        const message = $("#enterpriseMessage");
+        message.textContent = "";
+        try {
+            const data = await api(method, ENTERPRISE_API + path, body);
+            if (currentUser !== user || !user || $("#enterpriseSelect").value !== slug) return;
+            message.textContent = "Cambios guardados.";
+            if (path === "") await loadEnterprise(false, data.organization);
+            else await loadEnterpriseDashboard();
+        } catch (error) {
+            if (currentUser === user && $("#enterpriseSelect").value === slug) message.textContent = error.message;
+        }
+    }
+
+    function bindEnterpriseEvents() {
+        if (!exists("#enterpriseContent")) return;
+        const path = suffix => "/" + encodeURIComponent($("#enterpriseSelect").value) + suffix;
+        const bindForm = (selector, submit) => $(selector).addEventListener("submit", event => {
+            event.preventDefault();
+            submit(Object.fromEntries(new FormData(event.target)));
+        });
+        $("#enterpriseLogin").addEventListener("click", () => openAuth("login"));
+        $("#enterpriseSelect").addEventListener("change", () => loadEnterpriseDashboard());
+        $("#enterpriseMore").addEventListener("click", () => loadEnterprise(true));
+        $("#enterpriseMoreMembers").addEventListener("click", () => loadEnterpriseDashboard(true));
+        bindForm("#enterpriseCreate", body => changeEnterprise("POST", "", body));
+        bindForm("#enterpriseSettings", body => changeEnterprise("PATCH", path("/settings"), body));
+        bindForm("#enterpriseAdd", body => changeEnterprise("POST", path("/members"), body));
+        $("#enterpriseMembers").addEventListener("submit", event => {
+            event.preventDefault();
+            const form = event.target;
+            changeEnterprise("PATCH", path("/members/" + form.dataset.member), { role: form.elements.role.value });
+        });
+        $("#enterpriseMembers").addEventListener("click", event => {
+            if (!event.target.closest("[data-revoke]")) return;
+            const form = event.target.closest("[data-member]");
+            changeEnterprise("DELETE", path("/members/" + form.dataset.member));
+        });
+    }
+
     function bindAccountEvents() {
         const menu = $("#accountMenu");
         $("#authButton")?.addEventListener("click", () => {
@@ -778,6 +934,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if (logoutPending) return;
             $("#accountMenuError").textContent = "";
             setAccountMenu(menu.hidden);
+        });
+        $("#accountMenuEnterprise")?.addEventListener("click", () => {
+            setAccountMenu(false, true);
+            activateTab("empresas");
         });
         $("#accountMenuProfile")?.addEventListener("click", () => {
             setAccountMenu(false);
@@ -841,6 +1001,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function bindEvents() {
         bindAccountEvents();
+        bindEnterpriseEvents();
         if (exists("#form")) $("#form").addEventListener("submit", async (event) => {
             event.preventDefault();
             const query = $("#symbol")?.value.trim();
@@ -895,7 +1056,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }));
         if (exists("#runModels")) $("#runModels").addEventListener("click", runModels);
         const initial = $$(".main-nav a[data-nav]").find((a) => a.getAttribute("href") === location.hash);
-        if (initial && initial.dataset.nav !== "brokers") activateTab(initial.dataset.nav);
+        if (initial && !["brokers", "empresas"].includes(initial.dataset.nav)) activateTab(initial.dataset.nav);
 
         $$(".period").forEach((button) => button.addEventListener("click", async () => {
             if (!marketData) return;
@@ -985,6 +1146,7 @@ document.addEventListener("DOMContentLoaded", () => {
         applyLanguage();
         await loadSession();
         if (location.hash === "#brokers" && canAccessBroker) activateTab("brokers");
+        if (location.hash === "#empresas") activateTab("empresas");
         await loadHistory();
         try { await loadMarketData("AAPL", "1D", false); } catch (error) { setStatus(error.message); }
     }

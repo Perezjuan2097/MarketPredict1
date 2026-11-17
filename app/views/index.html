@@ -17,6 +17,7 @@
             <a href="#mercados" data-nav="mercados" data-i18n="markets">Mercados</a>
             <a href="#resultados" data-nav="resultados" data-i18n="results">Resultados</a>
             <a href="#brokers" data-nav="brokers" data-i18n="brokers" hidden>Brókers</a>
+            <a href="#empresas" data-nav="empresas">Empresas</a>
             <a href="#mas" data-nav="mas" data-i18n="more">Más</a>
         </nav>
     </div>
@@ -36,6 +37,7 @@
             <div id="accountMenu" class="account-menu" hidden>
                 <button id="accountMenuProfile" type="button" data-i18n="myAccount">Mi cuenta</button>
                 <a id="accountMenuAdmin" href="{{ url_for('admin.panel') }}" data-i18n="administration" hidden>Administración</a>
+                <button id="accountMenuEnterprise" type="button">Empresas</button>
                 <button id="accountMenuLogout" type="button" data-i18n="signOut">Cerrar sesión</button>
             </div>
             <div id="accountMenuError" class="account-menu-error" role="alert"></div>
@@ -315,6 +317,45 @@
                     <div id="pfPositions" class="table-scroll"></div>
                     <div id="pfTrades" class="table-scroll"></div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="tabEmpresas" class="tab-panel" aria-labelledby="enterpriseTitle">
+        <div class="panel-heading"><div><span class="panel-kicker">ESPACIO PRIVADO</span><h2 id="enterpriseTitle">Empresas</h2></div></div>
+        <div id="enterpriseSignIn" class="empty-state">Inicia sesión para administrar tus organizaciones.
+            <button id="enterpriseLogin" type="button" class="secondary-button">Iniciar sesión</button>
+        </div>
+        <div id="enterpriseContent" hidden>
+            <form id="enterpriseCreate" class="account-form">
+                <label>Nombre<input name="name" maxlength="100" required></label>
+                <label>Identificador URL<input name="slug" minlength="3" maxlength="48" required></label>
+                <button type="submit" class="primary-button">Crear organización</button>
+            </form>
+            <div class="tracking-actions">
+                <label>Organización <select id="enterpriseSelect"><option value="">Selecciona una organización</option></select></label>
+                <button id="enterpriseMore" type="button" class="secondary-button" hidden>Cargar más organizaciones</button>
+            </div>
+            <p id="enterpriseMessage" role="status"></p>
+            <div id="enterpriseDashboard" hidden>
+                <h3 id="enterpriseName"></h3>
+                <p id="enterpriseRole"></p>
+                <h4>Configuración</h4>
+                <form id="enterpriseSettings" class="account-form">
+                    <label>Zona horaria<input name="timezone" maxlength="64" required></label>
+                    <label>Moneda<input name="currency" minlength="3" maxlength="3" required></label>
+                    <button type="submit" class="secondary-button">Guardar configuración</button>
+                </form>
+                <section id="enterpriseDirectory" aria-label="Miembros">
+                    <h4>Miembros</h4>
+                    <form id="enterpriseAdd" class="account-form">
+                        <label>Nombre de usuario existente<input name="username" minlength="3" maxlength="30" required></label>
+                        <label>Rol<select name="role" id="enterpriseNewRole"></select></label>
+                        <button type="submit" class="secondary-button">Añadir miembro</button>
+                    </form>
+                    <div id="enterpriseMembers" class="table-scroll"></div>
+                    <button id="enterpriseMoreMembers" type="button" class="secondary-button" hidden>Cargar más miembros</button>
+                </section>
             </div>
         </div>
     </section>

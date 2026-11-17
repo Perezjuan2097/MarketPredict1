@@ -27,6 +27,8 @@ def create_app(overrides=None):
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(account_bp)
+    from app.controllers.organization_controller import organization_bp
+    app.register_blueprint(organization_bp)
     from app.controllers.broker_controller import broker_bp
     app.register_blueprint(broker_bp)
     app.extensions["runtime_config"] = {}

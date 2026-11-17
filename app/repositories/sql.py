@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
 from app.models import orm
+from app.repositories.organization_sql import OrganizationSQL, lock_identity_writes
 from app.services.forecast_emissions import prediction_rows
 from app.repositories.base import DUE_STATUSES, ConflictError, DuplicateError, NotFoundError, identity_key, q2
 from app.repositories.base import AdminAccessDenied, has_admin_role, validate_admin_change
@@ -53,7 +54,7 @@ def _trade(t, symbol):
             "price_source": t.price_source, "executed_at": _iso(t.executed_at)}
 
 
-class SQLRepository:
+class SQLRepository(OrganizationSQL):
     persistent_sessions = True
     def __init__(self, engine):
         self._Session = sessionmaker(engine, expire_on_commit=False)
@@ -92,12 +93,7 @@ class SQLRepository:
 
     def admin_update_user(self, user_id, actor_id, *, role=None, blocked=None):
         with self._Session.begin() as s:
-            conn = s.connection()
-            # Serialize the authorization check and last-admin invariant across workers.
-            if conn.dialect.name == "postgresql":
-                conn.exec_driver_sql("LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE")
-            elif conn.dialect.name == "sqlite":
-                conn.exec_driver_sql("BEGIN IMMEDIATE")
+            lock_identity_writes(s)
             actor = s.get(orm.User, actor_id) if actor_id is not None else None
             actor_data = _user(actor) if actor else None
             if actor_id is not None and not has_admin_role(actor_data):
@@ -110,6 +106,8 @@ class SQLRepository:
             validate_admin_change(actor_data, _user(target), role=role, blocked=blocked, active_admins=active)
             if role is not None:
                 target.role = role
+            if blocked and not target.is_blocked:
+                self.ensure_organization_owners_on_block(s, user_id)
             if blocked is not None:
                 target.is_blocked = blocked
             if blocked:

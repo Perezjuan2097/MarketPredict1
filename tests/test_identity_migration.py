@@ -74,7 +74,7 @@ def test_postgres_repairs_stamped_partial_installation(connection, monkeypatch):
     command.stamp(cfg, "20261115_identity_keys")
     command.upgrade(cfg, "head")
     command.upgrade(cfg, "head")
-    assert MigrationContext.configure(connection).get_current_revision() == "20261118_forecast_saves"
+    assert MigrationContext.configure(connection).get_current_revision() == "20261119_organizations"
     assert sa.inspect(connection).has_table("auth_sessions")
     assert sa.inspect(connection).has_table("forecast_emission_saves")
     assert connection.exec_driver_sql(
@@ -119,3 +119,60 @@ def test_forecast_emission_revision_is_additive_and_reentrant(connection):
     assert inspector.get_foreign_keys("forecast_emission_saves")[0]["referred_table"] == "users"
     assert connection.exec_driver_sql("SELECT * FROM users").one() == (4, "Clara", "Éxito@x.co")
     assert connection.exec_driver_sql("SELECT * FROM trades").one() == (9, 7)
+
+def test_organization_revision_adds_rls_and_only_downgrades_empty_tables(connection):
+    _legacy(connection)
+    migration = import_module("migrations.versions.20261119_organizations")
+    with Operations.context(MigrationContext.configure(connection)):
+        migration.upgrade()
+        migration.upgrade()
+        for table in migration.TABLES:
+            assert sa.inspect(connection).has_table(table)
+            if connection.dialect.name == "postgresql":
+                assert connection.exec_driver_sql(
+                    f"SELECT relrowsecurity FROM pg_class WHERE oid = '{table}'::regclass"
+                ).scalar_one() is True
+                assert not connection.exec_driver_sql(
+                    f"SELECT 1 FROM pg_policy WHERE polrelid = '{table}'::regclass"
+                ).first()
+        connection.exec_driver_sql("INSERT INTO organizations (id, name, slug) VALUES (1, 'Fixture', 'fixture')")
+        with pytest.raises(RuntimeError, match="mientras tengan datos"):
+            migration.downgrade()
+        connection.exec_driver_sql("DELETE FROM organizations")
+        migration.downgrade()
+    assert not sa.inspect(connection).has_table("organizations")
+    assert connection.exec_driver_sql("SELECT id FROM users").scalar_one() == 4
+
+def test_postgres_rls_denies_unprivileged_role(connection):
+    if connection.dialect.name != "postgresql":
+        pytest.skip("RLS PostgreSQL")
+    configured = os.getenv("TEST_RLS_PROBE_ROLE")
+    if configured is None:
+        can_create = connection.exec_driver_sql(
+            "SELECT rolsuper FROM pg_roles WHERE rolname = current_user"
+        ).scalar_one()
+        if not can_create:
+            pytest.skip("requiere rol de prueba RLS o superusuario en clúster de prueba")
+    with connection.begin_nested() as savepoint:
+        role = connection.dialect.identifier_preparer.quote_identifier(configured or f"mp_probe_{uuid4().hex}")
+        if configured is None:
+            connection.exec_driver_sql(f"CREATE ROLE {role} NOLOGIN NOSUPERUSER NOBYPASSRLS")
+        _legacy(connection)
+        with Operations.context(MigrationContext.configure(connection)):
+            import_module("migrations.versions.20261118_forecast_saves").upgrade()
+            import_module("migrations.versions.20261119_organizations").upgrade()
+        connection.exec_driver_sql("INSERT INTO organizations (id, name, slug) VALUES (1, 'Fixture', 'fixture')")
+        connection.exec_driver_sql(
+            "INSERT INTO forecast_emission_saves (user_id, emission_id, prediction_ids) VALUES (4, 'test', '[]')"
+        )
+        schema = connection.dialect.identifier_preparer.quote_identifier(
+            connection.exec_driver_sql("SELECT current_schema()").scalar_one())
+        connection.exec_driver_sql(f"GRANT USAGE ON SCHEMA {schema} TO {role}")
+        for table in ("organizations", "forecast_emission_saves"):
+            assert connection.exec_driver_sql(f"SELECT count(*) FROM {table}").scalar_one() == 1
+            connection.exec_driver_sql(f"GRANT SELECT, UPDATE ON {table} TO {role}")
+        connection.exec_driver_sql(f"SET LOCAL ROLE {role}")
+        for table, column in (("organizations", "name"), ("forecast_emission_saves", "emission_id")):
+            assert connection.exec_driver_sql(f"SELECT count(*) FROM {table}").scalar_one() == 0
+            assert connection.exec_driver_sql(f"UPDATE {table} SET {column} = 'changed'").rowcount == 0
+        savepoint.rollback()

@@ -8,6 +8,7 @@ from flask import Blueprint, current_app, jsonify, request
 from app.controllers.broker_controller import broker_access_allowed
 from app.repositories import factory
 from app.repositories.base import ConflictError, identity_key
+from app.repositories.organization_policy import OrganizationAccessDenied, OrganizationNotFound
 from app.security import InvalidInput, api_error, audit, check_csrf_header, client_ip, csrf_token, json_object, limiter
 from app.session_store import end_session, start_session, user_id
 from app.services import account_service, forecast_emissions, portfolio_service, user_predictions
@@ -52,6 +53,10 @@ def guarded(auth=True):
                 return view(repo, user, *args, **kwargs)
             except InvalidInput as exc:
                 return jsonify(error=str(exc)), 400
+            except OrganizationNotFound as exc:
+                return jsonify(error=str(exc)), 404
+            except OrganizationAccessDenied as exc:
+                return jsonify(error=str(exc)), 403
             except ConflictError as exc:
                 return jsonify(error=str(exc)), 409
             except Exception as exc:

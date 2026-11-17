@@ -6,6 +6,7 @@ from decimal import Decimal
 
 from app.repositories.base import DUE_STATUSES, ConflictError, DuplicateError, NotFoundError, identity_key, q2
 from app.repositories.base import AdminAccessDenied, has_admin_role, validate_admin_change
+from app.repositories.organization_memory import OrganizationMemory
 from app.services.forecast_emissions import prediction_rows
 
 
@@ -13,11 +14,12 @@ def _now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-class MemoryRepository:
+class MemoryRepository(OrganizationMemory):
     persistent_sessions = False
     def __init__(self):
         self._lock = threading.RLock()
         self._forecast_saves = {}
+        self._init_organizations()
         self._ids = {k: itertools.count(1) for k in ("user", "asset", "pred", "pf", "trade")}
         self.users, self.assets, self.preds, self.evals, self.portfolios, self.trades = {}, {}, {}, {}, {}, []
 
@@ -60,6 +62,8 @@ class MemoryRepository:
                 return False
             active = sum(has_admin_role(user) for user in self.users.values())
             validate_admin_change(actor, target, role=role, blocked=blocked, active_admins=active)
+            if blocked and not target["is_blocked"]:
+                self.ensure_organization_owners_on_block(user_id)
             if role is not None:
                 target["role"] = role
             if blocked is not None:

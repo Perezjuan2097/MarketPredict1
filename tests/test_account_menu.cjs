@@ -9,7 +9,7 @@ const script = fs.readFileSync(path.join(app, "static/js/script.js"), "utf8");
 const page = fs.readFileSync(path.join(app, "views/index.html"), "utf8");
 const styles = fs.readFileSync(path.join(app, "static/css/style.css"), "utf8");
 
-async function fixture({ authenticated = true, brokerAllowed = false, hash = "", logoutOk = true, role = "user" } = {}) {
+async function fixture({ authenticated = true, brokerAllowed = false, hash = "", logoutOk = true, role = "user", enterprise = false } = {}) {
     const fixtureState = { focused: null, requests: [] };
 
     function element(attributes = {}) {
@@ -74,10 +74,23 @@ async function fixture({ authenticated = true, brokerAllowed = false, hash = "",
     for (const id of ["authDialog", "authTabLogin", "authTabRegister", "authError", "loginForm", "registerForm"]) {
         nodes["#" + id] = id === "authDialog" ? dialog : element();
     }
+    if (enterprise) {
+        for (const id of ["tabEmpresas", "enterpriseContent", "enterpriseSignIn", "enterpriseLogin",
+            "enterpriseDashboard", "enterpriseSelect", "enterpriseMore", "enterpriseMoreMembers",
+            "enterpriseMessage", "enterpriseName", "enterpriseRole", "enterpriseDirectory",
+            "enterpriseNewRole", "enterpriseMembers", "enterpriseSettings", "enterpriseCreate", "enterpriseAdd"]) {
+            nodes["#" + id] = element();
+        }
+        nodes["#enterpriseSettings"].elements = { timezone: {}, currency: {} };
+        nodes["#enterpriseSettings"].querySelector = () => element();
+        for (const id of ["enterpriseCreate", "enterpriseSettings", "enterpriseAdd"]) {
+            nodes["#" + id].reset = () => {};
+        }
+    }
     const document = element();
     document.querySelector = (selector) => nodes[selector] ?? null;
     document.querySelectorAll = (selector) => ({
-        ".tab-panel": [account, summary, brokerPanel],
+        ".tab-panel": [account, summary, brokerPanel, nodes["#tabEmpresas"]].filter(Boolean),
         ".main-nav a[data-nav]": [brokerLink]
     }[selector] || []);
     const responses = {
@@ -93,9 +106,22 @@ async function fixture({ authenticated = true, brokerAllowed = false, hash = "",
         "/api/broker/status": [true, { authorized: true }],
         "/api/market-data/AAPL?period=1D": [false, {}]
     };
+    if (enterprise) {
+        const organization = { id: 15, slug: "fixture-org", name: "Fixture Company", role: "owner",
+            permissions: ["read", "members", "write_settings", "manage_members", "manage_privileged"] };
+        const url = "/api/me/organizations";
+        responses[url] = [true, { organization }];
+        responses[url + "?after=0"] = [true, { organizations: [] }];
+        responses[url + "/fixture-org"] = [true, { organization }];
+        responses[url + "/fixture-org/settings"] = [true, { settings: { timezone: "UTC", currency: "USD" } }];
+        responses[url + "/fixture-org/members?after=0"] = [true, {
+            members: [{ user_id: 41, username: "Fixture User", role: "owner", blocked: false }],
+        }];
+    }
     const context = {
         document, location: { hash }, window: { addEventListener() {} },
         localStorage: { getItem: () => null },
+        FormData: function (form) { return Object.entries(form.formFields); },
         fetch: async (url, options = {}) => {
             fixtureState.requests.push({ url, options });
             assert.ok(responses[url], "Unexpected request for " + url);
@@ -235,4 +261,32 @@ test("model saving sends the displayed token and requires a matching horizon", a
     nodes["#modelsHorizon"].value = "10";
     await nodes["#saveModels"].emit("click");
     assert.equal(saves().length, 1);
+});
+
+test("enterprise deep link loads after authentication and opens the newly created organization", async () => {
+    const { nodes, fixtureState, signOut } = await fixture({ hash: "#empresas", enterprise: true });
+    assert.equal(nodes["#enterpriseSignIn"].hidden, true);
+    assert.equal(nodes["#enterpriseContent"].hidden, false);
+    assert.equal(nodes["#enterpriseDashboard"].hidden, true);
+    const create = nodes["#enterpriseCreate"];
+    create.formFields = { name: "Fixture Company", slug: "fixture-org" };
+    await create.emit("submit");
+    await new Promise(setImmediate);
+    const request = fixtureState.requests.find(({ url, options }) =>
+        url === "/api/me/organizations" && options.method === "POST");
+    assert.deepEqual(JSON.parse(request.options.body), create.formFields);
+    assert.equal(request.options.headers["X-CSRF-Token"], "fixture-csrf");
+    assert.equal(nodes["#enterpriseDashboard"].hidden, false);
+    assert.equal(nodes["#enterpriseName"].textContent, "Fixture Company");
+    assert.match(nodes["#enterpriseMembers"].innerHTML, /Fixture User/);
+    await signOut.emit("click");
+    assert.equal(nodes["#enterpriseContent"].hidden, true);
+    assert.equal(nodes["#enterpriseMembers"].innerHTML, "");
+});
+
+test("the unauthenticated enterprise deep link shows sign-in without loading tenant data", async () => {
+    const { nodes, fixtureState } = await fixture({ authenticated: false, hash: "#empresas", enterprise: true });
+    assert.equal(nodes["#enterpriseSignIn"].hidden, false);
+    assert.equal(nodes["#enterpriseContent"].hidden, true);
+    assert.ok(fixtureState.requests.every(({ url }) => !url.startsWith("/api/me/organizations")));
 });

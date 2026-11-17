@@ -60,6 +60,74 @@ class RepoContract:
             self.repo.save_forecast_emission(self.u2["id"], emission, expired=True)
 
 
+    def test_organization_write_scope_and_ownership(self):
+        from app.repositories.organization_policy import OrganizationAccessDenied, OrganizationNotFound
+
+        ana, beto = self.u1["id"], self.u2["id"]
+        self.repo.create_organization(ana, "One", "one")
+        self.repo.create_organization(beto, "Two", "two")
+        with self.assertRaises(DuplicateError):
+            self.repo.create_organization(ana, "Duplicate", "one")
+        with self.assertRaises(OrganizationNotFound):
+            self.repo.get_organization(ana, "two")
+        with self.assertRaises(ConflictError):
+            self.repo.admin_update_user(ana, None, blocked=True)
+        self.repo.change_organization_member(ana, "one", "viewer", username="Beto")
+        with self.assertRaises(OrganizationAccessDenied):
+            self.repo.list_organization_members(beto, "one", 0, 10)
+        self.assertEqual([row["slug"] for row in self.repo.list_organizations(beto, 0, 10)], ["one", "two"])
+        self.repo.organization_settings(ana, "one", {"currency": "EUR"})
+        self.assertEqual(self.repo.organization_settings(beto, "one")["currency"], "EUR")
+        self.assertEqual(self.repo.organization_settings(beto, "two")["currency"], "USD")
+        self.repo.change_organization_member(ana, "one", None, target_id=beto)
+        with self.assertRaises(OrganizationNotFound):
+            self.repo.organization_settings(beto, "one")
+
+    def test_concurrent_organization_changes_keep_an_active_owner(self):
+        from app.repositories.organization_policy import OrganizationNotFound
+
+        ana, beto = self.u1["id"], self.u2["id"]
+        self.repo.create_organization(ana, "One", "one")
+        self.repo.change_organization_member(ana, "one", "owner", username="beto")
+        barrier = Barrier(2)
+
+        def remove(actor, target):
+            barrier.wait(timeout=5)
+            try:
+                self.repo.change_organization_member(actor, "one", None, target_id=target)
+                return True
+            except (ConflictError, OrganizationNotFound):
+                return False
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            first = executor.submit(remove, ana, beto)
+            second = executor.submit(remove, beto, ana)
+            self.assertEqual(sorted([first.result(timeout=10), second.result(timeout=10)]), [False, True])
+        active = [uid for uid in (ana, beto) if self.repo.list_organizations(uid, 0, 10)]
+        self.assertEqual(len(active), 1)
+        with self.assertRaises(ConflictError):
+            self.repo.admin_update_user(active[0], None, blocked=True)
+
+    def test_concurrent_account_block_and_membership_change_keep_an_owner(self):
+        ana, beto = self.u1["id"], self.u2["id"]
+        self.repo.create_organization(ana, "One", "one")
+        self.repo.change_organization_member(ana, "one", "owner", username="beto")
+        barrier = Barrier(2)
+
+        def change(action):
+            barrier.wait(timeout=5)
+            try:
+                action()
+                return True
+            except ConflictError:
+                return False
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            block = executor.submit(change, lambda: self.repo.admin_update_user(beto, None, blocked=True))
+            demote = executor.submit(change, lambda: self.repo.change_organization_member(
+                ana, "one", "member", target_id=ana))
+            self.assertEqual(sorted([block.result(timeout=10), demote.result(timeout=10)]), [False, True])
+
     def test_usuarios(self):
         self.assertEqual(self.u1["email"], "ana@x.co")
         with self.assertRaises(DuplicateError):
@@ -210,6 +278,40 @@ class TestSQLRepo(SQLForecastContract, RepoContract, unittest.TestCase):
 
 @unittest.skipUnless(os.getenv("TEST_POSTGRES_URL"), "requiere TEST_POSTGRES_URL")
 class TestPostgresRepo(SQLForecastContract, RepoContract, unittest.TestCase):
+    def test_forecast_batch_across_processes(self):
+        import json
+        import subprocess
+        import sys
+        from sqlalchemy import text
+
+        with self.repo._Session() as session:
+            schema = session.scalar(text("select current_schema()"))
+        code = """
+import json, os, sys
+from sqlalchemy import create_engine
+from app.repositories.sql import SQLRepository
+schema, uid, emission = json.load(sys.stdin)
+engine = create_engine(os.environ["TEST_POSTGRES_URL"], connect_args={"options": "-csearch_path=" + schema})
+try:
+    rows = SQLRepository(engine).save_forecast_emission(uid, emission, expired=False)
+    print(json.dumps([row["id"] for row in rows]))
+finally:
+    engine.dispose()
+"""
+        payload = json.dumps([schema, self.u1["id"], self._forecast_emission()])
+        barrier = Barrier(2)
+
+        def save():
+            barrier.wait(timeout=5)
+            output = subprocess.run([sys.executable, "-c", code], input=payload, text=True,
+                                    capture_output=True, timeout=25, check=True)
+            return json.loads(output.stdout)
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            first, second = executor.submit(save), executor.submit(save)
+            self.assertEqual(first.result(timeout=30), second.result(timeout=30))
+        self.assertEqual(len(self.repo.list_predictions(self.u1["id"])), 2)
+
     def make_repo(self):
         from sqlalchemy import create_engine
         from sqlalchemy.schema import CreateSchema, DropSchema
