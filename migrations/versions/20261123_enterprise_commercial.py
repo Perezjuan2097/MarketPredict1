@@ -93,6 +93,9 @@ def upgrade():
     if conn.dialect.name == "postgresql":
         for table in TABLES:
             op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
+        # Supabase grants anon/authenticated on every public table. Without RLS the revision table could be read
+        # and rewritten through the public API; production had it enabled by hand, clean installs did not.
+        op.execute("ALTER TABLE alembic_version ENABLE ROW LEVEL SECURITY")
 
 
 def downgrade():

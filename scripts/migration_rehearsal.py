@@ -120,6 +120,11 @@ def main():
     run(prod_path, replica, "alembic", "upgrade", "20261117_auth_sessions")
     user_id = int(run(prod_path, replica, code=CREATE_USER).strip())
     run(s4_path, replica, code=CREATE_TABLES)
+    # Production also has RLS on alembic_version, enabled by hand outside any migration.
+    engine = create_engine(replica)
+    with engine.begin() as conn:
+        conn.exec_driver_sql("ALTER TABLE alembic_version ENABLE ROW LEVEL SECURITY")
+    engine.dispose()
     before = fingerprint(replica)
     (out / "replica_before.txt").write_text("\n".join(before) + "\n", encoding="utf-8")
     observed = {"n": len(before), "total": digest(before), "enterprise": digest(before, "enterprise"),
