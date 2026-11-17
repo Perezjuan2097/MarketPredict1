@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from ml_engine.engine import run_all
 from ml_engine.calendar import CONTINUOUS, YAHOO_CLOSE_LAG_MINUTES, utc_instant
 from app.services.data_service import DemoFuente
+from app.services import forecast_emissions
 from app.security import InvalidInput, api_error, check_csrf_header, clean_symbol, json_object, legacy_owner_key, require_user
 
 main_bp = Blueprint("main", __name__)
@@ -283,7 +284,10 @@ def models(ticker):
     except ValueError:
         return jsonify(error="Horizonte no válido."), 400
     try:
-        return jsonify(model_result(ticker, horizon))
+        result = model_result(ticker, horizon)
+        response = jsonify({**result, "emission": forecast_emissions.issue(result, current_app.secret_key)})
+        response.headers["Cache-Control"] = "no-store"
+        return response
     except Exception as e:
         return api_error(e)
 

@@ -28,6 +28,6 @@ memoria (`tests/test_account.py`). La capa SQL (`app/repositories/sql.py`) se co
 - Sin recuperación de contraseña ni verificación de correo (requieren un servicio de envío de correo).
 - La comunidad (comentarios y votos) sigue en JSON local; migrarla a estas tablas es el siguiente paso.
 - Aún no hay feed público de predicciones, rankings ni moderación; `is_public` ya se guarda pero no se muestra.
-- Las predicciones de modelos guardadas son privadas. Consultar el pronóstico no lo guarda. El botón envía símbolo y horizonte y guarda el resultado que el servidor resuelve al recibir esa acción.
+- Las predicciones de modelos guardadas son privadas. Consultar el pronóstico no lo guarda. El botón envía el token de la emisión mostrada. Guardar la misma emisión otra vez devuelve las predicciones ya registradas. Ver [Emisiones](ENTERPRISE_2B2.md).
 - **Seguimiento** usa un historial JSON separado (`POST /api/save`, `GET /api/history`). Guarda el primer pronóstico del análisis y queda fuera de la evaluación SQL.
 - Los precios vienen de Yahoo Finance (último cierre); si Yahoo no responde, la operación o la evaluación se aplaza.

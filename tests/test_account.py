@@ -6,6 +6,7 @@ import unittest
 from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
+from unittest.mock import patch
 
 os.environ["USE_DEMO"] = "true"
 
@@ -207,13 +208,51 @@ class TestPredicciones(Base):
         self.assertEqual(self.post("/api/me/predictions/evaluate").get_json()["evaluated"], 0)  # no se reevalúa
 
     def test_guardar_predicciones_de_modelos(self):
+        endpoint = "/api/me/predictions/from-models"
+        result = self.c.get("/api/models/AAPL?horizon=5").get_json()
+        emission = result["emission"]
+        self.assertEqual(self.c.get("/api/models/AAPL?horizon=5").json["emission"], emission)
+        body = {"emission_token": emission["token"]}
+        self.assertEqual(self.post(endpoint, body).status_code, 401)
         self.register()
-        r = self.post("/api/me/predictions/from-models", {"symbol": "AAPL", "horizon": 5})
-        self.assertEqual(r.status_code, 201, r.get_data(as_text=True)[:300])
-        saved = r.get_json()["saved"]
+        self.assertEqual(self.c.post(endpoint, json=body).status_code, 403)
+        self.assertEqual(self.post(endpoint, {"symbol": "AAPL", "horizon": 5}).status_code, 400)
+        self.assertEqual(self.post(endpoint, {"emission_token": "X" + emission["token"]}).status_code, 400)
+        self.assertEqual(self.c.get("/api/me/predictions").json["predictions"], [])
+
+        with patch("app.controllers.main_controller.model_result", side_effect=AssertionError("recálculo")):
+            response = self.post(endpoint, {**body, "symbol": "MSFT", "horizon": 20})
+            self.assertEqual(response.status_code, 201, response.get_data(as_text=True)[:300])
+            saved = response.json["saved"]
+            self.assertEqual(self.post(endpoint, body).json["saved"], saved)
+            other, csrf = self.second_client()
+            self.assertEqual(other.get("/api/me/predictions").json["predictions"], [])
+            other_saved = self.post(endpoint, body, client=other, token=csrf).json["saved"]
+            self.assertTrue(set(p["id"] for p in saved).isdisjoint(p["id"] for p in other_saved))
+
+        expected = [(m["model_id"], m["version"], m["estimated_price"], m["estimated_return_pct"])
+                    for m in result["models"] if m["status"] == "ok" and "predicted_log_return" in m]
+        if result["consensus"]["status"] == "ok":
+            c = result["consensus"]
+            expected.append(("consensus", "1.0", c["estimated_price"], c["weighted_return_pct"]))
+        self.assertEqual(expected, [(p["indicators"]["model_id"], p["indicators"]["model_version"],
+                                     p["target_price"], p["expected_return_pct"]) for p in saved])
         self.assertGreaterEqual(len(saved), 2)
-        self.assertTrue(all(p["status"] == "pendiente" and p["indicators"]["model_version"] for p in saved))
-        self.assertFalse(any(p["is_public"] for p in saved))
+        for prediction in saved:
+            self.assertEqual(prediction["symbol"], result["asset"])
+            self.assertEqual(prediction["horizon_days"], result["horizon_days"])
+            self.assertEqual(prediction["target_date"], result["target_date"])
+            self.assertEqual(prediction["indicators"]["emission_id"], emission["id"])
+            self.assertEqual(prediction["indicators"]["provenance"], result["provenance"])
+            self.assertEqual(prediction["status"], "pendiente")
+            self.assertFalse(prediction["is_public"])
+
+        late, late_csrf = self.second_client("tarde", "tarde@x.co")
+        with patch("app.services.user_predictions.datetime") as clock:
+            from datetime import datetime
+            clock.now.return_value = datetime.fromisoformat(emission["expires_at"])
+            self.assertEqual(self.post(endpoint, body, client=late, token=late_csrf).status_code, 409)
+            self.assertEqual(self.post(endpoint, body).json["saved"], saved)
 
 
 class TestEvaluacionPura(unittest.TestCase):

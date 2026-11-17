@@ -74,33 +74,10 @@ def publish(repo, provider, user_id, payload):
         "is_public": bool(payload.get("is_public", False))})
 
 
-def save_model_predictions(repo, user_id, engine_result):
-    """Guarda cada modelo válido y el consenso del resultado de ml_engine como predicciones del usuario."""
-    symbol, ref, horizon = engine_result["asset"], engine_result["reference_price"], engine_result["horizon_days"]
-    target_date = engine_result["target_date"]
-    if not target_date or utc_instant(engine_result["provenance"]["target_close_at"]) <= datetime.now(timezone.utc):
-        raise InvalidInput("El pronóstico no tiene una sesión objetivo futura verificable.")
-    asset_id = repo.get_or_create_asset(symbol)
-    saved = []
-    entries = [(m["model_id"], m["version"], m["predicted_log_return"], m.get("estimated_return_pct"), m.get("estimated_price"))
-               for m in engine_result["models"] if m["status"] == "ok" and "predicted_log_return" in m]
-    cons = engine_result.get("consensus", {})
-    if cons.get("status") == "ok":
-        entries.append(("consensus", "1.0", cons["weighted_log_return"], cons["weighted_return_pct"], cons["estimated_price"]))
-    for model_id, version, logret, ret_pct, price in entries:
-        direction = "alcista" if logret > 0 else "bajista" if logret < 0 else "neutral"
-        if model_id == "consensus":
-            direction = cons["direction"]
-        saved.append(repo.add_prediction({
-            "source": "model", "user_id": user_id, "asset_id": asset_id, "direction": direction, "reference_price": ref,
-            "target_price": price, "expected_return_pct": ret_pct, "horizon_days": horizon,
-            "target_date": target_date, "rationale": None,
-            "indicators": {"model_id": model_id, "model_version": version, "data_source": engine_result.get("data_source"),
-                           "provenance": engine_result["provenance"]},
-            "is_public": False}))
-    if not saved:
-        raise InvalidInput("Ningún modelo produjo una predicción válida para guardar.")
-    return saved
+def save_model_predictions(repo, user_id, emission, *, now=None):
+    """Store the authenticated user's copy of a previously issued forecast."""
+    now = utc_instant(now or datetime.now(timezone.utc))
+    return repo.save_forecast_emission(user_id, emission, expired=utc_instant(emission["expires_at"]) <= now)
 
 
 def cancel(repo, user_id, pred_id):

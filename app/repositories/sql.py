@@ -3,10 +3,13 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import delete, func, or_, select, update
+from sqlalchemy.dialects.postgresql import insert as postgres_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
 from app.models import orm
+from app.services.forecast_emissions import prediction_rows
 from app.repositories.base import DUE_STATUSES, ConflictError, DuplicateError, NotFoundError, identity_key, q2
 from app.repositories.base import AdminAccessDenied, has_admin_role, validate_admin_change
 
@@ -141,21 +144,52 @@ class SQLRepository:
                 .join(orm.Asset, orm.Asset.id == orm.Prediction.asset_id)
                 .outerjoin(orm.PredictionEvaluation, orm.PredictionEvaluation.prediction_id == orm.Prediction.id))
 
+    @staticmethod
+    def _new_prediction(data):
+        return orm.Prediction(
+            source=data["source"], user_id=data.get("user_id"), asset_id=data["asset_id"], direction=data["direction"],
+            reference_price=Decimal(str(data["reference_price"])),
+            target_price=None if data.get("target_price") is None else Decimal(str(data["target_price"])),
+            expected_return_pct=None if data.get("expected_return_pct") is None else Decimal(str(data["expected_return_pct"])),
+            horizon_days=data["horizon_days"], target_date=date.fromisoformat(data["target_date"]),
+            rationale=data.get("rationale"), indicators=data.get("indicators"), is_public=bool(data.get("is_public", False)),
+            status="pendiente")
+
     def add_prediction(self, data):
-        with self._Session() as s:
-            p = orm.Prediction(
-                source=data["source"], user_id=data.get("user_id"), asset_id=data["asset_id"], direction=data["direction"],
-                reference_price=Decimal(str(data["reference_price"])),
-                target_price=None if data.get("target_price") is None else Decimal(str(data["target_price"])),
-                expected_return_pct=None if data.get("expected_return_pct") is None else Decimal(str(data["expected_return_pct"])),
-                horizon_days=data["horizon_days"], target_date=date.fromisoformat(data["target_date"]),
-                rationale=data.get("rationale"), indicators=data.get("indicators"), is_public=bool(data.get("is_public", False)),
-                status="pendiente")
+        with self._Session.begin() as s:
+            p = self._new_prediction(data)
             s.add(p)
-            s.commit()
-            s.refresh(p)
-            symbol = s.get(orm.Asset, p.asset_id).symbol
-            return _pred(p, symbol, None)
+            s.flush()
+            return _pred(p, s.get(orm.Asset, p.asset_id).symbol, None)
+
+    def save_forecast_emission(self, user_id, emission, *, expired):
+        key = (user_id, emission["id"])
+        symbol = emission["symbol"]
+        with self._Session.begin() as s:
+            insert = postgres_insert if s.bind.dialect.name == "postgresql" else sqlite_insert
+            if not expired:
+                # Claim first. A concurrent insert waits for commit or rollback before deciding.
+                claimed = s.execute(insert(orm.ForecastEmissionSave).values(
+                    user_id=user_id, emission_id=emission["id"], prediction_ids=[]
+                ).on_conflict_do_nothing(index_elements=["user_id", "emission_id"])
+                    .returning(orm.ForecastEmissionSave.emission_id)).scalar_one_or_none()
+                if claimed is not None:
+                    s.execute(insert(orm.Asset).values(symbol=symbol)
+                              .on_conflict_do_nothing(index_elements=["symbol"]))
+                    asset_id = s.execute(select(orm.Asset.id).where(orm.Asset.symbol == symbol)).scalar_one()
+                    predictions = [self._new_prediction(row) for row in prediction_rows(user_id, asset_id, emission)]
+                    s.add_all(predictions)
+                    s.flush()
+                    s.get(orm.ForecastEmissionSave, key).prediction_ids = [p.id for p in predictions]
+                    return [_pred(p, symbol, None) for p in predictions]
+
+            batch = s.get(orm.ForecastEmissionSave, key)
+            if batch is None:
+                raise ConflictError("La emisión caducó. Ejecuta los modelos nuevamente.")
+            rows = s.execute(self._select_preds().where(
+                orm.Prediction.user_id == user_id, orm.Prediction.id.in_(batch.prediction_ids))).all()
+            by_id = {p.id: _pred(p, sym, ev) for p, sym, ev in rows}
+            return [by_id[pid] for pid in batch.prediction_ids]
 
     def list_predictions(self, user_id):
         with self._Session() as s:

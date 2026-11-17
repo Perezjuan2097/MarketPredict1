@@ -6,6 +6,7 @@ from decimal import Decimal
 
 from app.repositories.base import DUE_STATUSES, ConflictError, DuplicateError, NotFoundError, identity_key, q2
 from app.repositories.base import AdminAccessDenied, has_admin_role, validate_admin_change
+from app.services.forecast_emissions import prediction_rows
 
 
 def _now():
@@ -16,6 +17,7 @@ class MemoryRepository:
     persistent_sessions = False
     def __init__(self):
         self._lock = threading.RLock()
+        self._forecast_saves = {}
         self._ids = {k: itertools.count(1) for k in ("user", "asset", "pred", "pf", "trade")}
         self.users, self.assets, self.preds, self.evals, self.portfolios, self.trades = {}, {}, {}, {}, {}, []
 
@@ -97,6 +99,18 @@ class MemoryRepository:
                    "status": "pendiente", "is_public": bool(data.get("is_public", False))}
             self.preds[pid] = row
             return self._pred_view(row)
+
+    def save_forecast_emission(self, user_id, emission, *, expired):
+        key = (user_id, emission["id"])
+        with self._lock:
+            if key in self._forecast_saves:
+                return [self._pred_view(self.preds[pid]) for pid in self._forecast_saves[key]]
+            if expired:
+                raise ConflictError("La emisión caducó. Ejecuta los modelos nuevamente.")
+            asset_id = self.get_or_create_asset(emission["symbol"])
+            saved = [self.add_prediction(row) for row in prediction_rows(user_id, asset_id, emission)]
+            self._forecast_saves[key] = [p["id"] for p in saved]
+            return saved
 
     def list_predictions(self, user_id):
         rows = [p for p in self.preds.values() if p["user_id"] == user_id]

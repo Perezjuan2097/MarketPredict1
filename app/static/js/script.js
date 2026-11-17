@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let language = localStorage.getItem("marketpredict-language") || "es";
     let searchTimer = null;
     let activeTicker = "AAPL";
+    let displayedForecast = null;
 
     const $ = (selector) => document.querySelector(selector);
     const $$ = (selector) => Array.from(document.querySelectorAll(selector));
@@ -539,18 +540,21 @@ document.addEventListener("DOMContentLoaded", () => {
     async function runModels() {
         const box = $("#modelsContent");
         const horizon = $("#modelsHorizon")?.value || "5";
+        const ticker = activeTicker;
+        displayedForecast = null;
         box.innerHTML = `<div class="loading">Entrenando y validando modelos...</div>`;
         $("#runModels").disabled = true;
         try {
             const [response, newsResp] = await Promise.all([
-                fetch(`/api/models/${encodeURIComponent(activeTicker)}?horizon=${encodeURIComponent(horizon)}`),
-                fetch(`/api/news/${encodeURIComponent(activeTicker)}`).catch(() => null),
+                fetch(`/api/models/${encodeURIComponent(ticker)}?horizon=${encodeURIComponent(horizon)}`, { cache: "no-store" }),
+                fetch(`/api/news/${encodeURIComponent(ticker)}`).catch(() => null),
             ]);
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || "No fue posible ejecutar los modelos.");
             let pulse = null;
             try { if (newsResp && newsResp.ok) pulse = (await newsResp.json()).pulse; } catch { pulse = null; }
             renderModels(data, pulse);
+            displayedForecast = { ticker, horizon, emission: data.emission };
         } catch (error) { box.innerHTML = `<div class="empty-state">${escapeHTML(error.message)}</div>`; }
         finally { $("#runModels").disabled = false; }
     }
@@ -752,11 +756,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function saveModelPredictions() {
         if (!currentUser) { openAuth("login"); return; }
-        const horizon = Number($("#modelsHorizon")?.value || 5);
+        const horizon = $("#modelsHorizon")?.value || "5";
+        const forecast = displayedForecast;
+        if (!forecast?.emission || forecast.ticker !== activeTicker || forecast.horizon !== horizon) {
+            setStatus("Ejecuta los modelos para este activo y horizonte antes de guardar.");
+            return;
+        }
         const button = $("#saveModels");
         button.disabled = true;
         try {
-            const { saved } = await api("POST", "/api/me/predictions/from-models", { symbol: activeTicker, horizon });
+            const { saved } = await api("POST", "/api/me/predictions/from-models", { emission_token: forecast.emission.token });
             setStatus(`Se guardaron ${saved.length} predicciones en tu cuenta (Mi cuenta → Mis predicciones).`);
         } catch (error) { setStatus(error.message); }
         finally { button.disabled = false; }

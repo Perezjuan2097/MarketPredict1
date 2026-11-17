@@ -31,7 +31,7 @@ Las claves JSON históricas `level`, `calibration`, `range_90` y `interval` cons
 
 ## Guardado y evaluación
 
-Consultar un pronóstico o generar un informe no lo guarda. **Guardar predicciones** en el panel de modelos envía símbolo y horizonte y persiste en SQL el resultado que el servidor resuelve en ese momento. **Publicar predicción** registra una predicción manual en SQL. **Guardar predicción** en Seguimiento conserva el primer pronóstico del análisis en el historial JSON separado. Ese historial queda fuera de la evaluación SQL.
+Consultar un pronóstico o generar un informe no lo guarda. **Guardar predicciones** en el panel de modelos envía el token de la emisión mostrada y persiste sus resultados en un lote SQL idempotente. Ver [Emisiones](ENTERPRISE_2B2.md). **Publicar predicción** registra una predicción manual en SQL. **Guardar predicción** en Seguimiento conserva el primer pronóstico del análisis en el historial JSON separado. Ese historial queda fuera de la evaluación SQL.
 
 Abrir **Mi cuenta** o pulsar **Actualizar resultados** solicita la evaluación de pronósticos SQL vencidos. Sólo se evalúan cuando se puede verificar el cierre exacto de su sesión objetivo con la fuente registrada. No hay tarea periódica. Ver [Cuentas](CUENTAS.md).
 

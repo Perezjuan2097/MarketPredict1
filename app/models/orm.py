@@ -106,6 +106,15 @@ class ModelRun(Base):
                       CheckConstraint("status IN ('ok','error')", name="ck_model_runs_status"))
 
 
+class ForecastEmissionSave(Base):
+    """Persistent idempotency record for a user's saved forecast batch."""
+    __tablename__ = "forecast_emission_saves"
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    emission_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    prediction_ids: Mapped[list[int]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = _created()
+
+
 class Prediction(Audit, Base):
     """Predicción de un modelo (source='model') o de un usuario (source='user', pública)."""
     __tablename__ = "predictions"

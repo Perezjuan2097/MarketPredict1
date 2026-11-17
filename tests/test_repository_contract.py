@@ -6,6 +6,7 @@ import tempfile
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
+from threading import Barrier
 
 from app.repositories.base import AdminAccessDenied, ConflictError, DuplicateError, NotFoundError
 from app.repositories.memory import MemoryRepository
@@ -29,6 +30,35 @@ class RepoContract:
                     rationale="r", indicators=["RSI"], is_public=True)
         base.update(kw)
         return self.repo.add_prediction(base)
+
+    def _forecast_emission(self):
+        return {"id": "e" * 64, "symbol": "NEW", "horizon": 5, "reference_price": 100,
+                "target_date": "2030-01-02", "expires_at": "2030-01-01T12:00:00+00:00",
+                "data_source": "demo", "provenance": {"seed": 0},
+                "forecasts": [{"model_id": name, "model_version": "1.0", "price": 101,
+                               "return_pct": 1, "direction": "alcista"}
+                              for name in ("linear_regression", "random_forest")]}
+
+    def test_forecast_batch_concurrent_and_idempotent(self):
+        uid = self.u1["id"]
+        emission = self._forecast_emission()
+        barrier = Barrier(2)
+
+        def save():
+            barrier.wait(timeout=5)
+            return self.repo.save_forecast_emission(uid, emission, expired=False)
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            first = executor.submit(save)
+            second = executor.submit(save)
+            saved = first.result(timeout=10)
+            self.assertEqual(saved, second.result(timeout=10))
+        self.assertEqual(len(saved), 2)
+        self.assertEqual(len(self.repo.list_predictions(uid)), 2)
+        self.assertEqual(saved, self.repo.save_forecast_emission(uid, emission, expired=True))
+        with self.assertRaises(ConflictError):
+            self.repo.save_forecast_emission(self.u2["id"], emission, expired=True)
+
 
     def test_usuarios(self):
         self.assertEqual(self.u1["email"], "ana@x.co")
@@ -146,8 +176,28 @@ class TestMemoryRepo(RepoContract, unittest.TestCase):
         return MemoryRepository()
 
 
+class SQLForecastContract:
+    def test_forecast_batch_rolls_back_rows_asset_and_claim(self):
+        from sqlalchemy import select
+        from sqlalchemy.exc import IntegrityError
+        from app.models.orm import Asset, ForecastEmissionSave
+
+        uid = self.u1["id"]
+        emission = self._forecast_emission()
+        emission["forecasts"][1]["direction"] = "invalid"
+        with self.assertRaises(IntegrityError):
+            self.repo.save_forecast_emission(uid, emission, expired=False)
+        self.assertEqual(self.repo.list_predictions(uid), [])
+        with self.repo._Session() as session:
+            self.assertIsNone(session.get(ForecastEmissionSave, (uid, emission["id"])))
+            self.assertIsNone(session.scalar(select(Asset.id).where(Asset.symbol == emission["symbol"])))
+        emission["forecasts"][1]["direction"] = "alcista"
+        saved = self.repo.save_forecast_emission(uid, emission, expired=False)
+        self.assertEqual(len(saved), 2)
+
+
 @unittest.skipUnless(HAS_SA, "sqlalchemy no instalado: ejecute estas pruebas en su entorno completo")
-class TestSQLRepo(RepoContract, unittest.TestCase):
+class TestSQLRepo(SQLForecastContract, RepoContract, unittest.TestCase):
     def make_repo(self):
         from sqlalchemy import create_engine
         from app.models.orm import Base
@@ -159,7 +209,7 @@ class TestSQLRepo(RepoContract, unittest.TestCase):
         return SQLRepository(engine)
 
 @unittest.skipUnless(os.getenv("TEST_POSTGRES_URL"), "requiere TEST_POSTGRES_URL")
-class TestPostgresRepo(RepoContract, unittest.TestCase):
+class TestPostgresRepo(SQLForecastContract, RepoContract, unittest.TestCase):
     def make_repo(self):
         from sqlalchemy import create_engine
         from sqlalchemy.schema import CreateSchema, DropSchema

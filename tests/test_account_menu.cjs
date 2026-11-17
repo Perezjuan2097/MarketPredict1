@@ -65,6 +65,10 @@ async function fixture({ authenticated = true, brokerAllowed = false, hash = "",
         "#accountTitle": title, "#tabCuenta": account, "#tabSummary": summary, "#tabBrokers": brokerPanel,
         "#brokerContent": brokerContent, '[data-nav="brokers"]': brokerLink, "#pfEmpty": element(), "#pfArea": element()
     };
+    for (const id of ["runModels", "saveModels", "modelsContent", "modelsHorizon"]) {
+        nodes["#" + id] = element();
+    }
+    nodes["#modelsHorizon"].value = "5";
     const dialog = element();
     dialog.showModal = () => { dialog.open = true; };
     for (const id of ["authDialog", "authTabLogin", "authTabRegister", "authError", "loginForm", "registerForm"]) {
@@ -79,6 +83,11 @@ async function fixture({ authenticated = true, brokerAllowed = false, hash = "",
     const responses = {
         "/api/auth/me": [true, { user: authenticated ? { username: "Fixture", role } : null,
             csrf: "fixture-csrf", persistence: true, can_access_broker: brokerAllowed }],
+        "/api/models/AAPL?horizon=5": [true, { asset: "AAPL", data_source: "demo", horizon_days: 5,
+            as_of: "2025-01-01", data_points: 300, models: [], baselines: [], notes: [],
+            emission: { token: "signed-forecast" } }],
+        "/api/news/AAPL": [true, {}],
+        "/api/me/predictions/from-models": [true, { saved: [{ id: 1 }] }],
         "/api/auth/logout": [logoutOk, { csrf: "new-csrf" }],
         "/api/me/portfolios": [true, { portfolios: [] }],
         "/api/broker/status": [true, { authorized: true }],
@@ -98,7 +107,7 @@ async function fixture({ authenticated = true, brokerAllowed = false, hash = "",
     await document.emit("DOMContentLoaded");
     await new Promise(setImmediate);
     return { fixtureState, trigger, menu, profile, signOut, title, error, account, summary,
-        brokerPanel, brokerLink, administration, dialog, document };
+        brokerPanel, brokerLink, administration, dialog, document, nodes };
 }
 
 test("the template uses native buttons and a hidden disclosure with an alert", () => {
@@ -211,4 +220,19 @@ test("only an account administrator sees the administration link", async () => {
     await admin.trigger.emit("click");
     await admin.signOut.emit("click");
     assert.equal(admin.administration.hidden, true);
+});
+
+test("model saving sends the displayed token and requires a matching horizon", async () => {
+    const { nodes, fixtureState } = await fixture();
+    const saves = () => fixtureState.requests.filter(({ url }) => url === "/api/me/predictions/from-models");
+    await nodes["#saveModels"].emit("click");
+    assert.equal(saves().length, 0);
+    await nodes["#runModels"].emit("click");
+    await nodes["#saveModels"].emit("click");
+    assert.equal(saves().length, 1);
+    assert.deepEqual(JSON.parse(saves()[0].options.body), { emission_token: "signed-forecast" });
+    assert.equal(saves()[0].options.headers["X-CSRF-Token"], "fixture-csrf");
+    nodes["#modelsHorizon"].value = "10";
+    await nodes["#saveModels"].emit("click");
+    assert.equal(saves().length, 1);
 });

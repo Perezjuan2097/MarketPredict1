@@ -10,7 +10,7 @@ from app.repositories import factory
 from app.repositories.base import ConflictError, identity_key
 from app.security import InvalidInput, api_error, audit, check_csrf_header, client_ip, csrf_token, json_object, limiter
 from app.session_store import end_session, start_session, user_id
-from app.services import account_service, portfolio_service, user_predictions
+from app.services import account_service, forecast_emissions, portfolio_service, user_predictions
 
 log = logging.getLogger("marketpredict")
 account_bp = Blueprint("account", __name__)
@@ -137,14 +137,9 @@ def publish_prediction(repo, user):
 @account_bp.post("/api/me/predictions/from-models")
 @guarded()
 def save_from_models(repo, user):
-    from app.controllers.main_controller import model_result
-    body = json_object()
-    try:
-        horizon = int(body.get("horizon", 5))
-    except (TypeError, ValueError):
-        raise InvalidInput("Horizonte no válido.")
-    result = model_result(body.get("symbol"), horizon)
-    return jsonify(saved=jsonable(user_predictions.save_model_predictions(repo, user["id"], result))), 201
+    emission = forecast_emissions.read(json_object().get("emission_token"), current_app.secret_key)
+    saved = user_predictions.save_model_predictions(repo, user["id"], emission)
+    return jsonify(saved=jsonable(saved)), 201
 
 
 @account_bp.post("/api/me/predictions/<int:pred_id>/cancel")

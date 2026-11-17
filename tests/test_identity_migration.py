@@ -74,8 +74,12 @@ def test_postgres_repairs_stamped_partial_installation(connection, monkeypatch):
     command.stamp(cfg, "20261115_identity_keys")
     command.upgrade(cfg, "head")
     command.upgrade(cfg, "head")
-    assert MigrationContext.configure(connection).get_current_revision() == "20261117_auth_sessions"
+    assert MigrationContext.configure(connection).get_current_revision() == "20261118_forecast_saves"
     assert sa.inspect(connection).has_table("auth_sessions")
+    assert sa.inspect(connection).has_table("forecast_emission_saves")
+    assert connection.exec_driver_sql(
+        "SELECT relrowsecurity FROM pg_class WHERE oid = 'forecast_emission_saves'::regclass"
+    ).scalar_one() is True
     assert connection.exec_driver_sql("SELECT 'users'::regclass::oid, 'portfolios'::regclass::oid").one() == oids
     assert connection.exec_driver_sql("SELECT id, username_key, email_key, password_hash FROM users").one() == (
         4, "clara", "éxito@x.co", "fixture-hash"
@@ -103,3 +107,15 @@ def test_identity_revision_stops_before_ddl_on_collision(connection):
         _upgrade(connection)
     assert [c["name"] for c in sa.inspect(connection).get_columns("users")] == ["id", "username", "email"]
     assert connection.exec_driver_sql("SELECT count(*) FROM portfolios").scalar_one() == 2
+
+def test_forecast_emission_revision_is_additive_and_reentrant(connection):
+    _legacy(connection)
+    revision = import_module("migrations.versions.20261118_forecast_saves")
+    with Operations.context(MigrationContext.configure(connection)):
+        revision.upgrade()
+        revision.upgrade()
+    inspector = sa.inspect(connection)
+    assert inspector.get_pk_constraint("forecast_emission_saves")["constrained_columns"] == ["user_id", "emission_id"]
+    assert inspector.get_foreign_keys("forecast_emission_saves")[0]["referred_table"] == "users"
+    assert connection.exec_driver_sql("SELECT * FROM users").one() == (4, "Clara", "Éxito@x.co")
+    assert connection.exec_driver_sql("SELECT * FROM trades").one() == (9, 7)
