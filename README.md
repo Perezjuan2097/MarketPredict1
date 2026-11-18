@@ -1,43 +1,47 @@
 # MarketPredict
 
-Plataforma académica de análisis y predicción de activos financieros (Flask, arquitectura MVC).
+Plataforma académica de análisis de mercado, predicción estadística y pronóstico empresarial (Flask, arquitectura en capas).
+Proyecto de Juan Carlos Pérez Ayala · Universidad Antonio Nariño · Calidad de Software.
 
-## Estado de la evolución
-| Fase | Estado |
+> Los pronósticos son estimaciones estadísticas con incertidumbre. No son recomendaciones de inversión. Cuando ningún modelo supera a una referencia simple de forma significativa, la aplicación lo indica (`sin_valor_predictivo`).
+
+## Estado (18 de noviembre de 2026)
+| Componente | Estado |
 |---|---|
-| 0 Auditoría | Hecha (ver `docs/DIAGNOSTICO.md`) |
-| 1 Estabilización | **Base hecha**: fábrica de app única, configuración por entorno, admin protegido, validación, límites, cabeceras, pruebas. Pendiente: BD Supabase |
-| 3 Predicción | **Parcial**: Ridge, Random Forest, referencias, Monte Carlo, consenso, walk-forward (ver `docs/MODELOS.md`). XGBoost, ARIMA y SARIMA se ejercitan en CI con `requirements-ml.txt`. La evaluación periódica sigue pendiente |
-| 3b Decisión | **Hecha**: probabilidad estimada de subida con diagnóstico histórico, modelo de riesgo (volatilidad), contexto externo preparado pero inactivo, pulso de noticias, resumen en lenguaje sencillo, prueba de significancia (Diebold-Mariano) y pestaña *Resultados* multiactivo |
-| Navegación | Menú superior funcional (Productos, Comunidad, Mercados, Brókers, Más) |
-| 4–5 Cuentas | **Parcial** (ver `docs/CUENTAS.md`): registro/login, guardado SQL explícito y solicitud de evaluación al abrir Mi cuenta o pulsar Actualizar resultados. Historial JSON separado y portafolio simulado |
-| 2, 4–8 | Pendientes |
+| Interfaz académica en seis módulos (Inicio, Análisis de mercado, Predicciones, Mis predicciones, Datos empresariales, Administración SaaS) | Implementada en `feat/academic-marketpredict-demo` |
+| Motor multimodelo (`ml_engine`): referencias, Ridge, Random Forest, XGBoost, ARIMA/SARIMA opcional, walk-forward con purga, Diebold-Mariano, Monte Carlo | Implementado |
+| Cuentas, sesiones revocables, emisiones firmadas, evaluación por sesión exacta, portafolio simulado | Implementado |
+| Extensión empresarial (organizaciones, datasets versionados, pronóstico, worker, alertas, reportes, planes) | Implementada en ramas; **no desplegada** |
+| Producción (Render, plan gratuito + Supabase) | Ejecuta el commit `5da6fe0` |
+| Staging aislado (`render.sprint5-staging.yaml`) | Planificado, no creado |
 
-## Instalación rápida y verificación
-`scripts\instalar_local.bat` (Windows) o `bash scripts/instalar_local.sh` instala todo y ejecuta `scripts/verify_install.py`.
-Guías: `docs/CUENTAS.md`, `docs/INSTALACION.md`, `docs/BASE_DE_DATOS.md`, `docs/MODELOS.md`. Estado en vivo: `/api/health`.
+Cifras verificables: 9 blueprints, 77 rutas, 38 tablas, 9 migraciones, 239 pruebas Python, 20 pruebas JavaScript y un recorrido E2E de 27 casos con capturas (`docs/academic/evidencia`).
 
-## Ejecución local
+## Instalación local
 ```
-python -m venv .venv && source .venv/bin/activate    # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env     # y complete los valores (se leen del entorno)
-python app.py            # http://127.0.0.1:5000
-python -m unittest discover -s tests -v
+git checkout feat/academic-marketpredict-demo
+python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -c constraints-py312.txt -r requirements.txt -r requirements-ml.txt
+cp .env.example .env
+alembic upgrade head
+python app.py                                            # http://127.0.0.1:5000
+python -m scripts.enterprise_worker                      # en otra terminal, para Datos empresariales
 ```
-Sin red puede usar `USE_DEMO=true`: genera datos **sintéticos** y la interfaz lo indica; no son datos de mercado.
+Sin red: `USE_DEMO=true` genera datos sintéticos marcados como DEMO.
 
-## Variables de entorno
-Ver `.env.example`. En producción (`APP_ENV=production`) `SECRET_KEY` es obligatoria y el modo debug queda desactivado.
-`/admin` solo funciona si se define `ADMIN_TOKEN` (acceso provisional hasta que existan roles en base de datos).
+## Pruebas
+```
+python -m pytest -q
+node --test tests/*.cjs
+python scripts/academic_e2e.py --base http://127.0.0.1:8000 --out evidencia
+```
+Integración continua: `baseline-ci.yml` (Linux, Windows, PostgreSQL 17), `migration-rehearsal.yml` y `academic-evidence.yml` (recorrido E2E con capturas publicado en `docs/academic/evidencia`).
 
-## Despliegue (Netlify + Render + Supabase)
-- **Supabase**: base de datos PostgreSQL (provisional/sustentación). La cadena va en `DATABASE_URL`.
-- **Render**: ejecuta el backend Flask (`render.yaml`). El plan gratuito se suspende tras inactividad: abra la URL unos minutos antes de una presentación.
-- **Netlify**: dominio público; `netlify.toml` reenvía todo el tráfico al backend como proxy. Edite `TU-BACKEND` con la URL real de Render.
+## Documentación
+La documentación académica completa (Documento final, ERS 2.0, manuales técnico y de usuario, UML, pruebas, calidad y riesgos, gestión, auditoría y trazabilidad) se entrega en el paquete `MarketPredict_Entrega_Academica_2026`. Documentos técnicos del repositorio: `docs/INSTALACION.md`, `docs/MODELOS.md`, `docs/BASE_DE_DATOS.md`, `docs/SEGURIDAD_1C.md`, `docs/INTEGRIDAD_TEMPORAL.md`, `docs/ENTERPRISE_SPRINT_*.md`.
 
-## Limitaciones actuales
-- El historial y la comunidad siguen en JSON local hasta migrar a Supabase.
-- Los votos de la comunidad aún no controlan duplicados (requiere usuarios autenticados, Fase 4).
-- No se ha podido probar la conexión real con Yahoo Finance ni con Supabase, ni XGBoost/ARIMA/SARIMA (el entorno de desarrollo no tenía red). Usa `scripts/verify_install.py` para verificarlos en tu equipo.
-- La app aún no escribe en la base de datos (esquema y migraciones preparados, pendientes de verificar).
+## Limitaciones
+- La extensión empresarial y la interfaz académica no están desplegadas en producción.
+- Yahoo Finance se consulta con una biblioteca no oficial y puede fallar; la aplicación informa el error sin mostrar datos falsos.
+- El plan gratuito de Render se suspende por inactividad.
+- No hay auditoría de accesibilidad automatizada ni pruebas en Firefox y Safari.
