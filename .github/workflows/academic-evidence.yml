@@ -46,7 +46,7 @@ jobs:
           node-version: "22"
       - name: Install dependencies
         run: |
-          python -m pip install -r requirements-test.txt playwright==1.49.1
+          python -m pip install -r requirements-test.txt -r requirements-ml.txt playwright==1.49.1
           python -m playwright install --with-deps chromium
       - name: Prepare evidence folder
         run: |

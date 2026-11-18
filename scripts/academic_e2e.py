@@ -20,6 +20,8 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeout, expect, sync_
 
 from scripts.synthetic_pilot import generate
 
+# bypass_csp: la CSP de la aplicación prohíbe eval, y Playwright evalúa sus esperas como texto JavaScript.
+# Solo afecta al navegador de prueba; la aplicación y sus cabeceras no cambian.
 DESKTOP = {"width": 1440, "height": 900}
 MOBILE = {"width": 390, "height": 844}
 PASSWORD = "Demo" + token_hex(6) + "9"
@@ -90,7 +92,7 @@ def main():
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
         meta["browser"] = "Chromium " + browser.version
-        ctx = browser.new_context(viewport=DESKTOP, locale="es-CO")
+        ctx = browser.new_context(viewport=DESKTOP, locale="es-CO", bypass_csp=True)
         page = ctx.new_page()
         console_errors = []
         page.on("pageerror", lambda exc: console_errors.append(str(exc)))
@@ -121,7 +123,7 @@ def main():
 
         def search():
             go(page, "summary")
-            page.fill("#globalSearch", "micro")
+            page.fill("#globalSearch", "apple")
             page.wait_for_selector("#searchSuggestions:not(.hidden) .suggestion", timeout=30000)
             rec.shot(page, "04_busqueda_sugerencias")
             page.keyboard.press("Escape")
@@ -262,7 +264,7 @@ def main():
         rec.case("CP-SEC-01", "Administración SaaS", "Un usuario común no accede a la administración", restricted_admin)
 
         # Ventas/organizaciones de otra cuenta: aislamiento entre empresas.
-        other = browser.new_context(viewport=DESKTOP, locale="es-CO")
+        other = browser.new_context(viewport=DESKTOP, locale="es-CO", bypass_csp=True)
         other_page = other.new_page()
 
         def isolation():
@@ -273,7 +275,7 @@ def main():
             return "organización ajena responde 404"
         rec.case("CP-SEC-02", "Datos empresariales", "Otra cuenta no puede ver la organización de un tercero", isolation)
 
-        admin_ctx = browser.new_context(viewport=DESKTOP, locale="es-CO")
+        admin_ctx = browser.new_context(viewport=DESKTOP, locale="es-CO", bypass_csp=True)
         admin_page = admin_ctx.new_page()
 
         def admin_module():
@@ -294,7 +296,7 @@ def main():
         rec.case("CP-UI-17", "Administración SaaS", "Administrador global consulta organizaciones, cuotas y workers", admin_module)
 
         def api_error():
-            err = browser.new_context(viewport=DESKTOP, locale="es-CO")
+            err = browser.new_context(viewport=DESKTOP, locale="es-CO", bypass_csp=True)
             err_page = err.new_page()
             err_page.route("**/api/market-data/**", lambda route: route.fulfill(
                 status=503, content_type="application/json",
@@ -308,7 +310,7 @@ def main():
         rec.case("CP-UI-18", "Análisis de mercado", "Fallo simulado de la fuente externa: se informa sin datos falsos", api_error)
 
         def mobile():
-            mob = browser.new_context(viewport=MOBILE, device_scale_factor=2, is_mobile=True, has_touch=True, locale="es-CO")
+            mob = browser.new_context(viewport=MOBILE, device_scale_factor=2, is_mobile=True, has_touch=True, locale="es-CO", bypass_csp=True)
             mp = mob.new_page()
             mp.goto(base + "/")
             mp.wait_for_selector("#tabInicio.active-panel", timeout=20000)
