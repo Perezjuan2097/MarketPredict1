@@ -1,0 +1,36 @@
+........................................................................ [ 30%]
+........s.....s.s........ss.........s................................... [ 60%]
+...sss.................................................................. [ 90%]
+.......................                                                  [100%]
+=============================== warnings summary ===============================
+tests/test_identity_migration.py::test_postgres_repairs_stamped_partial_installation[postgresql]
+tests/test_identity_migration.py::test_postgres_repairs_stamped_partial_installation[postgresql]
+tests/test_identity_migration.py::test_postgres_repairs_stamped_partial_installation[postgresql]
+  /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+tests/test_render_regressions.py::test_known_listing_survives_yahoo_metadata_failure[NVDA-401]
+tests/test_render_regressions.py::test_known_listing_survives_yahoo_metadata_failure[NVDA-401]
+tests/test_render_regressions.py::test_known_listing_survives_yahoo_metadata_failure[NVDA-401]
+tests/test_render_regressions.py::test_known_listing_survives_yahoo_metadata_failure[NVDA-401]
+tests/test_temporal_integrity.py::test_exchange_holidays_dst_early_closes_and_crypto
+tests/test_temporal_integrity.py::test_exchange_holidays_dst_early_closes_and_crypto
+tests/test_temporal_integrity.py::test_exchange_holidays_dst_early_closes_and_crypto
+tests/test_temporal_integrity.py::test_exchange_holidays_dst_early_closes_and_crypto
+  /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/pandas/core/series.py:848: Pandas4Warning: Series.values returning an ndarray that drops timezone information for DatetimeTZDtype is deprecated. In a future version, this will return the underlying DatetimeArray instead. Use 'Series.dt.tz_convert(None).to_numpy()' to get a NumPy array of UTC values, or 'Series.array' to get the ExtensionArray.
+  See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#whatsnew-310-deprecations-values for more details.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_enterprise_datasets.py:521: worker PostgreSQL
+SKIPPED [1] tests/test_enterprise_datasets.py:651: bloqueos PostgreSQL
+SKIPPED [1] tests/test_enterprise_datasets.py:702: bloqueos PostgreSQL
+SKIPPED [1] tests/test_enterprise_forecast.py:86: could not import 'statsmodels': No module named 'statsmodels'
+SKIPPED [1] tests/test_identity_migration.py:60: reparación de revisión PostgreSQL
+SKIPPED [1] tests/test_identity_migration.py:155: RLS PostgreSQL
+SKIPPED [1] tests/test_optional.py:37: xgboost no instalado
+SKIPPED [1] tests/test_optional.py:54: statsmodels no instalado
+SKIPPED [1] tests/test_optional.py:61: statsmodels no instalado
+230 passed, 9 skipped, 11 warnings in 59.20s
+duracion_s=60

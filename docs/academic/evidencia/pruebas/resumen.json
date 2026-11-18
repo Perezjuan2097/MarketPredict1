@@ -1,0 +1,104 @@
+{
+  "python": {
+    "tests": "239",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "9",
+    "time": "59.195",
+    "timestamp": "2026-11-18T15:46:24.362949+00:00"
+  },
+  "python_por_archivo": {
+    "test_account": {
+      "aprobada": 23,
+      "fallida": 0,
+      "omitida": 0
+    },
+    "test_app": {
+      "aprobada": 29,
+      "fallida": 0,
+      "omitida": 0
+    },
+    "test_broker_news": {
+      "aprobada": 8,
+      "fallida": 0,
+      "omitida": 0
+    },
+    "test_enterprise_automation": {
+      "aprobada": 2,
+      "fallida": 0,
+      "omitida": 0
+    },
+    "test_enterprise_datasets": {
+      "aprobada": 28,
+      "fallida": 0,
+      "omitida": 3
+    },
+    "test_enterprise_forecast": {
+      "aprobada": 4,
+      "fallida": 0,
+      "omitida": 1
+    },
+    "test_identity_migration": {
+      "aprobada": 14,
+      "fallida": 0,
+      "omitida": 2
+    },
+    "test_ml_engine": {
+      "aprobada": 24,
+      "fallida": 0,
+      "omitida": 0
+    },
+    "test_modelos_v3": {
+      "aprobada": 7,
+      "fallida": 0,
+      "omitida": 0
+    },
+    "test_optional": {
+      "aprobada": 9,
+      "fallida": 0,
+      "omitida": 3
+    },
+    "test_organizations": {
+      "aprobada": 2,
+      "fallida": 0,
+      "omitida": 0
+    },
+    "test_render_regressions": {
+      "aprobada": 11,
+      "fallida": 0,
+      "omitida": 0
+    },
+    "test_repository_contract": {
+      "aprobada": 39,
+      "fallida": 0,
+      "omitida": 0
+    },
+    "test_schema_guard": {
+      "aprobada": 7,
+      "fallida": 0,
+      "omitida": 0
+    },
+    "test_security_1c": {
+      "aprobada": 11,
+      "fallida": 0,
+      "omitida": 0
+    },
+    "test_smoke": {
+      "aprobada": 1,
+      "fallida": 0,
+      "omitida": 0
+    },
+    "test_temporal_integrity": {
+      "aprobada": 11,
+      "fallida": 0,
+      "omitida": 0
+    }
+  },
+  "javascript": {
+    "tests": 19.0,
+    "pass": 19.0,
+    "fail": 0.0,
+    "skipped": 0.0,
+    "duration_ms": 578.140573
+  }
+}

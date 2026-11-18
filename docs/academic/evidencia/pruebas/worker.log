@@ -1,0 +1,1 @@
+{"time": "2026-11-18T15:48:43.274401+00:00", "level": "INFO", "logger": "enterprise_worker", "message": "enterprise_job_attempt", "request_id": "9689a843c811473c95b51eaaf549e7b3", "duration_ms": 1802.31, "job_id": 1, "outcome": "completed", "worker_id": "8bcc1881fc994adea63f77e311608d3e"}

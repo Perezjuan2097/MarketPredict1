@@ -1,0 +1,2408 @@
+{
+  "AAPL": {
+    "as_of": "2026-11-17",
+    "asset": "AAPL",
+    "baselines": [
+      {
+        "asset": "AAPL",
+        "estimated_price": 351.910004,
+        "estimated_return_pct": 0.0,
+        "historical_metrics": {
+          "calibration_rmse_return": 0.04224138985650333,
+          "directional_accuracy": 0.0,
+          "mae_price": 6.874557666666692,
+          "mae_return": 0.026455653631800875,
+          "mape_price_pct": 2.636387386021866,
+          "max_drawdown_strategy": 0.0,
+          "mse_return": 0.0010794851381669389,
+          "n_oos": 147,
+          "n_strategy_trades": 30,
+          "rmse_price": 8.510962992948137,
+          "rmse_return": 0.03285551914316587,
+          "sharpe_strategy": null
+        },
+        "holdout_metrics": {
+          "directional_accuracy": 0.0,
+          "mae_price": 8.031442988888887,
+          "mae_return": 0.024548264117185494,
+          "mape_price_pct": 2.4556257099099144,
+          "max_drawdown_strategy": 0.0,
+          "mse_return": 0.0010292289406649854,
+          "n_oos": 90,
+          "n_strategy_trades": 18,
+          "rmse_price": 10.444761906382968,
+          "rmse_return": 0.032081598162575775,
+          "sharpe_strategy": null
+        },
+        "horizon_days": 5,
+        "indicators_used": [
+          "Retornos pasados (1,5,10,20)",
+          "Volatilidad (10,20)",
+          "RSI(14)",
+          "MACD(12,26,9)",
+          "Bandas de Bollinger(20,2)",
+          "ATR(14)",
+          "Estocástico(14,3)",
+          "SMA(20,50)",
+          "Volumen relativo"
+        ],
+        "interval": {
+          "high_price": 377.232821,
+          "level": 0.9,
+          "low_price": 328.287053,
+          "method": "predicción ± 1,645 × RMSE fuera de muestra (supone errores aprox. normales)"
+        },
+        "is_baseline": true,
+        "message": "",
+        "model_id": "baseline_last_price",
+        "name": "Referencia: último precio",
+        "predicted_log_return": 0.0,
+        "reference_price": 351.910004,
+        "run_date": "2026-11-18T15:48:03.805607+00:00",
+        "status": "ok",
+        "version": "1.0"
+      },
+      {
+        "asset": "AAPL",
+        "estimated_price": 353.572252,
+        "estimated_return_pct": 0.4724,
+        "historical_metrics": {
+          "calibration_rmse_return": 0.0417082971060636,
+          "directional_accuracy": 0.5034013605442177,
+          "mae_price": 6.972398227606854,
+          "mae_return": 0.02678639076183361,
+          "mape_price_pct": 2.6749876127993955,
+          "max_drawdown_strategy": -0.12112580529565509,
+          "mse_return": 0.0010878924277139316,
+          "n_oos": 147,
+          "n_strategy_trades": 30,
+          "rmse_price": 8.557254860943749,
+          "rmse_return": 0.032983214332656115,
+          "sharpe_strategy": 0.7614132307377969
+        },
+        "holdout_metrics": {
+          "directional_accuracy": 0.6555555555555556,
+          "mae_price": 7.703621280906609,
+          "mae_return": 0.02352239380400477,
+          "mape_price_pct": 2.362064057345401,
+          "max_drawdown_strategy": -0.10341679706074625,
+          "mse_return": 0.0009937377367135738,
+          "n_oos": 90,
+          "n_strategy_trades": 18,
+          "rmse_price": 10.270469810833848,
+          "rmse_return": 0.031523606023321216,
+          "sharpe_strategy": 1.7401821876410097
+        },
+        "horizon_days": 5,
+        "indicators_used": [
+          "Retornos pasados (1,5,10,20)",
+          "Volatilidad (10,20)",
+          "RSI(14)",
+          "MACD(12,26,9)",
+          "Bandas de Bollinger(20,2)",
+          "ATR(14)",
+          "Estocástico(14,3)",
+          "SMA(20,50)",
+          "Volumen relativo"
+        ],
+        "interval": {
+          "high_price": 378.682455,
+          "level": 0.9,
+          "low_price": 330.127092,
+          "method": "predicción ± 1,645 × RMSE fuera de muestra (supone errores aprox. normales)"
+        },
+        "is_baseline": true,
+        "message": "",
+        "model_id": "baseline_mean_return",
+        "name": "Referencia: retorno medio",
+        "predicted_log_return": 0.004712382846809915,
+        "reference_price": 351.910004,
+        "run_date": "2026-11-18T15:48:03.805607+00:00",
+        "status": "ok",
+        "version": "1.0"
+      }
+    ],
+    "consensus": {
+      "best_model_by_history": "random_forest",
+      "direction": "neutral",
+      "dispersion_std_pct": 0.0675,
+      "max_return_pct": 0.6982,
+      "message": "Ningún modelo superó a las referencias simples fuera de muestra de forma significativa: no se calcula consenso ponderado.",
+      "min_return_pct": 0.5631,
+      "n_models": 2,
+      "simple_median_return_pct": 0.6306,
+      "status": "sin_valor_predictivo",
+      "weighted_return_pct": null,
+      "weights": {
+        "linear_regression": 0.0,
+        "random_forest": 0.0
+      }
+    },
+    "context_used": [],
+    "data_points": 501,
+    "data_source": "Yahoo Finance",
+    "explanation": {
+      "headline": "Sin ventaja clara en la dirección",
+      "points": [
+        "Ningún modelo adivinó la dirección mejor que la estadística básica: históricamente este activo subió en 57 % de los periodos de 5 sesiones. Eso es lo más honesto que se puede decir sobre si subirá o bajará.",
+        "Los modelos de precio no superaron a las referencias simples, así que no se muestra un precio objetivo.",
+        "Contexto externo inactivo en esta predicción (VIX, S&P 500, tasa a 10 años y dólar).",
+        "Riesgo: el precio se suele mover cerca de ±2.9 % en 5 sesiones. Rango de riesgo (90 % nominal): 326.90 a 378.83. Cobertura observada en la evaluación histórica: 100 %. Nivel de riesgo actual: normal comparado con su historia."
+      ],
+      "reliability": "Baja para la dirección; el modelo de riesgo redujo el error en selección",
+      "verdict": "neutral",
+      "what_to_do": "Usa esto para dimensionar el riesgo (cuánto podrías ganar o perder), no como una orden de compra o venta. Ningún modelo garantiza resultados; invierte solo lo que puedas permitirte perder y diversifica."
+    },
+    "fibonacci_reference": {
+      "0.236": 340.27911,
+      "0.382": 327.565432,
+      "0.5": 317.289994,
+      "0.618": 307.014555,
+      "0.786": 292.385117,
+      "maximo": 360.829987,
+      "minimo": 273.75
+    },
+    "final_evaluation": {
+      "calibration_origins": 55,
+      "first_origin": "2026-07-07",
+      "n_origins": 90,
+      "status": "independent"
+    },
+    "glossary": {
+      "Brier score": "Error de una probabilidad (0 es perfecto). Se compara con la referencia para ver si el modelo aporta.",
+      "Intervalo 90 %": "El 90 % indica el nivel nominal. La cobertura observada debe medirse para cada método y horizonte.",
+      "Probabilidad de subida": "Estimación del modelo o frecuencia histórica de referencia. Los tramos observados sirven para diagnosticar la estimación.",
+      "Referencia simple": "Una regla tonta (\"el precio no cambia\" o \"sube lo de siempre\"). Si un modelo no le gana, no aporta.",
+      "VIX": "Índice del 'miedo' del mercado de EE. UU.: sube cuando los inversores esperan movimientos fuertes.",
+      "Volatilidad": "Cuánto se mueve el precio normalmente. Más volatilidad = más riesgo y más incertidumbre.",
+      "Walk-forward": "Se entrena con el pasado y se prueba con el 'futuro' que el modelo no vio, como en la vida real."
+    },
+    "horizon_days": 5,
+    "horizon_unit": "sesiones",
+    "labeled_points": 447,
+    "models": [
+      {
+        "asset": "AAPL",
+        "estimated_price": 353.891637,
+        "estimated_return_pct": 0.5631,
+        "historical_metrics": {
+          "adds_value_indication": false,
+          "calibration_rmse_return": 0.04417037212440005,
+          "directional_accuracy": 0.5374149659863946,
+          "dm_t": -0.608,
+          "mae_price": 7.17356913874015,
+          "mae_return": 0.02748750603238875,
+          "mape_price_pct": 2.7404129188058453,
+          "max_drawdown_strategy": -0.14029300557970792,
+          "mse_return": 0.0012312752587370164,
+          "n_oos": 147,
+          "n_strategy_trades": 30,
+          "p_value": 0.7283,
+          "rmse_price": 9.125591337747867,
+          "rmse_return": 0.03508953203929936,
+          "sharpe_strategy": 0.38482140536067067,
+          "significant": false,
+          "skill_vs_baseline": -0.06799505697654395
+        },
+        "holdout_metrics": {
+          "directional_accuracy": 0.5555555555555556,
+          "mae_price": 8.374998846634428,
+          "mae_return": 0.025707552970548983,
+          "mape_price_pct": 2.5817844528345235,
+          "max_drawdown_strategy": -0.23418747209732327,
+          "mse_return": 0.0011943514830367876,
+          "n_oos": 90,
+          "n_strategy_trades": 18,
+          "rmse_price": 11.17489825751327,
+          "rmse_return": 0.03455939066356332,
+          "sharpe_strategy": -1.6816002916022466
+        },
+        "horizon_days": 5,
+        "indicators_used": [
+          "Retornos pasados (1,5,10,20)",
+          "Volatilidad (10,20)",
+          "RSI(14)",
+          "MACD(12,26,9)",
+          "Bandas de Bollinger(20,2)",
+          "ATR(14)",
+          "Estocástico(14,3)",
+          "SMA(20,50)",
+          "Volumen relativo"
+        ],
+        "interval": {
+          "high_price": 380.562728,
+          "level": 0.9,
+          "low_price": 329.089745,
+          "method": "predicción ± 1,645 × RMSE fuera de muestra (supone errores aprox. normales)"
+        },
+        "is_baseline": false,
+        "message": "",
+        "model_id": "linear_regression",
+        "name": "Regresión lineal (Ridge)",
+        "predicted_log_return": 0.005615284779422083,
+        "reference_price": 351.910004,
+        "run_date": "2026-11-18T15:48:03.805607+00:00",
+        "status": "ok",
+        "version": "2.0"
+      },
+      {
+        "asset": "AAPL",
+        "estimated_price": 354.367054,
+        "estimated_return_pct": 0.6982,
+        "feature_importance": {
+          "atr_pct": 0.3029,
+          "bb_pct_b": 0.0152,
+          "dist_sma20": 0.005,
+          "dist_sma50": 0.0709,
+          "dxy_known": 0.0,
+          "dxy_ret_20": 0.0,
+          "dxy_ret_5": 0.0,
+          "macd_hist_pct": 0.0717,
+          "ret_1": 0.0036,
+          "ret_10": 0.0402,
+          "ret_20": 0.055,
+          "ret_5": 0.1918,
+          "rsi_14": 0.036,
+          "spx_known": 0.0,
+          "spx_ret_20": 0.0,
+          "spx_ret_5": 0.0,
+          "stoch_k": 0.0147,
+          "tnx_cambio_5": 0.0,
+          "tnx_known": 0.0,
+          "tnx_nivel": 0.0,
+          "vix_cambio_5": 0.0,
+          "vix_known": 0.0,
+          "vix_nivel": 0.0,
+          "vol_10": 0.0704,
+          "vol_20": 0.0665,
+          "vol_ratio": 0.0561
+        },
+        "historical_metrics": {
+          "adds_value_indication": false,
+          "calibration_rmse_return": 0.04298850159548316,
+          "directional_accuracy": 0.5034013605442177,
+          "dm_t": 0.006,
+          "mae_price": 7.156262496956871,
+          "mae_return": 0.027269024582864284,
+          "mape_price_pct": 2.7501936591539504,
+          "max_drawdown_strategy": -0.12112580529565531,
+          "mse_return": 0.0010783672110941428,
+          "n_oos": 147,
+          "n_strategy_trades": 30,
+          "p_value": 0.4974,
+          "rmse_price": 8.597509054209148,
+          "rmse_return": 0.03283850196178478,
+          "sharpe_strategy": 0.6585943628595907,
+          "significant": false,
+          "skill_vs_baseline": 0.0005179398111755384
+        },
+        "holdout_metrics": {
+          "directional_accuracy": 0.5666666666666667,
+          "mae_price": 9.406089082012336,
+          "mae_return": 0.028907111674078636,
+          "mape_price_pct": 2.8856597112363764,
+          "max_drawdown_strategy": -0.08949693693734129,
+          "mse_return": 0.0014205330922197994,
+          "n_oos": 90,
+          "n_strategy_trades": 18,
+          "rmse_price": 12.179641997634963,
+          "rmse_return": 0.037689960098410816,
+          "sharpe_strategy": 0.8876417577003494
+        },
+        "horizon_days": 5,
+        "indicators_used": [
+          "Retornos pasados (1,5,10,20)",
+          "Volatilidad (10,20)",
+          "RSI(14)",
+          "MACD(12,26,9)",
+          "Bandas de Bollinger(20,2)",
+          "ATR(14)",
+          "Estocástico(14,3)",
+          "SMA(20,50)",
+          "Volumen relativo"
+        ],
+        "interval": {
+          "high_price": 380.333819,
+          "level": 0.9,
+          "low_price": 330.173135,
+          "method": "predicción ± 1,645 × RMSE fuera de muestra (supone errores aprox. normales)"
+        },
+        "is_baseline": false,
+        "message": "",
+        "model_id": "random_forest",
+        "name": "Random Forest",
+        "predicted_log_return": 0.00695778002494996,
+        "reference_price": 351.910004,
+        "run_date": "2026-11-18T15:48:03.805607+00:00",
+        "status": "ok",
+        "version": "1.0"
+      }
+    ],
+    "models_active": [
+      "linear_regression",
+      "random_forest"
+    ],
+    "monte_carlo": {
+      "assumptions": [
+        "Retornos futuros i.i.d. remuestreados del pasado reciente",
+        "Sin cambios de régimen ni saltos",
+        "Es una distribución de escenarios, no una predicción"
+      ],
+      "calibration": {
+        "empirical_coverage": 0.975,
+        "n_origins": 40,
+        "nominal_level": 0.9,
+        "rmse_median_log": 0.034866
+      },
+      "horizon_days": 5,
+      "mean_return_pct": 0.4891,
+      "median_return_pct": 0.4422,
+      "method": "bootstrap de retornos diarios (últimos 252)",
+      "n_paths": 2000,
+      "percentiles_price": {
+        "p25": 345.985798,
+        "p5": 333.959711,
+        "p50": 353.466174,
+        "p75": 361.658849,
+        "p95": 373.256028
+      },
+      "prob_gain": 0.5535,
+      "prob_loss_gt_10pct": 0.004,
+      "std_return_pct": 3.4614
+    },
+    "notes": [
+      "Las métricas históricas de selección y el tramo final se informan por separado.",
+      "El tramo final no interviene en la selección del consenso.",
+      "Validación walk-forward cronológica con purga del horizonte: ningún modelo se entrena con información posterior a la fecha de predicción.",
+      "Un modelo solo recibe peso si supera a las referencias simples (último precio y retorno medio).",
+      "Los rangos individuales usan una aproximación normal basada en su propio error. El rango del consenso usa el promedio ponderado de los errores individuales y su cobertura es desconocida.",
+      "Modelos opcionales: xgboost (inactivo: xgboost o xgboost-cpu), arima (inactivo: statsmodels), sarima (inactivo: statsmodels). Pendientes: lstm, prophet."
+    ],
+    "oos_points": 147,
+    "probability": {
+      "base_rate": 0.5682,
+      "best_model": "logistica",
+      "brier_reference": 0.25582,
+      "final_evaluation": {
+        "brier": 0.23890792621542406,
+        "calibration": [
+          {
+            "casos": 90,
+            "frecuencia_real": 0.6556,
+            "prob_media": 0.5411,
+            "rango": "53–60 %"
+          }
+        ],
+        "n_origins": 90,
+        "reference_brier": 0.23890792621542406
+      },
+      "has_edge": false,
+      "models": [
+        {
+          "accuracy": 0.3785,
+          "brier": 0.2835,
+          "brier_skill": -0.1082,
+          "calibration": [
+            {
+              "casos": 19,
+              "frecuencia_real": 0.6316,
+              "prob_media": 0.3485,
+              "rango": "0–40 %"
+            },
+            {
+              "casos": 38,
+              "frecuencia_real": 0.7632,
+              "prob_media": 0.4404,
+              "rango": "40–47 %"
+            },
+            {
+              "casos": 24,
+              "frecuencia_real": 0.5833,
+              "prob_media": 0.5085,
+              "rango": "47–53 %"
+            },
+            {
+              "casos": 38,
+              "frecuencia_real": 0.3421,
+              "prob_media": 0.5655,
+              "rango": "53–60 %"
+            },
+            {
+              "casos": 58,
+              "frecuencia_real": 0.4828,
+              "prob_media": 0.6949,
+              "rango": "60–100 %"
+            }
+          ],
+          "confident_accuracy": 0.4545,
+          "confident_cases": 77,
+          "dm_t": -2.02,
+          "id": "logistica",
+          "name": "Regresión logística",
+          "p_value": 0.9783,
+          "significant": false
+        },
+        {
+          "accuracy": 0.4633,
+          "brier": 0.28663,
+          "brier_skill": -0.1204,
+          "calibration": [
+            {
+              "casos": 4,
+              "frecuencia_real": 0.5,
+              "prob_media": 0.3559,
+              "rango": "0–40 %"
+            },
+            {
+              "casos": 34,
+              "frecuencia_real": 0.6471,
+              "prob_media": 0.4327,
+              "rango": "40–47 %"
+            },
+            {
+              "casos": 25,
+              "frecuencia_real": 0.72,
+              "prob_media": 0.4968,
+              "rango": "47–53 %"
+            },
+            {
+              "casos": 38,
+              "frecuencia_real": 0.6316,
+              "prob_media": 0.5696,
+              "rango": "53–60 %"
+            },
+            {
+              "casos": 76,
+              "frecuencia_real": 0.3947,
+              "prob_media": 0.6871,
+              "rango": "60–100 %"
+            }
+          ],
+          "confident_accuracy": 0.4,
+          "confident_cases": 80,
+          "dm_t": -1.992,
+          "id": "bosque",
+          "name": "Bosque aleatorio (clasificación)",
+          "p_value": 0.9768,
+          "significant": false
+        }
+      ],
+      "n_oos": 177,
+      "prob_up": 0.5682,
+      "source": "Frecuencia histórica de subidas"
+    },
+    "provenance": {
+      "active_models": [
+        "linear_regression",
+        "random_forest"
+      ],
+      "calendar": "NASDAQ",
+      "contract_version": "daily-v1",
+      "cutoff_at": "2026-11-18T15:48:03.805607+00:00",
+      "dataset_sha256": "070f34fee2987d5406b8efa802a184f31c5145b48180f88da4957b4dd7dd78fc",
+      "dependencies": {
+        "exchange-calendars": "4.13.3",
+        "numpy": "2.5.5",
+        "pandas": "3.1.1",
+        "scikit-learn": "1.9.1",
+        "tzdata": "2026.6"
+      },
+      "expires_at": "2026-11-18T21:20:00+00:00",
+      "horizon": 5,
+      "lag_minutes": 20,
+      "model_parameters": {
+        "linear_regression": {
+          "memory": null,
+          "ridge__alpha": 10.0,
+          "ridge__copy_X": true,
+          "ridge__fit_intercept": true,
+          "ridge__max_iter": null,
+          "ridge__positive": false,
+          "ridge__random_state": null,
+          "ridge__solver": "auto",
+          "ridge__tol": 0.0001,
+          "standardscaler__copy": true,
+          "standardscaler__with_mean": true,
+          "standardscaler__with_std": true,
+          "transform_input": null,
+          "verbose": false
+        },
+        "random_forest": {
+          "bootstrap": true,
+          "ccp_alpha": 0.0,
+          "criterion": "squared_error",
+          "max_depth": 4,
+          "max_features": 1.0,
+          "max_leaf_nodes": null,
+          "max_samples": null,
+          "min_impurity_decrease": 0.0,
+          "min_samples_leaf": 15,
+          "min_samples_split": 2,
+          "min_weight_fraction_leaf": 0.0,
+          "monotonic_cst": null,
+          "n_estimators": 100,
+          "n_jobs": 1,
+          "oob_score": false,
+          "random_state": 0,
+          "verbose": 0,
+          "warm_start": false
+        }
+      },
+      "model_versions": {
+        "baseline_last_price": "1.0",
+        "baseline_mean_return": "1.0",
+        "linear_regression": "2.0",
+        "random_forest": "1.0"
+      },
+      "n_splits": 5,
+      "origin_at": "2026-11-17T21:00:00+00:00",
+      "origin_session": "2026-11-17",
+      "seed": 0,
+      "target_close_at": "2026-11-24T21:00:00+00:00",
+      "timezone": "America/New_York"
+    },
+    "reference_price": 351.910004,
+    "risk": {
+      "annual_vol_pct": 20.37,
+      "beats_reference": true,
+      "daily_vol_pct": 1.283,
+      "expected_move_pct": 2.911,
+      "model": "HAR (volatilidad de 1, 5 y 22 días)",
+      "range_90": {
+        "coverage_if_normal": 0.95,
+        "high_price": 378.833438,
+        "historical_coverage": 1.0,
+        "low_price": 326.9,
+        "method": "Volatilidad prevista × multiplicador empírico (con mínimo normal)",
+        "multiplier": 2.569
+      },
+      "risk_level": "Normal",
+      "scores": {
+        "har": {
+          "coverage_90": 1.0,
+          "coverage_90_normal": 0.95,
+          "multiplier": 2.56928,
+          "n_calibration": 55,
+          "n_final": 60,
+          "n_oos": 237,
+          "rmse_log_vol": 0.4864
+        },
+        "referencia": {
+          "coverage_90": 0.98333,
+          "coverage_90_normal": 0.93333,
+          "multiplier": 2.09907,
+          "n_calibration": 55,
+          "n_final": 60,
+          "n_oos": 237,
+          "rmse_log_vol": 0.50589
+        }
+      },
+      "skill_vs_reference": 0.0385,
+      "vol_percentile": 0.301
+    },
+    "target_date": "2026-11-24",
+    "target_date_approx": "2026-11-24"
+  },
+  "MSFT": {
+    "as_of": "2026-11-17",
+    "asset": "MSFT",
+    "baselines": [
+      {
+        "asset": "MSFT",
+        "estimated_price": 506.23999,
+        "estimated_return_pct": 0.0,
+        "historical_metrics": {
+          "calibration_rmse_return": 0.0519500691008612,
+          "directional_accuracy": 0.0,
+          "mae_price": 12.340748353741516,
+          "mae_return": 0.02712499952904358,
+          "mape_price_pct": 2.758236227295213,
+          "max_drawdown_strategy": 0.0,
+          "mse_return": 0.0013907140796952783,
+          "n_oos": 147,
+          "n_strategy_trades": 30,
+          "rmse_price": 16.804887304379605,
+          "rmse_return": 0.03729227908958205,
+          "sharpe_strategy": null
+        },
+        "holdout_metrics": {
+          "directional_accuracy": 0.0,
+          "mae_price": 16.47211203333336,
+          "mae_return": 0.03488871677975111,
+          "mape_price_pct": 3.36365099406798,
+          "max_drawdown_strategy": 0.0,
+          "mse_return": 0.003342326941294423,
+          "n_oos": 90,
+          "n_strategy_trades": 18,
+          "rmse_price": 26.037824327283417,
+          "rmse_return": 0.05781286138303849,
+          "sharpe_strategy": null
+        },
+        "horizon_days": 5,
+        "indicators_used": [
+          "Retornos pasados (1,5,10,20)",
+          "Volatilidad (10,20)",
+          "RSI(14)",
+          "MACD(12,26,9)",
+          "Bandas de Bollinger(20,2)",
+          "ATR(14)",
+          "Estocástico(14,3)",
+          "SMA(20,50)",
+          "Volumen relativo"
+        ],
+        "interval": {
+          "high_price": 551.404527,
+          "level": 0.9,
+          "low_price": 464.774797,
+          "method": "predicción ± 1,645 × RMSE fuera de muestra (supone errores aprox. normales)"
+        },
+        "is_baseline": true,
+        "message": "",
+        "model_id": "baseline_last_price",
+        "name": "Referencia: último precio",
+        "predicted_log_return": 0.0,
+        "reference_price": 506.23999,
+        "run_date": "2026-11-18T15:48:51.649047+00:00",
+        "status": "ok",
+        "version": "1.0"
+      },
+      {
+        "asset": "MSFT",
+        "estimated_price": 507.522121,
+        "estimated_return_pct": 0.2533,
+        "historical_metrics": {
+          "calibration_rmse_return": 0.051893373925232154,
+          "directional_accuracy": 0.5170068027210885,
+          "mae_price": 12.489100127282882,
+          "mae_return": 0.02742079819629832,
+          "mape_price_pct": 2.7975084126109158,
+          "max_drawdown_strategy": -0.2687655640756841,
+          "mse_return": 0.0014699156397900365,
+          "n_oos": 147,
+          "n_strategy_trades": 30,
+          "rmse_price": 17.348766921577838,
+          "rmse_return": 0.03833947886695953,
+          "sharpe_strategy": -0.8921296398472457
+        },
+        "holdout_metrics": {
+          "directional_accuracy": 0.4222222222222222,
+          "mae_price": 16.538302991901215,
+          "mae_return": 0.03504836321037908,
+          "mape_price_pct": 3.3761615559408957,
+          "max_drawdown_strategy": -0.35764914196806796,
+          "mse_return": 0.0033768136798632727,
+          "n_oos": 90,
+          "n_strategy_trades": 18,
+          "rmse_price": 26.159544290280543,
+          "rmse_return": 0.05811035776746924,
+          "sharpe_strategy": -1.9924184476832303
+        },
+        "horizon_days": 5,
+        "indicators_used": [
+          "Retornos pasados (1,5,10,20)",
+          "Volatilidad (10,20)",
+          "RSI(14)",
+          "MACD(12,26,9)",
+          "Bandas de Bollinger(20,2)",
+          "ATR(14)",
+          "Estocástico(14,3)",
+          "SMA(20,50)",
+          "Volumen relativo"
+        ],
+        "interval": {
+          "high_price": 552.749491,
+          "level": 0.9,
+          "low_price": 465.99537,
+          "method": "predicción ± 1,645 × RMSE fuera de muestra (supone errores aprox. normales)"
+        },
+        "is_baseline": true,
+        "message": "",
+        "model_id": "baseline_mean_return",
+        "name": "Referencia: retorno medio",
+        "predicted_log_return": 0.00252945354184902,
+        "reference_price": 506.23999,
+        "run_date": "2026-11-18T15:48:51.649047+00:00",
+        "status": "ok",
+        "version": "1.0"
+      }
+    ],
+    "consensus": {
+      "best_model_by_history": "random_forest",
+      "direction": "neutral",
+      "dispersion_std_pct": 1.4683,
+      "max_return_pct": 0.7621,
+      "message": "Ningún modelo superó a las referencias simples fuera de muestra de forma significativa: no se calcula consenso ponderado.",
+      "min_return_pct": -2.1745,
+      "n_models": 2,
+      "simple_median_return_pct": -0.717,
+      "status": "sin_valor_predictivo",
+      "weighted_return_pct": null,
+      "weights": {
+        "linear_regression": 0.0,
+        "random_forest": 0.0
+      }
+    },
+    "context_used": [],
+    "data_points": 501,
+    "data_source": "Yahoo Finance",
+    "explanation": {
+      "headline": "Sin ventaja clara en la dirección",
+      "points": [
+        "Ningún modelo adivinó la dirección mejor que la estadística básica: históricamente este activo subió en 55 % de los periodos de 5 sesiones. Eso es lo más honesto que se puede decir sobre si subirá o bajará.",
+        "Los modelos de precio no superaron a las referencias simples, así que no se muestra un precio objetivo.",
+        "Contexto externo inactivo en esta predicción (VIX, S&P 500, tasa a 10 años y dólar).",
+        "Riesgo: el precio se suele mover cerca de ±3.4 % en 5 sesiones. Rango de riesgo (90 % nominal): 449.22 a 570.49. Cobertura observada en la evaluación histórica: 100 %. Nivel de riesgo actual: normal comparado con su historia.",
+        "Escenario malo: en las simulaciones, 1 % de los casos pierden más de 10 %."
+      ],
+      "reliability": "Baja para la dirección; el modelo de riesgo redujo el error en selección",
+      "verdict": "neutral",
+      "what_to_do": "Usa esto para dimensionar el riesgo (cuánto podrías ganar o perder), no como una orden de compra o venta. Ningún modelo garantiza resultados; invierte solo lo que puedas permitirte perder y diversifica."
+    },
+    "fibonacci_reference": {
+      "0.236": 509.601821,
+      "0.382": 478.949119,
+      "0.5": 454.175018,
+      "0.618": 429.400917,
+      "0.786": 394.129315,
+      "maximo": 559.150024,
+      "minimo": 349.200012
+    },
+    "final_evaluation": {
+      "calibration_origins": 55,
+      "first_origin": "2026-07-07",
+      "n_origins": 90,
+      "status": "independent"
+    },
+    "glossary": {
+      "Brier score": "Error de una probabilidad (0 es perfecto). Se compara con la referencia para ver si el modelo aporta.",
+      "Intervalo 90 %": "El 90 % indica el nivel nominal. La cobertura observada debe medirse para cada método y horizonte.",
+      "Probabilidad de subida": "Estimación del modelo o frecuencia histórica de referencia. Los tramos observados sirven para diagnosticar la estimación.",
+      "Referencia simple": "Una regla tonta (\"el precio no cambia\" o \"sube lo de siempre\"). Si un modelo no le gana, no aporta.",
+      "VIX": "Índice del 'miedo' del mercado de EE. UU.: sube cuando los inversores esperan movimientos fuertes.",
+      "Volatilidad": "Cuánto se mueve el precio normalmente. Más volatilidad = más riesgo y más incertidumbre.",
+      "Walk-forward": "Se entrena con el pasado y se prueba con el 'futuro' que el modelo no vio, como en la vida real."
+    },
+    "horizon_days": 5,
+    "horizon_unit": "sesiones",
+    "labeled_points": 447,
+    "models": [
+      {
+        "asset": "MSFT",
+        "estimated_price": 510.098016,
+        "estimated_return_pct": 0.7621,
+        "historical_metrics": {
+          "adds_value_indication": false,
+          "calibration_rmse_return": 0.05931551792468374,
+          "directional_accuracy": 0.42857142857142855,
+          "dm_t": -2.0,
+          "mae_price": 14.593930459869124,
+          "mae_return": 0.032186592942515586,
+          "mape_price_pct": 3.268122616529671,
+          "max_drawdown_strategy": -0.16265156020711213,
+          "mse_return": 0.0017111952103139505,
+          "n_oos": 147,
+          "n_strategy_trades": 30,
+          "p_value": 0.9772,
+          "rmse_price": 18.49363612665413,
+          "rmse_return": 0.04136659534351299,
+          "sharpe_strategy": -0.9199804850393669,
+          "significant": false,
+          "skill_vs_baseline": -0.10925361370764652
+        },
+        "holdout_metrics": {
+          "directional_accuracy": 0.4888888888888889,
+          "mae_price": 18.873680841835554,
+          "mae_return": 0.03990430958526783,
+          "mape_price_pct": 3.846500609535667,
+          "max_drawdown_strategy": -0.3299029730301085,
+          "mse_return": 0.0041456132998057595,
+          "n_oos": 90,
+          "n_strategy_trades": 18,
+          "rmse_price": 29.13439965516861,
+          "rmse_return": 0.06438643723491586,
+          "sharpe_strategy": -1.4337272012740843
+        },
+        "horizon_days": 5,
+        "indicators_used": [
+          "Retornos pasados (1,5,10,20)",
+          "Volatilidad (10,20)",
+          "RSI(14)",
+          "MACD(12,26,9)",
+          "Bandas de Bollinger(20,2)",
+          "ATR(14)",
+          "Estocástico(14,3)",
+          "SMA(20,50)",
+          "Volumen relativo"
+        ],
+        "interval": {
+          "high_price": 562.379519,
+          "level": 0.9,
+          "low_price": 462.676853,
+          "method": "predicción ± 1,645 × RMSE fuera de muestra (supone errores aprox. normales)"
+        },
+        "is_baseline": false,
+        "message": "",
+        "model_id": "linear_regression",
+        "name": "Regresión lineal (Ridge)",
+        "predicted_log_return": 0.007592049637809052,
+        "reference_price": 506.23999,
+        "run_date": "2026-11-18T15:48:51.649047+00:00",
+        "status": "ok",
+        "version": "2.0"
+      },
+      {
+        "asset": "MSFT",
+        "estimated_price": 495.231938,
+        "estimated_return_pct": -2.1745,
+        "feature_importance": {
+          "atr_pct": 0.2068,
+          "bb_pct_b": 0.0136,
+          "dist_sma20": 0.0072,
+          "dist_sma50": 0.0575,
+          "dxy_known": 0.0,
+          "dxy_ret_20": 0.0,
+          "dxy_ret_5": 0.0,
+          "macd_hist_pct": 0.0566,
+          "ret_1": 0.0433,
+          "ret_10": 0.0295,
+          "ret_20": 0.1015,
+          "ret_5": 0.0742,
+          "rsi_14": 0.0528,
+          "spx_known": 0.0,
+          "spx_ret_20": 0.0,
+          "spx_ret_5": 0.0,
+          "stoch_k": 0.0114,
+          "tnx_cambio_5": 0.0,
+          "tnx_known": 0.0,
+          "tnx_nivel": 0.0,
+          "vix_cambio_5": 0.0,
+          "vix_known": 0.0,
+          "vix_nivel": 0.0,
+          "vol_10": 0.155,
+          "vol_20": 0.1604,
+          "vol_ratio": 0.0301
+        },
+        "historical_metrics": {
+          "adds_value_indication": false,
+          "calibration_rmse_return": 0.05518699528360895,
+          "directional_accuracy": 0.5102040816326531,
+          "dm_t": -1.153,
+          "mae_price": 14.108439730986321,
+          "mae_return": 0.03104007440060678,
+          "mape_price_pct": 3.146731653277034,
+          "max_drawdown_strategy": -0.12014140511329363,
+          "mse_return": 0.0015998236433805715,
+          "n_oos": 147,
+          "n_strategy_trades": 30,
+          "p_value": 0.8755,
+          "rmse_price": 17.902271724573396,
+          "rmse_return": 0.03999779548150837,
+          "sharpe_strategy": 1.028378447695396,
+          "significant": false,
+          "skill_vs_baseline": -0.07254896879397577
+        },
+        "holdout_metrics": {
+          "directional_accuracy": 0.4888888888888889,
+          "mae_price": 17.067531538205703,
+          "mae_return": 0.03642599263141353,
+          "mape_price_pct": 3.4999467277007223,
+          "max_drawdown_strategy": -0.32971263294967545,
+          "mse_return": 0.0038557513010150832,
+          "n_oos": 90,
+          "n_strategy_trades": 18,
+          "rmse_price": 27.627219097080005,
+          "rmse_return": 0.062094696239011295,
+          "sharpe_strategy": -1.7154020530969358
+        },
+        "horizon_days": 5,
+        "indicators_used": [
+          "Retornos pasados (1,5,10,20)",
+          "Volatilidad (10,20)",
+          "RSI(14)",
+          "MACD(12,26,9)",
+          "Bandas de Bollinger(20,2)",
+          "ATR(14)",
+          "Estocástico(14,3)",
+          "SMA(20,50)",
+          "Volumen relativo"
+        ],
+        "interval": {
+          "high_price": 542.294288,
+          "level": 0.9,
+          "low_price": 452.253836,
+          "method": "predicción ± 1,645 × RMSE fuera de muestra (supone errores aprox. normales)"
+        },
+        "is_baseline": false,
+        "message": "",
+        "model_id": "random_forest",
+        "name": "Random Forest",
+        "predicted_log_return": -0.02198463140301329,
+        "reference_price": 506.23999,
+        "run_date": "2026-11-18T15:48:51.649047+00:00",
+        "status": "ok",
+        "version": "1.0"
+      }
+    ],
+    "models_active": [
+      "linear_regression",
+      "random_forest"
+    ],
+    "monte_carlo": {
+      "assumptions": [
+        "Retornos futuros i.i.d. remuestreados del pasado reciente",
+        "Sin cambios de régimen ni saltos",
+        "Es una distribución de escenarios, no una predicción"
+      ],
+      "calibration": {
+        "empirical_coverage": 0.9,
+        "n_origins": 40,
+        "nominal_level": 0.9,
+        "rmse_median_log": 0.044117
+      },
+      "horizon_days": 5,
+      "mean_return_pct": 0.1882,
+      "median_return_pct": -0.0489,
+      "method": "bootstrap de retornos diarios (últimos 252)",
+      "n_paths": 2000,
+      "percentiles_price": {
+        "p25": 491.06384,
+        "p5": 470.322642,
+        "p50": 505.992481,
+        "p75": 520.742782,
+        "p95": 549.735436
+      },
+      "prob_gain": 0.4965,
+      "prob_loss_gt_10pct": 0.0145,
+      "std_return_pct": 5.0091
+    },
+    "notes": [
+      "Las métricas históricas de selección y el tramo final se informan por separado.",
+      "El tramo final no interviene en la selección del consenso.",
+      "Validación walk-forward cronológica con purga del horizonte: ningún modelo se entrena con información posterior a la fecha de predicción.",
+      "Un modelo solo recibe peso si supera a las referencias simples (último precio y retorno medio).",
+      "Los rangos individuales usan una aproximación normal basada en su propio error. El rango del consenso usa el promedio ponderado de los errores individuales y su cobertura es desconocida.",
+      "Modelos opcionales: xgboost (inactivo: xgboost o xgboost-cpu), arima (inactivo: statsmodels), sarima (inactivo: statsmodels). Pendientes: lstm, prophet."
+    ],
+    "oos_points": 147,
+    "probability": {
+      "base_rate": 0.5459,
+      "best_model": "bosque",
+      "brier_reference": 0.26509,
+      "final_evaluation": {
+        "brier": 0.24574558106646477,
+        "calibration": [
+          {
+            "casos": 90,
+            "frecuencia_real": 0.5778,
+            "prob_media": 0.5354,
+            "rango": "53–60 %"
+          }
+        ],
+        "n_origins": 90,
+        "reference_brier": 0.24574558106646477
+      },
+      "has_edge": false,
+      "models": [
+        {
+          "accuracy": 0.4294,
+          "brier": 0.282,
+          "brier_skill": -0.0638,
+          "calibration": [
+            {
+              "casos": 12,
+              "frecuencia_real": 0.8333,
+              "prob_media": 0.3751,
+              "rango": "0–40 %"
+            },
+            {
+              "casos": 26,
+              "frecuencia_real": 0.5385,
+              "prob_media": 0.444,
+              "rango": "40–47 %"
+            },
+            {
+              "casos": 42,
+              "frecuencia_real": 0.4524,
+              "prob_media": 0.5,
+              "rango": "47–53 %"
+            },
+            {
+              "casos": 46,
+              "frecuencia_real": 0.413,
+              "prob_media": 0.5625,
+              "rango": "53–60 %"
+            },
+            {
+              "casos": 51,
+              "frecuencia_real": 0.3529,
+              "prob_media": 0.6554,
+              "rango": "60–100 %"
+            }
+          ],
+          "confident_accuracy": 0.3175,
+          "confident_cases": 63,
+          "dm_t": -1.372,
+          "id": "logistica",
+          "name": "Regresión logística",
+          "p_value": 0.9149,
+          "significant": false
+        },
+        {
+          "accuracy": 0.4633,
+          "brier": 0.2673,
+          "brier_skill": -0.0083,
+          "calibration": [
+            {
+              "casos": 10,
+              "frecuencia_real": 0.4,
+              "prob_media": 0.3562,
+              "rango": "0–40 %"
+            },
+            {
+              "casos": 42,
+              "frecuencia_real": 0.4762,
+              "prob_media": 0.4399,
+              "rango": "40–47 %"
+            },
+            {
+              "casos": 37,
+              "frecuencia_real": 0.4865,
+              "prob_media": 0.5007,
+              "rango": "47–53 %"
+            },
+            {
+              "casos": 44,
+              "frecuencia_real": 0.4773,
+              "prob_media": 0.5566,
+              "rango": "53–60 %"
+            },
+            {
+              "casos": 44,
+              "frecuencia_real": 0.3864,
+              "prob_media": 0.6517,
+              "rango": "60–100 %"
+            }
+          ],
+          "confident_accuracy": 0.4259,
+          "confident_cases": 54,
+          "dm_t": -0.183,
+          "id": "bosque",
+          "name": "Bosque aleatorio (clasificación)",
+          "p_value": 0.5725,
+          "significant": false
+        }
+      ],
+      "n_oos": 177,
+      "prob_up": 0.5459,
+      "source": "Frecuencia histórica de subidas"
+    },
+    "provenance": {
+      "active_models": [
+        "linear_regression",
+        "random_forest"
+      ],
+      "calendar": "NASDAQ",
+      "contract_version": "daily-v1",
+      "cutoff_at": "2026-11-18T15:48:51.649047+00:00",
+      "dataset_sha256": "bc3b0b36aa4d6803f3ca6288fb52a1ba2e6581b38ca6edd9d3d992931b194025",
+      "dependencies": {
+        "exchange-calendars": "4.13.3",
+        "numpy": "2.5.5",
+        "pandas": "3.1.1",
+        "scikit-learn": "1.9.1",
+        "tzdata": "2026.6"
+      },
+      "expires_at": "2026-11-18T21:20:00+00:00",
+      "horizon": 5,
+      "lag_minutes": 20,
+      "model_parameters": {
+        "linear_regression": {
+          "memory": null,
+          "ridge__alpha": 10.0,
+          "ridge__copy_X": true,
+          "ridge__fit_intercept": true,
+          "ridge__max_iter": null,
+          "ridge__positive": false,
+          "ridge__random_state": null,
+          "ridge__solver": "auto",
+          "ridge__tol": 0.0001,
+          "standardscaler__copy": true,
+          "standardscaler__with_mean": true,
+          "standardscaler__with_std": true,
+          "transform_input": null,
+          "verbose": false
+        },
+        "random_forest": {
+          "bootstrap": true,
+          "ccp_alpha": 0.0,
+          "criterion": "squared_error",
+          "max_depth": 4,
+          "max_features": 1.0,
+          "max_leaf_nodes": null,
+          "max_samples": null,
+          "min_impurity_decrease": 0.0,
+          "min_samples_leaf": 15,
+          "min_samples_split": 2,
+          "min_weight_fraction_leaf": 0.0,
+          "monotonic_cst": null,
+          "n_estimators": 100,
+          "n_jobs": 1,
+          "oob_score": false,
+          "random_state": 0,
+          "verbose": 0,
+          "warm_start": false
+        }
+      },
+      "model_versions": {
+        "baseline_last_price": "1.0",
+        "baseline_mean_return": "1.0",
+        "linear_regression": "2.0",
+        "random_forest": "1.0"
+      },
+      "n_splits": 5,
+      "origin_at": "2026-11-17T21:00:00+00:00",
+      "origin_session": "2026-11-17",
+      "seed": 0,
+      "target_close_at": "2026-11-24T21:00:00+00:00",
+      "timezone": "America/New_York"
+    },
+    "reference_price": 506.23999,
+    "risk": {
+      "annual_vol_pct": 23.63,
+      "beats_reference": true,
+      "daily_vol_pct": 1.489,
+      "expected_move_pct": 3.385,
+      "model": "HAR (volatilidad de 1, 5 y 22 días)",
+      "range_90": {
+        "coverage_if_normal": 0.9333,
+        "high_price": 570.492592,
+        "historical_coverage": 1.0,
+        "low_price": 449.223936,
+        "method": "Volatilidad prevista × multiplicador empírico (con mínimo normal)",
+        "multiplier": 3.589
+      },
+      "risk_level": "Normal",
+      "scores": {
+        "har": {
+          "coverage_90": 1.0,
+          "coverage_90_normal": 0.93333,
+          "multiplier": 3.58945,
+          "n_calibration": 55,
+          "n_final": 60,
+          "n_oos": 237,
+          "rmse_log_vol": 0.58324
+        },
+        "referencia": {
+          "coverage_90": 1.0,
+          "coverage_90_normal": 0.96667,
+          "multiplier": 2.53828,
+          "n_calibration": 55,
+          "n_final": 60,
+          "n_oos": 237,
+          "rmse_log_vol": 0.66387
+        }
+      },
+      "skill_vs_reference": 0.1214,
+      "vol_percentile": 0.543
+    },
+    "target_date": "2026-11-24",
+    "target_date_approx": "2026-11-24"
+  },
+  "^GSPC": {
+    "as_of": "2026-11-17",
+    "asset": "^GSPC",
+    "baselines": [
+      {
+        "asset": "^GSPC",
+        "estimated_price": 7340.529785,
+        "estimated_return_pct": 0.0,
+        "historical_metrics": {
+          "calibration_rmse_return": 0.01852418530221114,
+          "directional_accuracy": 0.0,
+          "mae_price": 87.69495040136148,
+          "mae_return": 0.01302232134647027,
+          "mape_price_pct": 1.300402066615543,
+          "max_drawdown_strategy": 0.0,
+          "mse_return": 0.0002624110353815903,
+          "n_oos": 147,
+          "n_strategy_trades": 30,
+          "rmse_price": 108.65125266443442,
+          "rmse_return": 0.01619910600562853,
+          "sharpe_strategy": null
+        },
+        "holdout_metrics": {
+          "directional_accuracy": 0.0,
+          "mae_price": 89.73511836666664,
+          "mae_return": 0.011795569489707742,
+          "mape_price_pct": 1.177526025169433,
+          "max_drawdown_strategy": 0.0,
+          "mse_return": 0.00025100842931385865,
+          "n_oos": 90,
+          "n_strategy_trades": 18,
+          "rmse_price": 120.07706481125172,
+          "rmse_return": 0.015843245542307885,
+          "sharpe_strategy": null
+        },
+        "horizon_days": 5,
+        "indicators_used": [
+          "Retornos pasados (1,5,10,20)",
+          "Volatilidad (10,20)",
+          "RSI(14)",
+          "MACD(12,26,9)",
+          "Bandas de Bollinger(20,2)",
+          "ATR(14)",
+          "Estocástico(14,3)",
+          "SMA(20,50)",
+          "Volumen relativo"
+        ],
+        "interval": {
+          "high_price": 7567.655444,
+          "level": 0.9,
+          "low_price": 7120.220777,
+          "method": "predicción ± 1,645 × RMSE fuera de muestra (supone errores aprox. normales)"
+        },
+        "is_baseline": true,
+        "message": "",
+        "model_id": "baseline_last_price",
+        "name": "Referencia: último precio",
+        "predicted_log_return": 0.0,
+        "reference_price": 7340.529785,
+        "run_date": "2026-11-18T15:48:54.289149+00:00",
+        "status": "ok",
+        "version": "1.0"
+      },
+      {
+        "asset": "^GSPC",
+        "estimated_price": 7358.338109,
+        "estimated_return_pct": 0.2426,
+        "historical_metrics": {
+          "calibration_rmse_return": 0.017914401702907805,
+          "directional_accuracy": 0.564625850340136,
+          "mae_price": 86.61973979757992,
+          "mae_return": 0.012844011521514775,
+          "mape_price_pct": 1.28589795967081,
+          "max_drawdown_strategy": -0.05778813348476253,
+          "mse_return": 0.00026317734617537327,
+          "n_oos": 147,
+          "n_strategy_trades": 30,
+          "rmse_price": 109.01547631469542,
+          "rmse_return": 0.01622274163559826,
+          "sharpe_strategy": 0.8585870880652544
+        },
+        "holdout_metrics": {
+          "directional_accuracy": 0.4111111111111111,
+          "mae_price": 95.58867081013982,
+          "mae_return": 0.012543856343730574,
+          "mape_price_pct": 1.25606815917494,
+          "max_drawdown_strategy": -0.023875070512646146,
+          "mse_return": 0.00026122799134576123,
+          "n_oos": 90,
+          "n_strategy_trades": 18,
+          "rmse_price": 122.7026170360048,
+          "rmse_return": 0.016162549036144058,
+          "sharpe_strategy": 0.4862706012676214
+        },
+        "horizon_days": 5,
+        "indicators_used": [
+          "Retornos pasados (1,5,10,20)",
+          "Volatilidad (10,20)",
+          "RSI(14)",
+          "MACD(12,26,9)",
+          "Bandas de Bollinger(20,2)",
+          "ATR(14)",
+          "Estocástico(14,3)",
+          "SMA(20,50)",
+          "Volumen relativo"
+        ],
+        "interval": {
+          "high_price": 7578.40911,
+          "level": 0.9,
+          "low_price": 7144.657796,
+          "method": "predicción ± 1,645 × RMSE fuera de muestra (supone errores aprox. normales)"
+        },
+        "is_baseline": true,
+        "message": "",
+        "model_id": "baseline_mean_return",
+        "name": "Referencia: retorno medio",
+        "predicted_log_return": 0.00242308905837717,
+        "reference_price": 7340.529785,
+        "run_date": "2026-11-18T15:48:54.289149+00:00",
+        "status": "ok",
+        "version": "1.0"
+      }
+    ],
+    "consensus": {
+      "best_model_by_history": "linear_regression",
+      "direction": "neutral",
+      "dispersion_std_pct": 0.5474,
+      "max_return_pct": 0.9039,
+      "message": "Ningún modelo superó a las referencias simples fuera de muestra de forma significativa: no se calcula consenso ponderado.",
+      "min_return_pct": -0.1908,
+      "n_models": 2,
+      "simple_median_return_pct": 0.355,
+      "status": "sin_valor_predictivo",
+      "weighted_return_pct": null,
+      "weights": {
+        "linear_regression": 0.0,
+        "random_forest": 0.0
+      }
+    },
+    "context_used": [],
+    "data_points": 501,
+    "data_source": "Yahoo Finance",
+    "explanation": {
+      "headline": "Sin ventaja clara en la dirección",
+      "points": [
+        "Ningún modelo adivinó la dirección mejor que la estadística básica: históricamente este activo subió en 57 % de los periodos de 5 sesiones. Eso es lo más honesto que se puede decir sobre si subirá o bajará.",
+        "Los modelos de precio no superaron a las referencias simples, así que no se muestra un precio objetivo.",
+        "Contexto externo inactivo en esta predicción (VIX, S&P 500, tasa a 10 años y dólar).",
+        "Riesgo: el precio se suele mover cerca de ±2.2 % en 5 sesiones. Rango de riesgo (90 % nominal): 7,026.63 a 7,668.45. Cobertura observada en la evaluación histórica: 98 %. Nivel de riesgo actual: normal comparado con su historia."
+      ],
+      "reliability": "Baja para la dirección; el modelo de riesgo redujo el error en selección",
+      "verdict": "neutral",
+      "what_to_do": "Usa esto para dimensionar el riesgo (cuánto podrías ganar o perder), no como una orden de compra o venta. Ningún modelo garantiza resultados; invierte solo lo que puedas permitirte perder y diversifica."
+    },
+    "fibonacci_reference": {
+      "0.236": 7701.345918,
+      "0.382": 7612.77211,
+      "0.5": 7541.185059,
+      "0.618": 7469.598008,
+      "0.786": 7367.677461,
+      "maximo": 7844.52002,
+      "minimo": 7237.850098
+    },
+    "final_evaluation": {
+      "calibration_origins": 55,
+      "first_origin": "2026-07-07",
+      "n_origins": 90,
+      "status": "independent"
+    },
+    "glossary": {
+      "Brier score": "Error de una probabilidad (0 es perfecto). Se compara con la referencia para ver si el modelo aporta.",
+      "Intervalo 90 %": "El 90 % indica el nivel nominal. La cobertura observada debe medirse para cada método y horizonte.",
+      "Probabilidad de subida": "Estimación del modelo o frecuencia histórica de referencia. Los tramos observados sirven para diagnosticar la estimación.",
+      "Referencia simple": "Una regla tonta (\"el precio no cambia\" o \"sube lo de siempre\"). Si un modelo no le gana, no aporta.",
+      "VIX": "Índice del 'miedo' del mercado de EE. UU.: sube cuando los inversores esperan movimientos fuertes.",
+      "Volatilidad": "Cuánto se mueve el precio normalmente. Más volatilidad = más riesgo y más incertidumbre.",
+      "Walk-forward": "Se entrena con el pasado y se prueba con el 'futuro' que el modelo no vio, como en la vida real."
+    },
+    "horizon_days": 5,
+    "horizon_unit": "sesiones",
+    "labeled_points": 447,
+    "models": [
+      {
+        "asset": "^GSPC",
+        "estimated_price": 7406.878671,
+        "estimated_return_pct": 0.9039,
+        "historical_metrics": {
+          "adds_value_indication": false,
+          "calibration_rmse_return": 0.020194595454453866,
+          "directional_accuracy": 0.41496598639455784,
+          "dm_t": -2.073,
+          "mae_price": 98.74287670421425,
+          "mae_return": 0.014690636124947339,
+          "mape_price_pct": 1.4592731023404457,
+          "max_drawdown_strategy": -0.09161824145343977,
+          "mse_return": 0.0003413298937115866,
+          "n_oos": 147,
+          "n_strategy_trades": 30,
+          "p_value": 0.9809,
+          "rmse_price": 123.68099035238211,
+          "rmse_return": 0.018475115526339386,
+          "sharpe_strategy": -1.0210752344479963,
+          "significant": false,
+          "skill_vs_baseline": -0.1405021684480634
+        },
+        "holdout_metrics": {
+          "directional_accuracy": 0.4888888888888889,
+          "mae_price": 94.25393875804865,
+          "mae_return": 0.012393379090868227,
+          "mape_price_pct": 1.235721100148473,
+          "max_drawdown_strategy": -0.07635534551171996,
+          "mse_return": 0.0002814469800139703,
+          "n_oos": 90,
+          "n_strategy_trades": 18,
+          "rmse_price": 127.10133037477162,
+          "rmse_return": 0.01677638161267114,
+          "sharpe_strategy": -0.36756619920984535
+        },
+        "horizon_days": 5,
+        "indicators_used": [
+          "Retornos pasados (1,5,10,20)",
+          "Volatilidad (10,20)",
+          "RSI(14)",
+          "MACD(12,26,9)",
+          "Bandas de Bollinger(20,2)",
+          "ATR(14)",
+          "Estocástico(14,3)",
+          "SMA(20,50)",
+          "Volumen relativo"
+        ],
+        "interval": {
+          "high_price": 7657.068653,
+          "level": 0.9,
+          "low_price": 7164.863492,
+          "method": "predicción ± 1,645 × RMSE fuera de muestra (supone errores aprox. normales)"
+        },
+        "is_baseline": false,
+        "message": "",
+        "model_id": "linear_regression",
+        "name": "Regresión lineal (Ridge)",
+        "predicted_log_return": 0.008998100793024896,
+        "reference_price": 7340.529785,
+        "run_date": "2026-11-18T15:48:54.289149+00:00",
+        "status": "ok",
+        "version": "2.0"
+      },
+      {
+        "asset": "^GSPC",
+        "estimated_price": 7326.521174,
+        "estimated_return_pct": -0.1908,
+        "feature_importance": {
+          "atr_pct": 0.2504,
+          "bb_pct_b": 0.0103,
+          "dist_sma20": 0.0293,
+          "dist_sma50": 0.162,
+          "dxy_known": 0.0,
+          "dxy_ret_20": 0.0,
+          "dxy_ret_5": 0.0,
+          "macd_hist_pct": 0.0764,
+          "ret_1": 0.0046,
+          "ret_10": 0.0172,
+          "ret_20": 0.1184,
+          "ret_5": 0.0766,
+          "rsi_14": 0.0185,
+          "spx_known": 0.0,
+          "spx_ret_20": 0.0,
+          "spx_ret_5": 0.0,
+          "stoch_k": 0.0218,
+          "tnx_cambio_5": 0.0,
+          "tnx_known": 0.0,
+          "tnx_nivel": 0.0,
+          "vix_cambio_5": 0.0,
+          "vix_known": 0.0,
+          "vix_nivel": 0.0,
+          "vol_10": 0.1079,
+          "vol_20": 0.0986,
+          "vol_ratio": 0.0082
+        },
+        "historical_metrics": {
+          "adds_value_indication": false,
+          "calibration_rmse_return": 0.019719647700419514,
+          "directional_accuracy": 0.5850340136054422,
+          "dm_t": -1.627,
+          "mae_price": 91.68083392252284,
+          "mae_return": 0.013627504723592863,
+          "mape_price_pct": 1.3588277342479578,
+          "max_drawdown_strategy": -0.06752895483049248,
+          "mse_return": 0.0003536519694554344,
+          "n_oos": 147,
+          "n_strategy_trades": 30,
+          "p_value": 0.9482,
+          "rmse_price": 125.85882054142083,
+          "rmse_return": 0.018805636640524415,
+          "sharpe_strategy": 1.580131032584764,
+          "significant": false,
+          "skill_vs_baseline": -0.16090583233360056
+        },
+        "holdout_metrics": {
+          "directional_accuracy": 0.5222222222222223,
+          "mae_price": 95.58861758926464,
+          "mae_return": 0.012560347353222031,
+          "mape_price_pct": 1.256438187011468,
+          "max_drawdown_strategy": -0.04380906223002334,
+          "mse_return": 0.0002757331145308237,
+          "n_oos": 90,
+          "n_strategy_trades": 18,
+          "rmse_price": 125.77863668221075,
+          "rmse_return": 0.0166052134744129,
+          "sharpe_strategy": 0.28544896317650886
+        },
+        "horizon_days": 5,
+        "indicators_used": [
+          "Retornos pasados (1,5,10,20)",
+          "Volatilidad (10,20)",
+          "RSI(14)",
+          "MACD(12,26,9)",
+          "Bandas de Bollinger(20,2)",
+          "ATR(14)",
+          "Estocástico(14,3)",
+          "SMA(20,50)",
+          "Volumen relativo"
+        ],
+        "interval": {
+          "high_price": 7568.081666,
+          "level": 0.9,
+          "low_price": 7092.670889,
+          "method": "predicción ± 1,645 × RMSE fuera de muestra (supone errores aprox. normales)"
+        },
+        "is_baseline": false,
+        "message": "",
+        "model_id": "random_forest",
+        "name": "Random Forest",
+        "predicted_log_return": -0.001910215676206321,
+        "reference_price": 7340.529785,
+        "run_date": "2026-11-18T15:48:54.289149+00:00",
+        "status": "ok",
+        "version": "1.0"
+      }
+    ],
+    "models_active": [
+      "linear_regression",
+      "random_forest"
+    ],
+    "monte_carlo": {
+      "assumptions": [
+        "Retornos futuros i.i.d. remuestreados del pasado reciente",
+        "Sin cambios de régimen ni saltos",
+        "Es una distribución de escenarios, no una predicción"
+      ],
+      "calibration": {
+        "empirical_coverage": 0.925,
+        "n_origins": 40,
+        "nominal_level": 0.9,
+        "rmse_median_log": 0.015802
+      },
+      "horizon_days": 5,
+      "mean_return_pct": 0.1682,
+      "median_return_pct": 0.2158,
+      "method": "bootstrap de retornos diarios (últimos 252)",
+      "n_paths": 2000,
+      "percentiles_price": {
+        "p25": 7260.399233,
+        "p5": 7122.275337,
+        "p50": 7356.367735,
+        "p75": 7443.29998,
+        "p95": 7586.910797
+      },
+      "prob_gain": 0.5405,
+      "prob_loss_gt_10pct": 0.0,
+      "std_return_pct": 1.9471
+    },
+    "notes": [
+      "Las métricas históricas de selección y el tramo final se informan por separado.",
+      "El tramo final no interviene en la selección del consenso.",
+      "Validación walk-forward cronológica con purga del horizonte: ningún modelo se entrena con información posterior a la fecha de predicción.",
+      "Un modelo solo recibe peso si supera a las referencias simples (último precio y retorno medio).",
+      "Los rangos individuales usan una aproximación normal basada en su propio error. El rango del consenso usa el promedio ponderado de los errores individuales y su cobertura es desconocida.",
+      "Modelos opcionales: xgboost (inactivo: xgboost o xgboost-cpu), arima (inactivo: statsmodels), sarima (inactivo: statsmodels). Pendientes: lstm, prophet."
+    ],
+    "oos_points": 147,
+    "probability": {
+      "base_rate": 0.5749,
+      "best_model": "logistica",
+      "brier_reference": 0.24372,
+      "final_evaluation": {
+        "brier": 0.28472145314989733,
+        "calibration": [
+          {
+            "casos": 90,
+            "frecuencia_real": 0.4111,
+            "prob_media": 0.6176,
+            "rango": "60–100 %"
+          }
+        ],
+        "n_origins": 90,
+        "reference_brier": 0.28472145314989733
+      },
+      "has_edge": false,
+      "models": [
+        {
+          "accuracy": 0.5367,
+          "brier": 0.24719,
+          "brier_skill": -0.0142,
+          "calibration": [
+            {
+              "casos": 2,
+              "frecuencia_real": 1.0,
+              "prob_media": 0.3729,
+              "rango": "0–40 %"
+            },
+            {
+              "casos": 5,
+              "frecuencia_real": 1.0,
+              "prob_media": 0.4319,
+              "rango": "40–47 %"
+            },
+            {
+              "casos": 7,
+              "frecuencia_real": 0.8571,
+              "prob_media": 0.4901,
+              "rango": "47–53 %"
+            },
+            {
+              "casos": 57,
+              "frecuencia_real": 0.4912,
+              "prob_media": 0.5804,
+              "rango": "53–60 %"
+            },
+            {
+              "casos": 106,
+              "frecuencia_real": 0.6132,
+              "prob_media": 0.6545,
+              "rango": "60–100 %"
+            }
+          ],
+          "confident_accuracy": 0.6019,
+          "confident_cases": 108,
+          "dm_t": -0.382,
+          "id": "logistica",
+          "name": "Regresión logística",
+          "p_value": 0.6488,
+          "significant": false
+        },
+        {
+          "accuracy": 0.5763,
+          "brier": 0.25393,
+          "brier_skill": -0.0419,
+          "calibration": [
+            {
+              "casos": 17,
+              "frecuencia_real": 0.7059,
+              "prob_media": 0.5094,
+              "rango": "47–53 %"
+            },
+            {
+              "casos": 49,
+              "frecuencia_real": 0.5102,
+              "prob_media": 0.5708,
+              "rango": "53–60 %"
+            },
+            {
+              "casos": 111,
+              "frecuencia_real": 0.6216,
+              "prob_media": 0.7005,
+              "rango": "60–100 %"
+            }
+          ],
+          "confident_accuracy": 0.6216,
+          "confident_cases": 111,
+          "dm_t": -0.944,
+          "id": "bosque",
+          "name": "Bosque aleatorio (clasificación)",
+          "p_value": 0.8275,
+          "significant": false
+        }
+      ],
+      "n_oos": 177,
+      "prob_up": 0.5749,
+      "source": "Frecuencia histórica de subidas"
+    },
+    "provenance": {
+      "active_models": [
+        "linear_regression",
+        "random_forest"
+      ],
+      "calendar": "XNYS",
+      "contract_version": "daily-v1",
+      "cutoff_at": "2026-11-18T15:48:54.289149+00:00",
+      "dataset_sha256": "93eb4f950bf5788f7a51de2e0501ed98144d961de6d84e8efc527414dfa22cb5",
+      "dependencies": {
+        "exchange-calendars": "4.13.3",
+        "numpy": "2.5.5",
+        "pandas": "3.1.1",
+        "scikit-learn": "1.9.1",
+        "tzdata": "2026.6"
+      },
+      "expires_at": "2026-11-18T21:20:00+00:00",
+      "horizon": 5,
+      "lag_minutes": 20,
+      "model_parameters": {
+        "linear_regression": {
+          "memory": null,
+          "ridge__alpha": 10.0,
+          "ridge__copy_X": true,
+          "ridge__fit_intercept": true,
+          "ridge__max_iter": null,
+          "ridge__positive": false,
+          "ridge__random_state": null,
+          "ridge__solver": "auto",
+          "ridge__tol": 0.0001,
+          "standardscaler__copy": true,
+          "standardscaler__with_mean": true,
+          "standardscaler__with_std": true,
+          "transform_input": null,
+          "verbose": false
+        },
+        "random_forest": {
+          "bootstrap": true,
+          "ccp_alpha": 0.0,
+          "criterion": "squared_error",
+          "max_depth": 4,
+          "max_features": 1.0,
+          "max_leaf_nodes": null,
+          "max_samples": null,
+          "min_impurity_decrease": 0.0,
+          "min_samples_leaf": 15,
+          "min_samples_split": 2,
+          "min_weight_fraction_leaf": 0.0,
+          "monotonic_cst": null,
+          "n_estimators": 100,
+          "n_jobs": 1,
+          "oob_score": false,
+          "random_state": 0,
+          "verbose": 0,
+          "warm_start": false
+        }
+      },
+      "model_versions": {
+        "baseline_last_price": "1.0",
+        "baseline_mean_return": "1.0",
+        "linear_regression": "2.0",
+        "random_forest": "1.0"
+      },
+      "n_splits": 5,
+      "origin_at": "2026-11-17T21:00:00+00:00",
+      "origin_session": "2026-11-17",
+      "seed": 0,
+      "target_close_at": "2026-11-24T21:00:00+00:00",
+      "timezone": "America/New_York"
+    },
+    "reference_price": 7340.529785,
+    "risk": {
+      "annual_vol_pct": 15.43,
+      "beats_reference": true,
+      "daily_vol_pct": 0.972,
+      "expected_move_pct": 2.198,
+      "model": "HAR (volatilidad de 1, 5 y 22 días)",
+      "range_90": {
+        "coverage_if_normal": 0.95,
+        "high_price": 7668.448947,
+        "historical_coverage": 0.9833,
+        "low_price": 7026.633143,
+        "method": "Volatilidad prevista × multiplicador empírico (con mínimo normal)",
+        "multiplier": 2.01
+      },
+      "risk_level": "Normal",
+      "scores": {
+        "har": {
+          "coverage_90": 0.98333,
+          "coverage_90_normal": 0.95,
+          "multiplier": 2.01043,
+          "n_calibration": 55,
+          "n_final": 60,
+          "n_oos": 237,
+          "rmse_log_vol": 0.41477
+        },
+        "referencia": {
+          "coverage_90": 0.98333,
+          "coverage_90_normal": 0.95,
+          "multiplier": 1.98026,
+          "n_calibration": 55,
+          "n_final": 60,
+          "n_oos": 237,
+          "rmse_log_vol": 0.43218
+        }
+      },
+      "skill_vs_reference": 0.0403,
+      "vol_percentile": 0.741
+    },
+    "target_date": "2026-11-24",
+    "target_date_approx": "2026-11-24"
+  },
+  "BTC-USD": {
+    "as_of": "2026-11-17",
+    "asset": "BTC-USD",
+    "baselines": [
+      {
+        "asset": "BTC-USD",
+        "estimated_price": 64893.945312,
+        "estimated_return_pct": 0.0,
+        "historical_metrics": {
+          "calibration_rmse_return": 0.05035255075295467,
+          "directional_accuracy": 0.0,
+          "mae_price": 3541.148682757859,
+          "mae_return": 0.03854563911484518,
+          "mape_price_pct": 3.9218076299199995,
+          "max_drawdown_strategy": 0.0,
+          "mse_return": 0.0025950090237799226,
+          "n_oos": 223,
+          "n_strategy_trades": 45,
+          "rmse_price": 4651.509456896503,
+          "rmse_return": 0.05094123107837033,
+          "sharpe_strategy": null
+        },
+        "holdout_metrics": {
+          "directional_accuracy": 0.0,
+          "mae_price": 2464.325396338237,
+          "mae_return": 0.033480117829514634,
+          "mape_price_pct": 3.3088115546551533,
+          "max_drawdown_strategy": 0.0,
+          "mse_return": 0.0026889015074448262,
+          "n_oos": 136,
+          "n_strategy_trades": 28,
+          "rmse_price": 3758.983712411605,
+          "rmse_return": 0.05185461895959536,
+          "sharpe_strategy": null
+        },
+        "horizon_days": 5,
+        "indicators_used": [
+          "Retornos pasados (1,5,10,20)",
+          "Volatilidad (10,20)",
+          "RSI(14)",
+          "MACD(12,26,9)",
+          "Bandas de Bollinger(20,2)",
+          "ATR(14)",
+          "Estocástico(14,3)",
+          "SMA(20,50)",
+          "Volumen relativo"
+        ],
+        "interval": {
+          "high_price": 70497.995217,
+          "level": 0.9,
+          "low_price": 59735.374392,
+          "method": "predicción ± 1,645 × RMSE fuera de muestra (supone errores aprox. normales)"
+        },
+        "is_baseline": true,
+        "message": "",
+        "model_id": "baseline_last_price",
+        "name": "Referencia: último precio",
+        "predicted_log_return": 0.0,
+        "reference_price": 64893.945312,
+        "run_date": "2026-11-18T15:48:56.723856+00:00",
+        "status": "ok",
+        "version": "1.0"
+      },
+      {
+        "asset": "BTC-USD",
+        "estimated_price": 64709.537258,
+        "estimated_return_pct": -0.2842,
+        "historical_metrics": {
+          "calibration_rmse_return": 0.04992552867737291,
+          "directional_accuracy": 0.5201793721973094,
+          "mae_price": 3554.388984597005,
+          "mae_return": 0.038638239562385567,
+          "mape_price_pct": 3.9325203837815894,
+          "max_drawdown_strategy": -0.3573545594313017,
+          "mse_return": 0.0026115507043488907,
+          "n_oos": 223,
+          "n_strategy_trades": 45,
+          "rmse_price": 4680.108271646129,
+          "rmse_return": 0.051103333593307695,
+          "sharpe_strategy": 0.03532660750032912
+        },
+        "holdout_metrics": {
+          "directional_accuracy": 0.5808823529411765,
+          "mae_price": 2421.4334974741,
+          "mae_return": 0.0330313514005172,
+          "mape_price_pct": 3.2493244860634687,
+          "max_drawdown_strategy": -0.34078668046082583,
+          "mse_return": 0.002731381960365957,
+          "n_oos": 136,
+          "n_strategy_trades": 28,
+          "rmse_price": 3777.1491264511315,
+          "rmse_return": 0.05226262488974274,
+          "sharpe_strategy": -0.8444347264067943
+        },
+        "horizon_days": 5,
+        "indicators_used": [
+          "Retornos pasados (1,5,10,20)",
+          "Volatilidad (10,20)",
+          "RSI(14)",
+          "MACD(12,26,9)",
+          "Bandas de Bollinger(20,2)",
+          "ATR(14)",
+          "Estocástico(14,3)",
+          "SMA(20,50)",
+          "Volumen relativo"
+        ],
+        "interval": {
+          "high_price": 70248.298881,
+          "level": 0.9,
+          "low_price": 59607.482015,
+          "method": "predicción ± 1,645 × RMSE fuera de muestra (supone errores aprox. normales)"
+        },
+        "is_baseline": true,
+        "message": "",
+        "model_id": "baseline_mean_return",
+        "name": "Referencia: retorno medio",
+        "predicted_log_return": -0.0028457287494823486,
+        "reference_price": 64893.945312,
+        "run_date": "2026-11-18T15:48:56.723856+00:00",
+        "status": "ok",
+        "version": "1.0"
+      }
+    ],
+    "consensus": {
+      "best_model_by_history": "random_forest",
+      "direction": "neutral",
+      "dispersion_std_pct": 0.1676,
+      "max_return_pct": -1.1687,
+      "message": "Ningún modelo superó a las referencias simples fuera de muestra de forma significativa: no se calcula consenso ponderado.",
+      "min_return_pct": -1.504,
+      "n_models": 2,
+      "simple_median_return_pct": -1.3365,
+      "status": "sin_valor_predictivo",
+      "weighted_return_pct": null,
+      "weights": {
+        "linear_regression": 0.0,
+        "random_forest": 0.0
+      }
+    },
+    "context_used": [],
+    "data_points": 730,
+    "data_source": "Yahoo Finance",
+    "explanation": {
+      "headline": "Sin ventaja clara en la dirección",
+      "points": [
+        "Ningún modelo adivinó la dirección mejor que la estadística básica: históricamente este activo subió en 48 % de los periodos de 5 sesiones. Eso es lo más honesto que se puede decir sobre si subirá o bajará.",
+        "Los modelos de precio no superaron a las referencias simples, así que no se muestra un precio objetivo.",
+        "Contexto externo inactivo en esta predicción (VIX, S&P 500, tasa a 10 años y dólar).",
+        "Riesgo: el precio se suele mover cerca de ±4.5 % en 5 sesiones. Rango de riesgo (90 % nominal): 60,339.91 a 69,791.68. Cobertura observada en la evaluación histórica: 85 %. Nivel de riesgo actual: normal comparado con su historia.",
+        "Escenario malo: en las simulaciones, 1 % de los casos pierden más de 10 %."
+      ],
+      "reliability": "Baja para la dirección; el modelo de riesgo redujo el error en selección",
+      "verdict": "neutral",
+      "what_to_do": "Usa esto para dimensionar el riesgo (cuánto podrías ganar o perder), no como una orden de compra o venta. Ningún modelo garantiza resultados; invierte solo lo que puedas permitirte perder y diversifica."
+    },
+    "fibonacci_reference": {
+      "0.236": 81382.131312,
+      "0.382": 77681.633562,
+      "0.5": 74690.820312,
+      "0.618": 71700.007062,
+      "0.786": 67441.900062,
+      "maximo": 87363.757812,
+      "minimo": 62017.882812
+    },
+    "final_evaluation": {
+      "calibration_origins": 86,
+      "first_origin": "2026-06-30",
+      "n_origins": 136,
+      "status": "independent"
+    },
+    "glossary": {
+      "Brier score": "Error de una probabilidad (0 es perfecto). Se compara con la referencia para ver si el modelo aporta.",
+      "Intervalo 90 %": "El 90 % indica el nivel nominal. La cobertura observada debe medirse para cada método y horizonte.",
+      "Probabilidad de subida": "Estimación del modelo o frecuencia histórica de referencia. Los tramos observados sirven para diagnosticar la estimación.",
+      "Referencia simple": "Una regla tonta (\"el precio no cambia\" o \"sube lo de siempre\"). Si un modelo no le gana, no aporta.",
+      "VIX": "Índice del 'miedo' del mercado de EE. UU.: sube cuando los inversores esperan movimientos fuertes.",
+      "Volatilidad": "Cuánto se mueve el precio normalmente. Más volatilidad = más riesgo y más incertidumbre.",
+      "Walk-forward": "Se entrena con el pasado y se prueba con el 'futuro' que el modelo no vio, como en la vida real."
+    },
+    "horizon_days": 5,
+    "horizon_unit": "días UTC",
+    "labeled_points": 676,
+    "models": [
+      {
+        "asset": "BTC-USD",
+        "estimated_price": 63917.9715,
+        "estimated_return_pct": -1.504,
+        "historical_metrics": {
+          "adds_value_indication": false,
+          "calibration_rmse_return": 0.05038442211010496,
+          "directional_accuracy": 0.4170403587443946,
+          "dm_t": -1.977,
+          "mae_price": 3922.409206156258,
+          "mae_return": 0.042573348207914544,
+          "mape_price_pct": 4.339195225529236,
+          "max_drawdown_strategy": -0.30612548483648994,
+          "mse_return": 0.0030712881631926522,
+          "n_oos": 223,
+          "n_strategy_trades": 45,
+          "p_value": 0.976,
+          "rmse_price": 5050.187938573065,
+          "rmse_return": 0.055419203920596447,
+          "sharpe_strategy": 0.44104319977078293,
+          "significant": false,
+          "skill_vs_baseline": -0.08790468442619703
+        },
+        "holdout_metrics": {
+          "directional_accuracy": 0.5147058823529411,
+          "mae_price": 2479.6177950863084,
+          "mae_return": 0.03388900795153466,
+          "mape_price_pct": 3.3135159937149115,
+          "max_drawdown_strategy": -0.43692279086243047,
+          "mse_return": 0.0029628177490941894,
+          "n_oos": 136,
+          "n_strategy_trades": 28,
+          "rmse_price": 3935.1526947558928,
+          "rmse_return": 0.05443177150428038,
+          "sharpe_strategy": -2.0019428043686056
+        },
+        "horizon_days": 5,
+        "indicators_used": [
+          "Retornos pasados (1,5,10,20)",
+          "Volatilidad (10,20)",
+          "RSI(14)",
+          "MACD(12,26,9)",
+          "Bandas de Bollinger(20,2)",
+          "ATR(14)",
+          "Estocástico(14,3)",
+          "SMA(20,50)",
+          "Volumen relativo"
+        ],
+        "interval": {
+          "high_price": 69441.379786,
+          "level": 0.9,
+          "low_price": 58833.898366,
+          "method": "predicción ± 1,645 × RMSE fuera de muestra (supone errores aprox. normales)"
+        },
+        "is_baseline": false,
+        "message": "",
+        "model_id": "linear_regression",
+        "name": "Regresión lineal (Ridge)",
+        "predicted_log_return": -0.015153760806741443,
+        "reference_price": 64893.945312,
+        "run_date": "2026-11-18T15:48:56.723856+00:00",
+        "status": "ok",
+        "version": "2.0"
+      },
+      {
+        "asset": "BTC-USD",
+        "estimated_price": 64135.535269,
+        "estimated_return_pct": -1.1687,
+        "feature_importance": {
+          "atr_pct": 0.2856,
+          "bb_pct_b": 0.0304,
+          "dist_sma20": 0.0139,
+          "dist_sma50": 0.0734,
+          "dxy_known": 0.0,
+          "dxy_ret_20": 0.0,
+          "dxy_ret_5": 0.0,
+          "macd_hist_pct": 0.0752,
+          "ret_1": 0.029,
+          "ret_10": 0.0348,
+          "ret_20": 0.1273,
+          "ret_5": 0.0278,
+          "rsi_14": 0.0311,
+          "spx_known": 0.0,
+          "spx_ret_20": 0.0,
+          "spx_ret_5": 0.0,
+          "stoch_k": 0.0417,
+          "tnx_cambio_5": 0.0,
+          "tnx_known": 0.0,
+          "tnx_nivel": 0.0,
+          "vix_cambio_5": 0.0,
+          "vix_known": 0.0,
+          "vix_nivel": 0.0,
+          "vol_10": 0.0562,
+          "vol_20": 0.1241,
+          "vol_ratio": 0.0494
+        },
+        "historical_metrics": {
+          "adds_value_indication": false,
+          "calibration_rmse_return": 0.05665012030175805,
+          "directional_accuracy": 0.452914798206278,
+          "dm_t": -2.191,
+          "mae_price": 3835.6471093174473,
+          "mae_return": 0.0416688433680772,
+          "mape_price_pct": 4.2510277576496645,
+          "max_drawdown_strategy": -0.509088643495224,
+          "mse_return": 0.0030000269577932256,
+          "n_oos": 223,
+          "n_strategy_trades": 45,
+          "p_value": 0.9858,
+          "rmse_price": 5022.494891019514,
+          "rmse_return": 0.05477250183982128,
+          "sharpe_strategy": -2.3696771198113877,
+          "significant": false,
+          "skill_vs_baseline": -0.07520962254635655
+        },
+        "holdout_metrics": {
+          "directional_accuracy": 0.5661764705882353,
+          "mae_price": 2445.9036278108483,
+          "mae_return": 0.03343514597065078,
+          "mape_price_pct": 3.2840405147735696,
+          "max_drawdown_strategy": -0.16377840831524093,
+          "mse_return": 0.002669416413661986,
+          "n_oos": 136,
+          "n_strategy_trades": 28,
+          "rmse_price": 3735.952837526259,
+          "rmse_return": 0.05166639540031786,
+          "sharpe_strategy": 0.11739552780144022
+        },
+        "horizon_days": 5,
+        "indicators_used": [
+          "Retornos pasados (1,5,10,20)",
+          "Volatilidad (10,20)",
+          "RSI(14)",
+          "MACD(12,26,9)",
+          "Bandas de Bollinger(20,2)",
+          "ATR(14)",
+          "Estocástico(14,3)",
+          "SMA(20,50)",
+          "Volumen relativo"
+        ],
+        "interval": {
+          "high_price": 70399.631628,
+          "level": 0.9,
+          "low_price": 58428.812611,
+          "method": "predicción ± 1,645 × RMSE fuera de muestra (supone errores aprox. normales)"
+        },
+        "is_baseline": false,
+        "message": "",
+        "model_id": "random_forest",
+        "name": "Random Forest",
+        "predicted_log_return": -0.011755744086852624,
+        "reference_price": 64893.945312,
+        "run_date": "2026-11-18T15:48:56.723856+00:00",
+        "status": "ok",
+        "version": "1.0"
+      }
+    ],
+    "models_active": [
+      "linear_regression",
+      "random_forest"
+    ],
+    "monte_carlo": {
+      "assumptions": [
+        "Retornos futuros i.i.d. remuestreados del pasado reciente",
+        "Sin cambios de régimen ni saltos",
+        "Es una distribución de escenarios, no una predicción"
+      ],
+      "calibration": {
+        "empirical_coverage": 0.9,
+        "n_origins": 40,
+        "nominal_level": 0.9,
+        "rmse_median_log": 0.054557
+      },
+      "horizon_days": 5,
+      "mean_return_pct": -0.1932,
+      "median_return_pct": -0.4778,
+      "method": "bootstrap de retornos diarios (últimos 252)",
+      "n_paths": 2000,
+      "percentiles_price": {
+        "p25": 62833.622044,
+        "p5": 60324.288692,
+        "p50": 64583.875973,
+        "p75": 66627.122417,
+        "p95": 69760.479838
+      },
+      "prob_gain": 0.4535,
+      "prob_loss_gt_10pct": 0.014,
+      "std_return_pct": 4.4717
+    },
+    "notes": [
+      "Las métricas históricas de selección y el tramo final se informan por separado.",
+      "El tramo final no interviene en la selección del consenso.",
+      "Validación walk-forward cronológica con purga del horizonte: ningún modelo se entrena con información posterior a la fecha de predicción.",
+      "Un modelo solo recibe peso si supera a las referencias simples (último precio y retorno medio).",
+      "Los rangos individuales usan una aproximación normal basada en su propio error. El rango del consenso usa el promedio ponderado de los errores individuales y su cobertura es desconocida.",
+      "Modelos opcionales: xgboost (inactivo: xgboost o xgboost-cpu), arima (inactivo: statsmodels), sarima (inactivo: statsmodels). Pendientes: lstm, prophet."
+    ],
+    "oos_points": 223,
+    "probability": {
+      "base_rate": 0.4793,
+      "best_model": "logistica",
+      "brier_reference": 0.25845,
+      "final_evaluation": {
+        "brier": 0.24884849239317025,
+        "calibration": [
+          {
+            "casos": 136,
+            "frecuencia_real": 0.4191,
+            "prob_media": 0.4925,
+            "rango": "47–53 %"
+          }
+        ],
+        "n_origins": 136,
+        "reference_brier": 0.24884849239317025
+      },
+      "has_edge": false,
+      "models": [
+        {
+          "accuracy": 0.3321,
+          "brier": 0.27546,
+          "brier_skill": -0.0658,
+          "calibration": [
+            {
+              "casos": 8,
+              "frecuencia_real": 0.375,
+              "prob_media": 0.3741,
+              "rango": "0–40 %"
+            },
+            {
+              "casos": 69,
+              "frecuencia_real": 0.6377,
+              "prob_media": 0.4441,
+              "rango": "40–47 %"
+            },
+            {
+              "casos": 78,
+              "frecuencia_real": 0.4744,
+              "prob_media": 0.5012,
+              "rango": "47–53 %"
+            },
+            {
+              "casos": 68,
+              "frecuencia_real": 0.2353,
+              "prob_media": 0.5579,
+              "rango": "53–60 %"
+            },
+            {
+              "casos": 45,
+              "frecuencia_real": 0.3111,
+              "prob_media": 0.6414,
+              "rango": "60–100 %"
+            }
+          ],
+          "confident_accuracy": 0.3585,
+          "confident_cases": 53,
+          "dm_t": -3.19,
+          "id": "logistica",
+          "name": "Regresión logística",
+          "p_value": 0.9993,
+          "significant": false
+        },
+        {
+          "accuracy": 0.3993,
+          "brier": 0.28231,
+          "brier_skill": -0.0923,
+          "calibration": [
+            {
+              "casos": 18,
+              "frecuencia_real": 0.6667,
+              "prob_media": 0.3755,
+              "rango": "0–40 %"
+            },
+            {
+              "casos": 57,
+              "frecuencia_real": 0.5263,
+              "prob_media": 0.4379,
+              "rango": "40–47 %"
+            },
+            {
+              "casos": 80,
+              "frecuencia_real": 0.425,
+              "prob_media": 0.5021,
+              "rango": "47–53 %"
+            },
+            {
+              "casos": 48,
+              "frecuencia_real": 0.3125,
+              "prob_media": 0.5645,
+              "rango": "53–60 %"
+            },
+            {
+              "casos": 65,
+              "frecuencia_real": 0.3538,
+              "prob_media": 0.6835,
+              "rango": "60–100 %"
+            }
+          ],
+          "confident_accuracy": 0.3494,
+          "confident_cases": 83,
+          "dm_t": -2.581,
+          "id": "bosque",
+          "name": "Bosque aleatorio (clasificación)",
+          "p_value": 0.9951,
+          "significant": false
+        }
+      ],
+      "n_oos": 268,
+      "prob_up": 0.4793,
+      "source": "Frecuencia histórica de subidas"
+    },
+    "provenance": {
+      "active_models": [
+        "linear_regression",
+        "random_forest"
+      ],
+      "calendar": "24/7",
+      "contract_version": "daily-v1",
+      "cutoff_at": "2026-11-18T15:48:56.723856+00:00",
+      "dataset_sha256": "396e662013f096777e6c2fa3c57730256af7bd564634986462065062edd4a055",
+      "dependencies": {
+        "exchange-calendars": "4.13.3",
+        "numpy": "2.5.5",
+        "pandas": "3.1.1",
+        "scikit-learn": "1.9.1",
+        "tzdata": "2026.6"
+      },
+      "expires_at": "2026-11-19T00:20:00+00:00",
+      "horizon": 5,
+      "lag_minutes": 20,
+      "model_parameters": {
+        "linear_regression": {
+          "memory": null,
+          "ridge__alpha": 10.0,
+          "ridge__copy_X": true,
+          "ridge__fit_intercept": true,
+          "ridge__max_iter": null,
+          "ridge__positive": false,
+          "ridge__random_state": null,
+          "ridge__solver": "auto",
+          "ridge__tol": 0.0001,
+          "standardscaler__copy": true,
+          "standardscaler__with_mean": true,
+          "standardscaler__with_std": true,
+          "transform_input": null,
+          "verbose": false
+        },
+        "random_forest": {
+          "bootstrap": true,
+          "ccp_alpha": 0.0,
+          "criterion": "squared_error",
+          "max_depth": 4,
+          "max_features": 1.0,
+          "max_leaf_nodes": null,
+          "max_samples": null,
+          "min_impurity_decrease": 0.0,
+          "min_samples_leaf": 15,
+          "min_samples_split": 2,
+          "min_weight_fraction_leaf": 0.0,
+          "monotonic_cst": null,
+          "n_estimators": 100,
+          "n_jobs": 1,
+          "oob_score": false,
+          "random_state": 0,
+          "verbose": 0,
+          "warm_start": false
+        }
+      },
+      "model_versions": {
+        "baseline_last_price": "1.0",
+        "baseline_mean_return": "1.0",
+        "linear_regression": "2.0",
+        "random_forest": "1.0"
+      },
+      "n_splits": 5,
+      "origin_at": "2026-11-18T00:00:00+00:00",
+      "origin_session": "2026-11-17",
+      "seed": 0,
+      "target_close_at": "2026-11-23T00:00:00+00:00",
+      "timezone": "UTC"
+    },
+    "reference_price": 64893.945312,
+    "risk": {
+      "annual_vol_pct": 37.79,
+      "beats_reference": true,
+      "daily_vol_pct": 1.978,
+      "expected_move_pct": 4.522,
+      "model": "HAR (volatilidad de 1, 5 y 22 días)",
+      "range_90": {
+        "coverage_if_normal": 0.8523,
+        "high_price": 69791.682314,
+        "historical_coverage": 0.8523,
+        "low_price": 60339.914421,
+        "method": "Volatilidad prevista × multiplicador empírico (con mínimo normal)",
+        "multiplier": 1.645
+      },
+      "risk_level": "Normal",
+      "scores": {
+        "har": {
+          "coverage_90": 0.85227,
+          "coverage_90_normal": 0.85227,
+          "multiplier": 1.645,
+          "n_calibration": 84,
+          "n_final": 88,
+          "n_oos": 352,
+          "rmse_log_vol": 0.50031
+        },
+        "referencia": {
+          "coverage_90": 0.84091,
+          "coverage_90_normal": 0.84091,
+          "multiplier": 1.645,
+          "n_calibration": 84,
+          "n_final": 88,
+          "n_oos": 352,
+          "rmse_log_vol": 0.58664
+        }
+      },
+      "skill_vs_reference": 0.1472,
+      "vol_percentile": 0.449
+    },
+    "target_date": "2026-11-22",
+    "target_date_approx": "2026-11-22"
+  }
+}
