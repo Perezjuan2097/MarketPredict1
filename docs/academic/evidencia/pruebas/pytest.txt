@@ -28,5 +28,5 @@ SKIPPED [1] tests/test_enterprise_datasets.py:651: bloqueos PostgreSQL
 SKIPPED [1] tests/test_enterprise_datasets.py:702: bloqueos PostgreSQL
 SKIPPED [1] tests/test_identity_migration.py:60: reparación de revisión PostgreSQL
 SKIPPED [1] tests/test_identity_migration.py:155: RLS PostgreSQL
-234 passed, 5 skipped, 11 warnings in 47.77s
-duracion_s=49
+234 passed, 5 skipped, 11 warnings in 57.12s
+duracion_s=59

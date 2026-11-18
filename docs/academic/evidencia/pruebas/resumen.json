@@ -4,8 +4,8 @@
     "failures": "0",
     "errors": "0",
     "skipped": "5",
-    "time": "47.771",
-    "timestamp": "2026-11-18T15:59:13.103431+00:00"
+    "time": "57.120",
+    "timestamp": "2026-11-18T16:06:48.372527+00:00"
   },
   "python_por_archivo": {
     "test_account": {
@@ -95,10 +95,10 @@
     }
   },
   "javascript": {
-    "tests": 19.0,
-    "pass": 19.0,
+    "tests": 20.0,
+    "pass": 20.0,
     "fail": 0.0,
     "skipped": 0.0,
-    "duration_ms": 730.990077
+    "duration_ms": 173.722189
   }
 }
