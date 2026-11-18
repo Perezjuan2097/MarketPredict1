@@ -325,8 +325,10 @@ def main():
                 raise RuntimeError("La página de Inicio desborda horizontalmente en móvil")
             rec.shot(mp, "25_movil_inicio", full=True)
             mp.locator('.module-bar a[data-nav="summary"]').click()
-            wait_text(mp, "#status", "Datos de mercado actualizados|Análisis completado|.", timeout=60000)
-            mp.wait_for_timeout(1500)
+            mp.wait_for_selector("#tabSummary.active-panel", timeout=20000)
+            mp.wait_for_timeout(2500)
+            if mp.evaluate("document.documentElement.scrollWidth > window.innerWidth + 1"):
+                raise RuntimeError("Análisis de mercado desborda horizontalmente en móvil")
             rec.shot(mp, "26_movil_analisis", full=True)
             mp.locator('.module-bar a[data-nav="predicciones"]').click()
             mp.wait_for_timeout(500)
