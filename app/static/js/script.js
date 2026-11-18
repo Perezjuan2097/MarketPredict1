@@ -147,7 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function analyzeAsset(query) {
         setStatus("Consultando y procesando datos...");
-        const response = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify({ symbol: query }) });
+        const response = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken }, body: JSON.stringify({ symbol: query }) });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "No fue posible analizar el activo.");
         current = data;

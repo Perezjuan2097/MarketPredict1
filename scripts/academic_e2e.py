@@ -38,7 +38,7 @@ class Recorder:
         page.screenshot(path=str(path), full_page=full)
         return path.name
 
-    def case(self, ident, module, title, fn):
+    def case(self, ident, module, title, fn, page=None):
         start = time.monotonic()
         entry = {"id": ident, "module": module, "title": title}
         try:
@@ -46,6 +46,12 @@ class Recorder:
             entry.update(status="aprobada", detail=detail or "")
         except Exception as exc:  # se registra el fallo real y el recorrido continúa
             entry.update(status="fallida", detail=f"{type(exc).__name__}: {str(exc)[:400]}")
+            if page is not None:  # diagnóstico: estado visible y captura del fallo
+                try:
+                    entry["status_text"] = page.locator("#status").inner_text(timeout=2000)[:300]
+                    page.screenshot(path=str(self.out / "capturas" / f"FALLO_{ident}.png"), full_page=True)
+                except Exception:
+                    pass
         entry["seconds"] = round(time.monotonic() - start, 2)
         self.cases.append(entry)
         print(f"[{entry['status']}] {ident} {title} ({entry['seconds']} s) {entry['detail'][:160]}", flush=True)
@@ -138,7 +144,7 @@ def main():
             expect(page.locator("#cards .card").first).to_be_visible()
             rec.shot(page, "05_analisis_aapl", full=True)
             return page.locator("#status").inner_text()
-        rec.case("CP-UI-04", "Análisis de mercado", "Análisis de AAPL con indicadores, tendencia y gráfico", analyze)
+        rec.case("CP-UI-04", "Análisis de mercado", "Análisis de AAPL con indicadores, tendencia y gráfico", analyze, page)
 
         def period():
             page.click('.period[data-period="1A"]')
@@ -314,7 +320,7 @@ def main():
             mp = mob.new_page()
             mp.goto(base + "/")
             mp.wait_for_selector("#tabInicio.active-panel", timeout=20000)
-            mp.wait_for_function("!document.querySelector('#homeMarkets .loading')", timeout=60000)
+            mp.wait_for_selector("#homeMarkets table, #homeMarkets .empty-state", state="attached", timeout=60000)
             if mp.evaluate("document.documentElement.scrollWidth > window.innerWidth + 1"):
                 raise RuntimeError("La página de Inicio desborda horizontalmente en móvil")
             rec.shot(mp, "25_movil_inicio", full=True)

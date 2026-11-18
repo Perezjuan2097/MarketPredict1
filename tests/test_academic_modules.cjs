@@ -36,3 +36,10 @@ test("statistical disclaimers are visible in Inicio and Predicciones", () => {
     assert.match(html, /home-disclaimer[^>]*>[^<]*estimaciones estadísticas/);
     assert.match(html, /limits-callout[^>]*><strong>Limitaciones\.<\/strong>/);
 });
+
+test("the analyze request sends the CSRF header and does not spread an undeclared variable", () => {
+    const start = js.indexOf("async function analyzeAsset(");
+    const body = js.slice(start, js.indexOf("async function loadMarketData(", start));
+    assert.ok(!body.includes("...headers"), "analyzeAsset usa una variable headers que no existe en su alcance");
+    assert.match(body, /fetch\("\/api\/analyze", \{ method: "POST", headers: \{ "Content-Type": "application\/json", "X-CSRF-Token": csrfToken \}/);
+});
