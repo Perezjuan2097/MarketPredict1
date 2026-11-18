@@ -1,6 +1,6 @@
 ........................................................................ [ 30%]
-........s.....s.s........ss.........s................................... [ 60%]
-...sss.................................................................. [ 90%]
+........s.....s.s.........s.........s................................... [ 60%]
+........................................................................ [ 90%]
 .......................                                                  [100%]
 =============================== warnings summary ===============================
 tests/test_identity_migration.py::test_postgres_repairs_stamped_partial_installation[postgresql]
@@ -26,11 +26,7 @@ tests/test_temporal_integrity.py::test_exchange_holidays_dst_early_closes_and_cr
 SKIPPED [1] tests/test_enterprise_datasets.py:521: worker PostgreSQL
 SKIPPED [1] tests/test_enterprise_datasets.py:651: bloqueos PostgreSQL
 SKIPPED [1] tests/test_enterprise_datasets.py:702: bloqueos PostgreSQL
-SKIPPED [1] tests/test_enterprise_forecast.py:86: could not import 'statsmodels': No module named 'statsmodels'
 SKIPPED [1] tests/test_identity_migration.py:60: reparación de revisión PostgreSQL
 SKIPPED [1] tests/test_identity_migration.py:155: RLS PostgreSQL
-SKIPPED [1] tests/test_optional.py:37: xgboost no instalado
-SKIPPED [1] tests/test_optional.py:54: statsmodels no instalado
-SKIPPED [1] tests/test_optional.py:61: statsmodels no instalado
-230 passed, 9 skipped, 11 warnings in 59.20s
-duracion_s=60
+234 passed, 5 skipped, 11 warnings in 47.77s
+duracion_s=49

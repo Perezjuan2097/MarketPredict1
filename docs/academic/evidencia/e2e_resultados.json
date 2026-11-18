@@ -1,6 +1,6 @@
 {
   "meta": {
-    "started_at": "2026-11-18T15:47:28.669872+00:00",
+    "started_at": "2026-11-18T16:00:04.638783+00:00",
     "base": "http://127.0.0.1:8000",
     "user": "estudiante_demo",
     "browser": "Chromium 131.0.6778.33",
@@ -12,53 +12,51 @@
       "width": 390,
       "height": 844
     },
-    "console_errors": [
-      "Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: \"script-src 'self' https://cdn.jsdelivr.net\".\n"
-    ],
-    "finished_at": "2026-11-18T15:48:59.596319+00:00",
-    "passed": 15,
-    "failed": 12
+    "console_errors": [],
+    "finished_at": "2026-11-18T16:03:41.174318+00:00",
+    "passed": 25,
+    "failed": 2
   },
   "cases": [
     {
       "id": "CP-UI-01",
       "module": "Inicio",
       "title": "Inicio carga sin sesión, con 5 módulos visibles y administración oculta",
-      "status": "fallida",
-      "detail": "Error: Page.wait_for_function: EvalError: Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: \"script-src 'self' https://cdn.jsdelivr.net\".\n\n    at eval (<anonymous>)\n    at predicate (eval at evaluate (:234:30), <anonymous>:11:37)\n    at next (eval at evaluate (:234:30), <anonymous>:32:31)",
-      "seconds": 0.26
+      "status": "aprobada",
+      "detail": "MERCADO\tÚLTIMO CIERRE\tVARIACIÓN\tFECHA DEL DATO\nS&P 500 ^GSPC\t7323,48\t-0.23%\t18 de nov de 2026, 05:00 a. m.\nNasdaq Composite ^IXIC\t24.402,1\t+0.30%\t18 de nov de 2026, 05:00 a. m.\nDow Jones ^DJI\t50.216,9",
+      "seconds": 1.39
     },
     {
       "id": "CP-UI-02",
       "module": "Inicio",
       "title": "Registro e inicio de sesión desde Inicio",
-      "status": "fallida",
-      "detail": "Error: Page.wait_for_function: EvalError: Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: \"script-src 'self' https://cdn.jsdelivr.net\".\n\n    at eval (<anonymous>)\n    at predicate (eval at evaluate (:234:30), <anonymous>:11:37)\n    at next (eval at evaluate (:234:30), <anonymous>:32:31)",
-      "seconds": 0.32
+      "status": "aprobada",
+      "detail": "cuenta creada y sesión iniciada",
+      "seconds": 0.86
     },
     {
       "id": "CP-UI-03",
       "module": "Análisis de mercado",
       "title": "Búsqueda de activos con sugerencias",
-      "status": "fallida",
-      "detail": "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#searchSuggestions:not(.hidden) .suggestion\") to be visible\n",
-      "seconds": 30.64
+      "status": "aprobada",
+      "detail": "7 sugerencias",
+      "seconds": 1.31
     },
     {
       "id": "CP-UI-04",
       "module": "Análisis de mercado",
       "title": "Análisis de AAPL con indicadores, tendencia y gráfico",
       "status": "fallida",
-      "detail": "Error: Page.wait_for_function: EvalError: Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: \"script-src 'self' https://cdn.jsdelivr.net\".\n\n    at eval (<anonymous>)\n    at predicate (eval at evaluate (:234:30), <anonymous>:11:37)\n    at next (eval at evaluate (:234:30), <anonymous>:32:31)",
-      "seconds": 0.46
+      "detail": "TimeoutError: Page.wait_for_function: Timeout 120000ms exceeded.",
+      "seconds": 120.48
     },
     {
       "id": "CP-UI-05",
       "module": "Análisis de mercado",
       "title": "Cambio de periodo del gráfico histórico",
-      "status": "fallida",
-      "detail": "Error: Page.wait_for_function: EvalError: Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: \"script-src 'self' https://cdn.jsdelivr.net\".\n\n    at eval (<anonymous>)\n    at predicate (eval at evaluate (:234:30), <anonymous>:11:37)\n    at next (eval at evaluate (:234:30), <anonymous>:32:31)",
-      "seconds": 0.05
+      "status": "aprobada",
+      "detail": "periodo 1A",
+      "seconds": 1.02
     },
     {
       "id": "CP-UI-06",
@@ -66,7 +64,7 @@
       "title": "Pestaña technical carga datos o informa el error",
       "status": "aprobada",
       "detail": "technical",
-      "seconds": 0.76
+      "seconds": 0.78
     },
     {
       "id": "CP-UI-07",
@@ -74,7 +72,7 @@
       "title": "Pestaña seasonal carga datos o informa el error",
       "status": "aprobada",
       "detail": "seasonal",
-      "seconds": 0.56
+      "seconds": 0.46
     },
     {
       "id": "CP-UI-08",
@@ -82,7 +80,7 @@
       "title": "Pestaña news carga datos o informa el error",
       "status": "aprobada",
       "detail": "news",
-      "seconds": 1.05
+      "seconds": 0.96
     },
     {
       "id": "CP-UI-09",
@@ -90,23 +88,23 @@
       "title": "Pestaña mercados carga datos o informa el error",
       "status": "aprobada",
       "detail": "mercados",
-      "seconds": 0.19
+      "seconds": 0.94
     },
     {
       "id": "CP-UI-10",
       "module": "Predicciones",
       "title": "Ejecución de modelos, comparación, métricas y proyección",
-      "status": "fallida",
-      "detail": "Error: Page.wait_for_function: EvalError: Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: \"script-src 'self' https://cdn.jsdelivr.net\".\n\n    at eval (<anonymous>)\n    at predicate (eval at evaluate (:234:30), <anonymous>:11:37)\n    at next (eval at evaluate (:234:30), <anonymous>:32:31)",
-      "seconds": 0.49
+      "status": "aprobada",
+      "detail": "Datos al 2026-11-17 (Yahoo Finance) · 501 sesiones · objetivo 2026-11-24 · 90 orígenes en la evaluación final · contexto externo inactivo\n\nRESUMEN PARA TODOS\nSin ventaja clara en la dirección\nNingún m",
+      "seconds": 4.03
     },
     {
       "id": "CP-UI-11",
       "module": "Mis predicciones",
       "title": "Guardado de la emisión firmada y consulta del historial",
-      "status": "fallida",
-      "detail": "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#predList table tbody tr\") to be visible\n",
-      "seconds": 31.96
+      "status": "aprobada",
+      "detail": "3 filas guardadas",
+      "seconds": 2.07
     },
     {
       "id": "CP-UI-12",
@@ -114,7 +112,7 @@
       "title": "Panel de validación en varios activos accesible",
       "status": "aprobada",
       "detail": "panel de validación visible",
-      "seconds": 0.58
+      "seconds": 0.54
     },
     {
       "id": "CP-UI-13",
@@ -122,15 +120,15 @@
       "title": "Creación de organización y dataset",
       "status": "aprobada",
       "detail": "organización y dataset creados",
-      "seconds": 0.86
+      "seconds": 0.78
     },
     {
       "id": "CP-UI-14",
       "module": "Datos empresariales",
       "title": "Importación CSV con mapeo, validación y versión",
-      "status": "fallida",
-      "detail": "Error: Page.wait_for_function: EvalError: Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: \"script-src 'self' https://cdn.jsdelivr.net\".\n\n    at eval (<anonymous>)\n    at predicate (eval at evaluate (:234:30), <anonymous>:11:37)\n    at next (eval at evaluate (:234:30), <anonymous>:32:31)",
-      "seconds": 0.69
+      "status": "aprobada",
+      "detail": "Versión 1 disponible.",
+      "seconds": 0.95
     },
     {
       "id": "CP-UI-15",
@@ -138,7 +136,7 @@
       "title": "Pronóstico empresarial procesado por el worker",
       "status": "aprobada",
       "detail": "",
-      "seconds": 7.42
+      "seconds": 7.02
     },
     {
       "id": "CP-UI-16",
@@ -146,7 +144,7 @@
       "title": "Panel de monitoreo y automatizaciones",
       "status": "aprobada",
       "detail": "Último pronóstico: #1 (v1).",
-      "seconds": 1.65
+      "seconds": 1.64
     },
     {
       "id": "CP-SEC-01",
@@ -154,23 +152,23 @@
       "title": "Un usuario común no accede a la administración",
       "status": "aprobada",
       "detail": "interfaz restringida y API 403",
-      "seconds": 0.12
+      "seconds": 0.1
     },
     {
       "id": "CP-SEC-02",
       "module": "Datos empresariales",
       "title": "Otra cuenta no puede ver la organización de un tercero",
-      "status": "fallida",
-      "detail": "Error: Page.wait_for_function: EvalError: Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: \"script-src 'self' https://cdn.jsdelivr.net\".\n\n    at eval (<anonymous>)\n    at predicate (eval at evaluate (:234:30), <anonymous>:11:37)\n    at next (eval at evaluate (:234:30), <anonymous>:32:31)",
-      "seconds": 0.24
+      "status": "aprobada",
+      "detail": "organización ajena responde 404",
+      "seconds": 0.26
     },
     {
       "id": "CP-UI-17",
       "module": "Administración SaaS",
       "title": "Administrador global consulta organizaciones, cuotas y workers",
-      "status": "fallida",
-      "detail": "Error: Page.wait_for_function: EvalError: Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: \"script-src 'self' https://cdn.jsdelivr.net\".\n\n    at eval (<anonymous>)\n    at predicate (eval at evaluate (:234:30), <anonymous>:11:37)\n    at next (eval at evaluate (:234:30), <anonymous>:32:31)",
-      "seconds": 0.29
+      "status": "aprobada",
+      "detail": "Organizaciones\n1\nen esta página del listado\nTrabajos pendientes\n0\ncola al día\nTrabajos fallidos\n0\n0 organizaciones con la cola llena\nServicio web\nListo\ncomprobación de readiness",
+      "seconds": 1.52
     },
     {
       "id": "CP-UI-18",
@@ -178,15 +176,15 @@
       "title": "Fallo simulado de la fuente externa: se informa sin datos falsos",
       "status": "aprobada",
       "detail": "La fuente de datos de mercado no respondió.",
-      "seconds": 0.42
+      "seconds": 0.21
     },
     {
       "id": "CP-UI-19",
       "module": "Transversal",
       "title": "Diseño responsive en 390 × 844",
       "status": "fallida",
-      "detail": "Error: Page.wait_for_function: EvalError: Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: \"script-src 'self' https://cdn.jsdelivr.net\".\n\n    at eval (<anonymous>)\n    at predicate (eval at evaluate (:234:30), <anonymous>:11:37)\n    at next (eval at evaluate (:234:30), <anonymous>:32:31)",
-      "seconds": 0.53
+      "detail": "TimeoutError: Page.wait_for_function: Timeout 60000ms exceeded.",
+      "seconds": 60.36
     },
     {
       "id": "CP-UI-20",
@@ -194,22 +192,22 @@
       "title": "Tema oscuro legible",
       "status": "aprobada",
       "detail": "tema oscuro",
-      "seconds": 2.8
+      "seconds": 2.73
     },
     {
       "id": "CP-UI-21",
       "module": "Transversal",
       "title": "Cierre de sesión",
-      "status": "fallida",
-      "detail": "Error: Page.wait_for_function: EvalError: Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: \"script-src 'self' https://cdn.jsdelivr.net\".\n\n    at eval (<anonymous>)\n    at predicate (eval at evaluate (:234:30), <anonymous>:11:37)\n    at next (eval at evaluate (:234:30), <anonymous>:32:31)",
-      "seconds": 0.16
+      "status": "aprobada",
+      "detail": "sesión cerrada",
+      "seconds": 0.09
     },
     {
       "id": "CP-ML-AAPL",
       "module": "Predicciones",
       "title": "Motor predictivo sobre AAPL a 5 sesiones",
       "status": "aprobada",
-      "detail": "2 modelos, consenso sin_valor_predictivo",
+      "detail": "3 modelos, consenso sin_valor_predictivo",
       "seconds": 0.02
     },
     {
@@ -217,24 +215,24 @@
       "module": "Predicciones",
       "title": "Motor predictivo sobre MSFT a 5 sesiones",
       "status": "aprobada",
-      "detail": "2 modelos, consenso sin_valor_predictivo",
-      "seconds": 2.64
+      "detail": "3 modelos, consenso sin_valor_predictivo",
+      "seconds": 1.87
     },
     {
       "id": "CP-ML-^GSPC",
       "module": "Predicciones",
       "title": "Motor predictivo sobre ^GSPC a 5 sesiones",
       "status": "aprobada",
-      "detail": "2 modelos, consenso sin_valor_predictivo",
-      "seconds": 2.43
+      "detail": "3 modelos, consenso sin_valor_predictivo",
+      "seconds": 1.68
     },
     {
       "id": "CP-ML-BTC-USD",
       "module": "Predicciones",
       "title": "Motor predictivo sobre BTC-USD a 5 sesiones",
       "status": "aprobada",
-      "detail": "2 modelos, consenso sin_valor_predictivo",
-      "seconds": 2.81
+      "detail": "3 modelos, consenso sin_valor_predictivo",
+      "seconds": 2.0
     }
   ]
 }
