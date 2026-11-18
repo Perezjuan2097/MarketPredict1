@@ -4,8 +4,8 @@
     "failures": "0",
     "errors": "0",
     "skipped": "5",
-    "time": "57.120",
-    "timestamp": "2026-11-18T16:06:48.372527+00:00"
+    "time": "70.110",
+    "timestamp": "2026-11-18T16:11:47.436494+00:00"
   },
   "python_por_archivo": {
     "test_account": {
@@ -99,6 +99,6 @@
     "pass": 20.0,
     "fail": 0.0,
     "skipped": 0.0,
-    "duration_ms": 173.722189
+    "duration_ms": 229.673609
   }
 }
