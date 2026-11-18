@@ -1250,3 +1250,129 @@ body.dark-mode .account-form option { color: #0d1117; }
     background: #e4e7ec;
     color: #475467;
 }
+
+/* =========================
+   VERSIÓN ACADÉMICA: SEIS MÓDULOS
+========================= */
+.module-bar {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 0 max(20px, calc((100% - 1380px) / 2));
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: thin;
+}
+.module-bar a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 14px 12px;
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+}
+.module-bar a:hover { color: var(--text); }
+.module-bar a:focus-visible, .home-card:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.module-bar a.active { color: var(--text); border-bottom-color: var(--green); }
+.module-index {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 700;
+}
+.module-bar a.active .module-index { background: var(--green); border-color: var(--green); color: #fff; }
+
+/* Cada módulo muestra solo lo que le corresponde. */
+body[data-module="inicio"] .asset-header, body[data-module="inicio"] .analysis-toolbar,
+body[data-module="cuenta"] .asset-header, body[data-module="cuenta"] .analysis-toolbar,
+body[data-module="empresas"] .asset-header, body[data-module="empresas"] .analysis-toolbar,
+body[data-module="administracion"] .asset-header, body[data-module="administracion"] .analysis-toolbar,
+body[data-module="brokers"] .asset-header, body[data-module="brokers"] .analysis-toolbar { display: none; }
+body[data-module]:not([data-module="summary"]) .context-tabs { display: none; }
+body[data-module="predicciones"] .analysis-toolbar h2::after { content: " y ejecuta sus modelos"; }
+
+.module-intro { margin: 8px 0 18px; }
+.module-intro h2 { margin: 6px 0 8px; font-size: 26px; }
+.limits-callout {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-left: 4px solid #d99a06;
+    background: #fff8e6;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.dark-mode .limits-callout { background: #2a2310; }
+
+.home-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
+    gap: 24px;
+    align-items: start;
+    margin: 18px 0 22px;
+}
+.home-hero h1 { font-size: 40px; margin: 6px 0 10px; letter-spacing: -0.02em; }
+.home-lead { font-size: 17px; line-height: 1.6; color: var(--text); max-width: 760px; }
+.home-disclaimer { font-size: 14px; color: var(--muted); border-left: 3px solid var(--green); padding-left: 10px; }
+.home-auth {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+}
+.home-auth strong { font-size: 20px; }
+.home-auth small { color: var(--muted); line-height: 1.45; }
+.home-auth .pill { align-self: flex-start; }
+.home-counts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
+.home-counts div { display: flex; flex-direction: column; padding: 10px; background: var(--surface-soft); border-radius: 10px; }
+.home-counts strong { font-size: 22px; }
+.home-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+}
+.home-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 18px;
+    text-align: left;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    transition: border-color .15s, transform .15s;
+}
+.home-card:hover { border-color: var(--green); transform: translateY(-1px); }
+.home-card strong { font-size: 16px; }
+.home-card small { color: var(--muted); line-height: 1.45; }
+.projection-panel { margin: 4px 0 18px; }
+.projection-wrapper { height: 320px; }
+#tabPredicciones > .dashboard-panel, #tabPredicciones > .dashboard-grid { margin-bottom: 18px; }
+#tabAdministracion .dashboard-panel { margin-bottom: 16px; }
+#tabAdministracion h3 { margin-top: 0; }
+a.primary-button, a.secondary-button { display: inline-flex; align-items: center; text-decoration: none; }
+
+@media (max-width: 800px) {
+    .home-hero { grid-template-columns: 1fr; }
+    .home-hero h1 { font-size: 32px; }
+    .module-bar { padding: 0 8px; }
+    .module-bar a { padding: 12px 10px 10px; font-size: 13px; }
+    .projection-wrapper { height: 260px; }
+}

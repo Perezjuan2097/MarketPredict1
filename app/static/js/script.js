@@ -336,9 +336,21 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) { $("#communityPosts").innerHTML = `<div class="empty-state">${escapeHTML(error.message || "No fue posible cargar la comunidad.")}</div>`; }
     }
 
-    const NAV_KEYS = ["productos", "community", "mercados", "resultados", "brokers", "mas", "empresas"];
+    // Seis módulos académicos. Cada pestaña interna pertenece a uno de ellos.
+    const MODULE_OF = {
+        inicio: "inicio", productos: "inicio",
+        summary: "summary", news: "summary", community: "summary", technical: "summary", seasonal: "summary",
+        components: "summary", options: "summary", mercados: "summary",
+        predicciones: "predicciones", cuenta: "cuenta", empresas: "empresas",
+        administracion: "administracion", brokers: "brokers",
+    };
+    const ROUTES = { "#inicio": "inicio", "#analisis": "summary", "#predicciones": "predicciones", "#mis-predicciones": "cuenta",
+        "#cuenta": "cuenta", "#empresas": "empresas", "#administracion": "administracion", "#brokers": "brokers",
+        "#mercados": "mercados", "#productos": "productos", "#comunidad": "community", "#resultados": "predicciones" };
 
     async function loadTab(tab) {
+        if (tab === "inicio") return loadHome();
+        if (tab === "administracion") return loadAdmin();
         if (tab === "empresas") return loadEnterprise();
         if (tab === "mercados") return loadMarkets();
         if (tab === "brokers") return loadBroker();
@@ -357,7 +369,9 @@ document.addEventListener("DOMContentLoaded", () => {
         $$(".tab-panel").forEach((panel) => panel.classList.remove("active-panel"));
         const panel = tab === "summary" ? $("#tabSummary") : $(`#tab${tab.charAt(0).toUpperCase()}${tab.slice(1)}`);
         if (panel) panel.classList.add("active-panel");
-        setNavActive(NAV_KEYS.includes(tab) ? tab : null);
+        const module = MODULE_OF[tab] || "summary";
+        if (document.body) document.body.dataset.module = module;
+        setNavActive(module);
         loadTab(tab);
     }
 
@@ -556,12 +570,141 @@ document.addEventListener("DOMContentLoaded", () => {
             try { if (newsResp && newsResp.ok) pulse = (await newsResp.json()).pulse; } catch { pulse = null; }
             renderModels(data, pulse);
             displayedForecast = { ticker, horizon, emission: data.emission };
+            drawProjection(ticker, data);
         } catch (error) { box.innerHTML = `<div class="empty-state">${escapeHTML(error.message)}</div>`; }
         finally { $("#runModels").disabled = false; }
     }
 
     function setNavActive(key) {
-        $$(".main-nav a[data-nav]").forEach((a) => a.classList.toggle("active", a.dataset.nav === key));
+        $$(".main-nav a[data-nav]").forEach((a) => {
+            const active = a.dataset.nav === key;
+            a.classList.toggle("active", active);
+            if (active) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+        });
+    }
+
+    /* ---------- Módulo 1: Inicio ---------- */
+    async function loadHome() {
+        const auth = $("#homeAuth");
+        if (auth) {
+            if (currentUser) {
+                auth.innerHTML = `<span class="pill">Sesión iniciada</span><strong>${escapeHTML(currentUser.username)}</strong>
+                    <small>Rol en la plataforma: ${currentUser.role === "admin" ? "administrador" : "usuario"}</small>
+                    <div class="home-counts" data-home="counts"><div class="loading">Consultando tu actividad...</div></div>`;
+                loadHomeCounts();
+            } else {
+                auth.innerHTML = `<span class="pill">Sin sesión</span><strong>Visitante</strong>
+                    <small>Puedes analizar activos y ejecutar modelos. Para guardar predicciones o usar el espacio empresarial necesitas una cuenta.</small>
+                    <div class="vote-actions"><button type="button" class="primary-button" data-home="login">Iniciar sesión</button><button type="button" class="secondary-button" data-home="register">Crear cuenta</button></div>`;
+                auth.querySelector('[data-home="login"]')?.addEventListener("click", () => openAuth("login"));
+                auth.querySelector('[data-home="register"]')?.addEventListener("click", () => openAuth("register"));
+            }
+        }
+        const status = $("#homeStatus");
+        if (status) {
+            try {
+                const response = await fetch("/api/health", { cache: "no-store" });
+                const data = await response.json();
+                if (!response.ok) throw new Error();
+                const db = data.db || {};
+                const models = Object.entries(data.optional_models || {});
+                status.innerHTML = `<table class="table"><tbody>
+                    <tr><th scope="row">Servidor</th><td>${data.status === "ok" ? "En funcionamiento" : escapeHTML(String(data.status))}</td></tr>
+                    <tr><th scope="row">Base de datos</th><td>${db.status === "ok" ? "Conectada" : escapeHTML(db.detail || db.status || "No disponible")}</td></tr>
+                    <tr><th scope="row">Origen de datos de mercado</th><td>${data.demo_mode ? "Modo demostración (datos sintéticos)" : "Yahoo Finance (datos reales)"}</td></tr>
+                    ${models.map(([name, ok]) => `<tr><th scope="row">Modelo opcional ${escapeHTML(name)}</th><td>${ok ? "Instalado" : "No instalado"}</td></tr>`).join("")}
+                </tbody></table>`;
+            } catch { status.innerHTML = `<div class="empty-state">No fue posible consultar el estado del servidor.</div>`; }
+        }
+        const markets = $("#homeMarkets");
+        if (markets && !markets.dataset.loaded) {
+            try {
+                const response = await fetch("/api/markets");
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error);
+                const rows = (data.markets || []).slice(0, 6);
+                markets.innerHTML = rows.length ? `<table class="table"><thead><tr><th>Mercado</th><th>Último cierre</th><th>Variación</th><th>Fecha del dato</th></tr></thead><tbody>${rows.map((m) => `<tr><td>${escapeHTML(m.name)} <small>${escapeHTML(m.symbol)}</small></td><td>${m.price == null ? escapeHTML(m.error || "N/D") : numText(m.price, 2)}</td><td class="${Number(m.change_percent) >= 0 ? "positive-text" : "negative-text"}">${m.change_percent == null ? "N/D" : pctText(m.change_percent, 2)}</td><td>${m.as_of ? formatDateTime(m.as_of) : "N/D"}</td></tr>`).join("")}</tbody></table>` : `<div class="empty-state">La fuente no devolvió mercados.</div>`;
+                markets.dataset.loaded = "1";
+            } catch (error) { markets.innerHTML = `<div class="empty-state">Yahoo Finance no respondió: ${escapeHTML(error.message || "sin detalle")}. Intenta más tarde.</div>`; }
+        }
+    }
+
+    async function loadHomeCounts() {
+        const box = $("#homeAuth")?.querySelector('[data-home="counts"]');
+        if (!box) return;
+        try {
+            const [preds, orgs] = await Promise.all([api("GET", "/api/me/predictions"), api("GET", "/api/me/organizations").catch(() => null)]);
+            const list = preds.predictions || [];
+            const pending = list.filter((p) => p.status === "pendiente").length;
+            box.innerHTML = `<div><strong>${list.length}</strong><small>predicciones guardadas</small></div>
+                <div><strong>${pending}</strong><small>pendientes de evaluar</small></div>
+                <div><strong>${orgs ? (orgs.organizations || []).length : "—"}</strong><small>organizaciones</small></div>`;
+        } catch { box.innerHTML = `<small>No fue posible consultar tu actividad.</small>`; }
+    }
+
+    /* ---------- Módulo 6: Administración SaaS ---------- */
+    async function loadAdmin() {
+        const box = $("#adminContent");
+        if (!box) return;
+        if (!currentUser || currentUser.role !== "admin") {
+            box.innerHTML = `<div class="empty-state"><strong>Acceso restringido.</strong> Este módulo solo está disponible para administradores globales. El servidor también rechaza las solicitudes de cualquier otra cuenta.</div>`;
+            return;
+        }
+        box.innerHTML = `<div class="loading">Consultando la operación...</div>`;
+        try {
+            const response = await fetch("/admin/api/commercial", { cache: "no-store" });
+            if (response.status === 401 || response.status === 403) throw new Error("El servidor rechazó el acceso administrativo.");
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "No fue posible consultar la operación.");
+            const q = data.queue || {};
+            const orgs = data.organizations || [];
+            const workers = data.workers || [];
+            const jobs = data.jobs || [];
+            const failed = jobs.filter((j) => j.state === "failed");
+            box.innerHTML = `<section class="metric-grid">
+                    <article class="card"><small>Organizaciones</small><strong>${orgs.length}</strong><small>en esta página del listado</small></article>
+                    <article class="card"><small>Trabajos pendientes</small><strong>${q.pending ?? 0}</strong><small>${q.oldest_due_seconds == null ? "cola al día" : "el más antiguo espera " + q.oldest_due_seconds + " s"}</small></article>
+                    <article class="card"><small>Trabajos fallidos</small><strong>${q.failed ?? 0}</strong><small>${q.saturated_organizations ?? 0} organizaciones con la cola llena</small></article>
+                    <article class="card"><small>Servicio web</small><strong>${data.web_ready ? "Listo" : "Sin migrar"}</strong><small>comprobación de readiness</small></article>
+                </section>
+                <div class="dashboard-panel"><h3>Organizaciones, planes y consumo</h3><div class="table-scroll"><table class="table"><thead><tr><th>Organización</th><th>Estado</th><th>Plan</th><th>Usuarios</th><th>Datasets</th><th>Almacenamiento</th><th>Pronósticos del mes</th></tr></thead><tbody>${orgs.length ? orgs.map((o) => `<tr><td><strong>${escapeHTML(o.name)}</strong><br><small>${escapeHTML(o.slug)}</small></td><td>${escapeHTML(o.status)}</td><td>${escapeHTML(o.plan)}</td><td>${o.usage.users} / ${o.limits.users}</td><td>${o.usage.datasets} / ${o.limits.datasets}</td><td>${numText(o.usage.storage_bytes / 1e6, 2)} / ${numText(o.limits.storage_bytes / 1e6, 0)} MB</td><td>${o.usage.forecasts} / ${o.limits.forecasts}</td></tr>`).join("") : `<tr><td colspan="7">Todavía no hay organizaciones.</td></tr>`}</tbody></table></div></div>
+                <div class="dashboard-grid">
+                    <div class="dashboard-panel"><h3>Workers</h3>${workers.length ? `<table class="table"><thead><tr><th>Worker</th><th>Estado</th><th>Último latido</th></tr></thead><tbody>${workers.map((w) => `<tr><td><code>${escapeHTML(String(w.id).slice(0, 8))}</code></td><td>${escapeHTML(w.state)}</td><td>hace ${w.age_seconds} s</td></tr>`).join("")}</tbody></table>` : `<div class="empty-state">Ningún worker ha reportado actividad. Se inicia con <code>python -m scripts.enterprise_worker</code>.</div>`}</div>
+                    <div class="dashboard-panel"><h3>Trabajos recientes y errores</h3>${jobs.length ? `<table class="table"><thead><tr><th>ID</th><th>Tipo</th><th>Estado</th><th>Intentos</th><th>Error</th></tr></thead><tbody>${jobs.slice(0, 10).map((j) => `<tr><td>${j.id}</td><td>${escapeHTML(j.kind)}</td><td>${escapeHTML(j.state)}</td><td>${j.attempts}</td><td>${escapeHTML(j.error_code || "—")}</td></tr>`).join("")}</tbody></table>` : `<div class="empty-state">No hay trabajos registrados.</div>`}${failed.length ? `<p class="note">${failed.length} de los últimos trabajos terminaron en error.</p>` : ""}</div>
+                </div>
+                <div class="vote-actions"><a class="primary-button" href="/admin/commercial">Gestionar planes y límites</a><a class="secondary-button" href="/admin/">Usuarios y configuración</a></div>`;
+        } catch (error) { box.innerHTML = `<div class="empty-state">${escapeHTML(error.message)}</div>`; }
+    }
+
+    /* ---------- Módulo 3: gráfico histórico y proyectado ---------- */
+    let projectionInstance = null;
+    async function drawProjection(ticker, d) {
+        const panel = $("#projectionPanel");
+        const canvas = $("#projectionChart");
+        if (!panel || !canvas || typeof Chart === "undefined") return;
+        try {
+            const response = await fetch(`/api/market-data/${encodeURIComponent(ticker)}?period=6M`);
+            const history = await response.json();
+            if (!response.ok) throw new Error(history.error);
+            const points = (history.data || []).filter((r) => r.cierre != null);
+            if (!points.length) throw new Error("Sin histórico");
+            const labels = points.map((r) => String(r.fecha).slice(0, 10));
+            const closes = points.map((r) => Number(r.cierre));
+            const pc = d.monte_carlo?.percentiles_price || {};
+            const target = d.target_date || `+${d.horizon_days} sesiones`;
+            const pad = (value) => [...closes.map(() => null).slice(0, -1), closes[closes.length - 1], value];
+            const datasets = [{ label: "Cierre histórico", data: [...closes, null], borderColor: "#2563eb", pointRadius: 0, borderWidth: 2 }];
+            if (pc.p50 != null) datasets.push({ label: "Mediana de escenarios (P50)", data: pad(pc.p50), borderColor: "#0a9f6e", borderDash: [6, 4], pointRadius: 3 });
+            if (pc.p95 != null) datasets.push({ label: "Escenario alto (P95)", data: pad(pc.p95), borderColor: "#9aa4b2", borderDash: [2, 4], pointRadius: 2 });
+            if (pc.p5 != null) datasets.push({ label: "Escenario bajo (P5)", data: pad(pc.p5), borderColor: "#dc3d4b", borderDash: [2, 4], pointRadius: 2 });
+            if (d.consensus?.status === "ok") datasets.push({ label: "Consenso de modelos", data: pad(d.consensus.estimated_price), borderColor: "#111827", pointRadius: 4, showLine: false });
+            if (projectionInstance) projectionInstance.destroy();
+            projectionInstance = new Chart(canvas.getContext("2d"), { type: "line", data: { labels: [...labels, target], datasets },
+                options: { responsive: true, maintainAspectRatio: false, spanGaps: false, interaction: { mode: "index", intersect: false },
+                    plugins: { legend: { position: "bottom" } }, scales: { x: { ticks: { maxTicksLimit: 8 } } } } });
+            $("#projectionCaption").textContent = `${ticker}: cierres diarios de 6 meses hasta ${d.as_of} y escenarios a ${d.horizon_days} ${d.horizon_unit || "sesiones"} (Monte Carlo${d.consensus?.status === "ok" ? " y consenso" : ""}). Los escenarios son rangos posibles, no valores esperados con certeza.`;
+            panel.hidden = false;
+        } catch { panel.hidden = true; }
     }
 
 
@@ -624,10 +767,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         $('[data-nav="brokers"]').hidden = !canAccessBroker;
         $("#accountMenuAdmin").hidden = currentUser?.role !== "admin";
+        const isAdmin = currentUser?.role === "admin";
+        const adminLink = $('[data-nav="administracion"]');
+        if (adminLink) adminLink.hidden = !isAdmin;
+        $$("[data-admin-only]").forEach((el) => { el.hidden = !isAdmin; });
         if (exists("#accountLoggedOut")) $("#accountLoggedOut").hidden = !!currentUser;
         if (exists("#accountContent")) $("#accountContent").hidden = !currentUser;
         if (exists("#logoutButton")) $("#logoutButton").hidden = !currentUser;
-        if (exists("#accountTitle")) $("#accountTitle").textContent = currentUser ? `Hola, ${currentUser.username}` : "Mi cuenta";
+        if (exists("#accountTitle")) $("#accountTitle").textContent = currentUser ? `Mis predicciones · ${currentUser.username}` : "Mis predicciones";
     }
 
     function accountMsg(text, ok = true) {
@@ -664,7 +811,8 @@ document.addEventListener("DOMContentLoaded", () => {
             currentUser = data.user;
             canAccessBroker = data.can_access_broker === true;
             form.reset(); closeAuth(); updateAuthUI();
-            activateTab($("#tabEmpresas")?.classList.contains("active-panel") ? "empresas" : "cuenta");
+            const here = document.body?.dataset.module;
+            activateTab(["empresas", "administracion", "inicio", "predicciones", "summary"].includes(here) ? here : "cuenta");
             await loadHistory();
         } catch (error) { $("#authError").textContent = error.message; }
         finally { submit.disabled = false; }
@@ -693,7 +841,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentUser = null;
         canAccessBroker = false;
         updateAuthUI();
-        activateTab("summary");
+        activateTab("inicio");
         await loadHistory();
     }
 
@@ -1055,7 +1203,7 @@ document.addEventListener("DOMContentLoaded", () => {
         $$(".main-nav a[data-nav]").forEach((link) => link.addEventListener("click", (event) => {
             event.preventDefault();
             activateTab(link.dataset.nav);
-            history.replaceState(null, "", `#${link.getAttribute("href").slice(1)}`);
+            history.replaceState(null, "", link.getAttribute("href"));
             window.scrollTo({ top: 0, behavior: "smooth" });
         }));
         $$("[data-goto]").forEach((btn) => btn.addEventListener("click", () => {
@@ -1063,8 +1211,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (btn.dataset.focus) $(btn.dataset.focus)?.scrollIntoView({ behavior: "smooth", block: "center" });
         }));
         if (exists("#runModels")) $("#runModels").addEventListener("click", runModels);
-        const initial = $$(".main-nav a[data-nav]").find((a) => a.getAttribute("href") === location.hash);
-        if (initial && !["brokers", "empresas"].includes(initial.dataset.nav)) activateTab(initial.dataset.nav);
+        window.addEventListener("hashchange", () => { const tab = ROUTES[location.hash]; if (tab) activateTab(tab); });
 
         $$(".period").forEach((button) => button.addEventListener("click", async () => {
             if (!marketData) return;
@@ -1153,8 +1300,8 @@ document.addEventListener("DOMContentLoaded", () => {
         bindEvents();
         applyLanguage();
         await loadSession();
-        if (location.hash === "#brokers" && canAccessBroker) activateTab("brokers");
-        if (location.hash === "#empresas") activateTab("empresas");
+        const route = ROUTES[location.hash] || "inicio";
+        activateTab(route === "brokers" && !canAccessBroker ? "inicio" : route);
         await loadHistory();
         try { await loadMarketData("AAPL", "1D", false); } catch (error) { setStatus(error.message); }
     }

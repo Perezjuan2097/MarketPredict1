@@ -187,10 +187,15 @@ class TestNuevosEndpoints(BaseCase):
 
     def test_index_tiene_navegacion_funcional(self):
         html = self.c.get("/").get_data(as_text=True)
-        for key in ("productos", "community", "mercados", "brokers", "mas"):
+        # Seis módulos académicos; Administración SaaS se muestra solo a administradores.
+        for key in ("inicio", "summary", "predicciones", "cuenta", "empresas", "administracion", "brokers"):
             self.assertIn(f'data-nav="{key}"', html)
-        for panel in ("tabProductos", "tabMercados", "tabBrokers", "tabMas", "modelsPanel"):
+        for panel in ("tabInicio", "tabSummary", "tabPredicciones", "tabCuenta", "tabEmpresas", "tabAdministracion",
+                      "tabProductos", "tabMercados", "tabBrokers", "modelsPanel", "projectionChart", "runResults"):
             self.assertIn(f'id="{panel}"', html)
+        self.assertIn('data-tab="mercados"', html)
+        self.assertIn('id="tabInicio" class="tab-panel active-panel"', html)
+        self.assertNotIn('id="tabMas"', html)
 
 
 class TestNoticias(unittest.TestCase):

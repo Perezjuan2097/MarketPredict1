@@ -1,0 +1,119 @@
+name: Academic evidence
+
+# Ejecuta las pruebas y el recorrido de interfaz de la versión académica y publica la evidencia
+# (capturas, resultados y ejecuciones del motor) en docs/academic/evidencia de la misma rama.
+# No usa secretos ni se conecta a producción: PostgreSQL desechable y datos públicos de Yahoo Finance.
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/academic-marketpredict-demo]
+    paths-ignore:
+      - docs/academic/**
+
+permissions:
+  contents: write
+
+concurrency:
+  group: academic-evidence
+  cancel-in-progress: true
+
+jobs:
+  evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      OUT: docs/academic/evidencia
+      PGURL: postgresql+psycopg2://postgres@127.0.0.1:5432
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements-test.txt playwright==1.49.1
+          python -m playwright install --with-deps chromium
+      - name: Prepare evidence folder
+        run: |
+          rm -rf "$OUT" && mkdir -p "$OUT/pruebas"
+          {
+            echo "fecha_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "commit=$GITHUB_SHA"
+            echo "runner=$(lsb_release -ds)"
+            echo "python=$(python --version)"
+            echo "node=$(node --version)"
+          } > "$OUT/pruebas/entorno.txt"
+      - name: Python test suite (SQLite and PostgreSQL)
+        continue-on-error: true
+        env:
+          TEST_POSTGRES_URL: ${{ env.PGURL }}/postgres
+        run: |
+          start=$(date +%s)
+          python -m pytest -q -rs --junitxml="$OUT/pruebas/pytest.xml" | tee "$OUT/pruebas/pytest.txt"
+          echo "duracion_s=$(( $(date +%s) - start ))" >> "$OUT/pruebas/pytest.txt"
+      - name: JavaScript test suite
+        continue-on-error: true
+        run: node --test tests/*.cjs 2>&1 | tee "$OUT/pruebas/javascript.txt"
+      - name: Start web and worker on a disposable database
+        run: |
+          psql -h 127.0.0.1 -U postgres -c "CREATE DATABASE marketpredict_sprint5_staging"
+          export DATABASE_URL="$PGURL/marketpredict_sprint5_staging"
+          echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
+          export APP_ENV=development SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')" AUTO_CREATE_TABLES=false
+          python -m scripts.staging_bootstrap
+          nohup python -m gunicorn "app:create_app()" --bind 127.0.0.1:8000 --workers 1 --threads 4 --timeout 300 > web.log 2>&1 &
+          nohup python -m scripts.enterprise_worker > worker.log 2>&1 &
+          for i in $(seq 1 60); do curl -fs http://127.0.0.1:8000/api/ready && break; sleep 1; done
+      - name: End-to-end walkthrough with screenshots
+        continue-on-error: true
+        run: python -m scripts.academic_e2e --base http://127.0.0.1:8000 --out "$OUT"
+      - name: Summarize test results
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os, re, xml.etree.ElementTree as ET
+          out = os.environ["OUT"] + "/pruebas"
+          summary = {}
+          if os.path.exists(out + "/pytest.xml"):
+              suite = ET.parse(out + "/pytest.xml").getroot()
+              suite = suite if suite.tag == "testsuite" else suite.find("testsuite")
+              summary["python"] = {k: suite.get(k) for k in ("tests", "failures", "errors", "skipped", "time", "timestamp")}
+              by_file = {}
+              for case in suite.iter("testcase"):
+                  name = case.get("classname", "").split(".")[1] if "." in case.get("classname", "") else case.get("classname")
+                  state = "omitida" if case.find("skipped") is not None else "fallida" if case.find("failure") is not None or case.find("error") is not None else "aprobada"
+                  row = by_file.setdefault(name, {"aprobada": 0, "fallida": 0, "omitida": 0})
+                  row[state] += 1
+              summary["python_por_archivo"] = by_file
+          if os.path.exists(out + "/javascript.txt"):
+              text = open(out + "/javascript.txt").read()
+              summary["javascript"] = {k: float(m.group(1)) for k in ("tests", "pass", "fail", "skipped", "duration_ms")
+                                       for m in [re.search(rf"^# {k} ([\d.]+)", text, re.M)] if m}
+          open(out + "/resumen.json", "w").write(json.dumps(summary, indent=2, ensure_ascii=False))
+          print(json.dumps(summary, indent=2, ensure_ascii=False)[:3000])
+          PY
+          cp web.log "$OUT/pruebas/web.log" || true
+          cp worker.log "$OUT/pruebas/worker.log" || true
+      - name: Publish evidence to the branch
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$OUT"
+          git commit -m "docs: academic evidence from run $GITHUB_RUN_ID [skip ci]" || exit 0
+          git push origin HEAD:${GITHUB_REF_NAME}

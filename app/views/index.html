@@ -11,15 +11,6 @@
 <header class="topbar">
     <div class="topbar-left">
         <a href="/" class="brand"><span class="brand-mark">M</span><span>MarketPredict</span></a>
-        <nav class="main-nav">
-            <a href="#productos" data-nav="productos" data-i18n="products">Productos</a>
-            <a href="#comunidad" data-nav="community" data-i18n="community">Comunidad</a>
-            <a href="#mercados" data-nav="mercados" data-i18n="markets">Mercados</a>
-            <a href="#resultados" data-nav="resultados" data-i18n="results">Resultados</a>
-            <a href="#brokers" data-nav="brokers" data-i18n="brokers" hidden>Brókers</a>
-            <a href="#empresas" data-nav="empresas">Empresas</a>
-            <a href="#mas" data-nav="mas" data-i18n="more">Más</a>
-        </nav>
     </div>
     <div class="topbar-center">
         <div class="global-search search-shell">
@@ -37,7 +28,7 @@
             <div id="accountMenu" class="account-menu" hidden>
                 <button id="accountMenuProfile" type="button" data-i18n="myAccount">Mi cuenta</button>
                 <a id="accountMenuAdmin" href="{{ url_for('admin.panel') }}" data-i18n="administration" hidden>Administración</a>
-                <button id="accountMenuEnterprise" type="button">Empresas</button>
+                <button id="accountMenuEnterprise" type="button">Datos empresariales</button>
                 <button id="accountMenuLogout" type="button" data-i18n="signOut">Cerrar sesión</button>
             </div>
             <div id="accountMenuError" class="account-menu-error" role="alert"></div>
@@ -45,7 +36,49 @@
     </div>
 </header>
 
+<nav class="main-nav module-bar" aria-label="Módulos de MarketPredict">
+    <a href="#inicio" data-nav="inicio"><span class="module-index">1</span>Inicio</a>
+    <a href="#analisis" data-nav="summary"><span class="module-index">2</span>Análisis de mercado</a>
+    <a href="#predicciones" data-nav="predicciones"><span class="module-index">3</span>Predicciones</a>
+    <a href="#mis-predicciones" data-nav="cuenta"><span class="module-index">4</span>Mis predicciones</a>
+    <a href="#empresas" data-nav="empresas"><span class="module-index">5</span>Datos empresariales</a>
+    <a href="#administracion" data-nav="administracion" hidden><span class="module-index">6</span>Administración SaaS</a>
+    <a href="#brokers" data-nav="brokers" hidden>Brókers</a>
+</nav>
+
 <main>
+
+    <section id="tabInicio" class="tab-panel active-panel" aria-labelledby="homeTitle">
+        <div class="home-hero">
+            <div>
+                <span class="eyebrow">MÓDULO 1 · INICIO</span>
+                <h1 id="homeTitle">MarketPredict</h1>
+                <p class="home-lead">Sistema de análisis y predicción del comportamiento de activos financieros. Consulta datos históricos, revisa indicadores, compara modelos predictivos validados en el tiempo y guarda los resultados emitidos por el sistema.</p>
+                <p class="home-disclaimer" role="note">Los pronósticos son estimaciones estadísticas con incertidumbre. No garantizan rentabilidad ni sustituyen el criterio de un profesional.</p>
+            </div>
+            <div class="home-auth" id="homeAuth" aria-live="polite"><div class="loading">Comprobando sesión...</div></div>
+        </div>
+
+        <div class="home-grid">
+            <button type="button" class="home-card" data-goto="summary"><span class="module-index">2</span><strong>Análisis de mercado</strong><small>Busca un activo, revisa su histórico en nueve periodos, indicadores, tendencia, noticias, datos técnicos y estacionalidad.</small></button>
+            <button type="button" class="home-card" data-goto="predicciones"><span class="module-index">3</span><strong>Predicciones</strong><small>Ejecuta los modelos, compara resultados contra referencias simples y consulta intervalos y escenarios.</small></button>
+            <button type="button" class="home-card" data-goto="cuenta"><span class="module-index">4</span><strong>Mis predicciones</strong><small>Consulta lo que guardaste: activo, fecha, horizonte, modelo y resultado cuando vence.</small></button>
+            <button type="button" class="home-card" data-goto="empresas"><span class="module-index">5</span><strong>Datos empresariales</strong><small>Organizaciones, datasets CSV/XLSX versionados y pronósticos de ventas aislados por empresa.</small></button>
+            <button type="button" class="home-card" data-goto="administracion" data-admin-only hidden><span class="module-index">6</span><strong>Administración SaaS</strong><small>Planes, cuotas, consumo, cola de trabajos y estado de los workers. Solo administradores.</small></button>
+            <button type="button" class="home-card" data-goto="productos"><span class="module-index">i</span><strong>Estado de los módulos</strong><small>Qué está disponible, qué es parcial y qué queda pendiente.</small></button>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="dashboard-panel">
+                <div class="panel-heading"><div><span class="panel-kicker">MERCADOS DE REFERENCIA</span><h2>Indicadores generales</h2><p class="panel-description">Último cierre consultado a Yahoo Finance. Si la fuente no responde se informa el error; nunca se muestran valores inventados.</p></div></div>
+                <div id="homeMarkets"><div class="loading">Consultando mercados...</div></div>
+            </div>
+            <div class="dashboard-panel">
+                <div class="panel-heading"><div><span class="panel-kicker">PLATAFORMA</span><h2>Estado del sistema</h2><p class="panel-description">Información que entrega el propio servidor en este momento.</p></div></div>
+                <div id="homeStatus"><div class="loading">Consultando estado...</div></div>
+            </div>
+        </div>
+    </section>
     <section class="asset-header">
         <div class="asset-identity">
             <div class="asset-badge" id="assetBadge">A</div>
@@ -74,6 +107,7 @@
         <button class="context-tab" type="button" data-tab="technical" data-i18n="technical">Datos técnicos</button>
         <button class="context-tab" type="button" data-tab="seasonal" data-i18n="seasonal">Estacionales</button>
         <button class="context-tab" type="button" data-tab="components" data-i18n="components">Componentes</button>
+        <button class="context-tab" type="button" data-tab="mercados">Mercados</button>
         <button class="context-tab" type="button" data-tab="options" data-i18n="options">Opciones</button>
     </section>
 
@@ -85,9 +119,9 @@
         </form>
     </section>
 
-    <div id="status" class="status"></div>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
 
-    <section id="tabSummary" class="tab-panel active-panel">
+    <section id="tabSummary" class="tab-panel">
         <section id="results">
             <section class="metric-grid" id="cards"></section>
 
@@ -122,39 +156,7 @@
                 <div class="period-performance" id="periodPerformance"></div>
             </section>
 
-            <section class="dashboard-grid">
-                <div class="dashboard-panel">
-                    <div class="panel-heading"><div><span class="panel-kicker">MODELO</span><h2 data-i18n="predictions">Predicciones</h2></div><span class="model-version" id="modelVersion">—</span></div>
-                    <div id="predictions"><div class="empty-state">Ejecuta un análisis para generar predicciones.</div></div>
-                </div>
-                <div class="dashboard-panel">
-                    <div class="panel-heading"><div><span class="panel-kicker">SEÑAL</span><h2 data-i18n="sellAlert">Alerta de venta</h2></div></div>
-                    <div id="alert"><div class="empty-state">Ejecuta un análisis para consultar la señal.</div></div>
-                    <p class="note" data-i18n="alertNote">La alerta es una señal de análisis, no una orden financiera.</p>
-                </div>
-            </section>
 
-
-            <section class="dashboard-panel" id="modelsPanel">
-                <div class="panel-heading">
-                    <div><span class="panel-kicker">MULTIMODELO</span><h2>Consenso de modelos</h2>
-                    <p class="panel-description">Compara modelos validados cronológicamente (walk-forward) contra referencias simples. Estimaciones estadísticas, no certezas.</p></div>
-                    <div class="tracking-actions">
-                        <select id="modelsHorizon" aria-label="Horizonte en sesiones"><option value="1">1 sesión</option><option value="5" selected>5 sesiones</option><option value="10">10 sesiones</option><option value="20">20 sesiones</option></select>
-                        <button id="runModels" class="primary-button" type="button">Ejecutar modelos</button>
-                        <button id="saveModels" class="secondary-button" type="button">Guardar predicciones</button>
-                    </div>
-                </div>
-                <div id="modelsContent"><div class="empty-state">Pulsa “Ejecutar modelos” para calcular el consenso del activo (puede tardar unos segundos).</div></div>
-            </section>
-
-            <section class="dashboard-panel tracking-panel">
-                <div class="panel-heading">
-                    <div><span class="panel-kicker">REGISTRO</span><h2 data-i18n="tracking">Seguimiento</h2><p class="panel-description" data-i18n="trackingDesc">Guarda y consulta las predicciones generadas por el sistema.</p></div>
-                    <div class="tracking-actions"><button id="save" class="secondary-button" type="button" data-i18n="save">Guardar predicción</button><button id="report" class="primary-button" type="button" data-i18n="report">Generar informe</button></div>
-                </div>
-                <div id="history"></div>
-            </section>
         </section>
     </section>
 
@@ -230,19 +232,6 @@
         </div>
     </section>
 
-    <section id="tabResultados" class="tab-panel">
-        <div class="dashboard-panel">
-            <div class="panel-heading"><div><span class="panel-kicker">VALIDACIÓN</span><h2>¿Funcionan los modelos?</h2>
-            <p class="panel-description">Ejecuta todo el motor sobre activos de distintos mercados (acciones, índices, divisas, oro y criptomonedas) y muestra, sin maquillaje, dónde los modelos le ganan a una regla simple y dónde no. Cada activo se entrena y prueba con datos que el modelo no vio.</p></div>
-                <div class="tracking-actions">
-                    <select id="resultsHorizon" aria-label="Horizonte"><option value="1">1 sesión</option><option value="5" selected>5 sesiones</option><option value="20">20 sesiones</option></select>
-                    <button id="runResults" class="primary-button" type="button">Calcular resultados</button>
-                </div>
-            </div>
-            <div id="resultsSummary"></div>
-            <div id="resultsContent"><div class="empty-state">Pulsa “Calcular resultados”. La primera vez tarda unos minutos (se entrenan decenas de modelos); después queda en caché 30 minutos.</div></div>
-        </div>
-    </section>
 
     <section id="tabMercados" class="tab-panel">
         <div class="dashboard-panel">
@@ -259,24 +248,68 @@
         </div>
     </section>
 
-    <section id="tabMas" class="tab-panel">
+
+
+    <section id="tabPredicciones" class="tab-panel" aria-labelledby="predictionsTitle">
+        <div class="module-intro">
+            <span class="panel-kicker">MÓDULO 3</span>
+            <h2 id="predictionsTitle">Predicciones</h2>
+            <p class="panel-description">Elige el activo en la barra de análisis, define el horizonte y ejecuta los modelos. Cada resultado es una estimación estadística validada con datos que el modelo no vio; no es una certeza ni una recomendación de inversión.</p>
+            <div class="limits-callout" role="note"><strong>Limitaciones.</strong> Los modelos no funcionan igual con todos los activos: algunos no tienen datos suficientes o un calendario verificado, y en la validación histórica los modelos de precio no superaron de forma consistente a una referencia simple. Revisa siempre la confiabilidad que se informa en cada resultado.</div>
+        </div>
+            <section class="dashboard-panel" id="modelsPanel">
+                <div class="panel-heading">
+                    <div><span class="panel-kicker">MULTIMODELO</span><h2>Consenso de modelos</h2>
+                    <p class="panel-description">Compara modelos validados cronológicamente (walk-forward) contra referencias simples. Estimaciones estadísticas, no certezas.</p></div>
+                    <div class="tracking-actions">
+                        <select id="modelsHorizon" aria-label="Horizonte en sesiones"><option value="1">1 sesión</option><option value="5" selected>5 sesiones</option><option value="10">10 sesiones</option><option value="20">20 sesiones</option></select>
+                        <button id="runModels" class="primary-button" type="button">Ejecutar modelos</button>
+                        <button id="saveModels" class="secondary-button" type="button">Guardar predicciones</button>
+                    </div>
+                </div>
+                                <div id="projectionPanel" class="projection-panel" hidden>
+                    <div class="panel-heading"><div><h3>Histórico y proyección</h3>
+                    <p class="panel-description" id="projectionCaption">Cierres diarios de los últimos 6 meses y el rango de escenarios del horizonte elegido.</p></div></div>
+                    <div class="chart-wrapper projection-wrapper"><canvas id="projectionChart" aria-label="Gráfico histórico y proyectado"></canvas></div>
+                </div>
+                <div id="modelsContent"><div class="empty-state">Pulsa “Ejecutar modelos” para calcular el consenso del activo (puede tardar unos segundos).</div></div>
+            </section>
+            <section class="dashboard-grid">
+                <div class="dashboard-panel">
+                    <div class="panel-heading"><div><span class="panel-kicker">MODELO</span><h2 data-i18n="predictions">Predicciones</h2></div><span class="model-version" id="modelVersion">—</span></div>
+                    <div id="predictions"><div class="empty-state">Ejecuta un análisis para generar predicciones.</div></div>
+                </div>
+                <div class="dashboard-panel">
+                    <div class="panel-heading"><div><span class="panel-kicker">SEÑAL</span><h2 data-i18n="sellAlert">Alerta de venta</h2></div></div>
+                    <div id="alert"><div class="empty-state">Ejecuta un análisis para consultar la señal.</div></div>
+                    <p class="note" data-i18n="alertNote">La alerta es una señal de análisis, no una orden financiera.</p>
+                </div>
+            </section>
+            <section class="dashboard-panel tracking-panel">
+                <div class="panel-heading">
+                    <div><span class="panel-kicker">REGISTRO</span><h2 data-i18n="tracking">Seguimiento</h2><p class="panel-description" data-i18n="trackingDesc">Guarda y consulta las predicciones generadas por el sistema.</p></div>
+                    <div class="tracking-actions"><button id="save" class="secondary-button" type="button" data-i18n="save">Guardar predicción</button><button id="report" class="primary-button" type="button" data-i18n="report">Generar informe</button></div>
+                </div>
+                <div id="history"></div>
+            </section>
         <div class="dashboard-panel">
-            <div class="panel-heading"><div><span class="panel-kicker">MÁS</span><h2>Más opciones</h2></div></div>
-            <div class="vote-actions">
-                <button class="primary-button" type="button" data-goto="summary" data-focus="#report">Generar informe del activo</button>
-                <button class="secondary-button" type="button" data-goto="community">Ir a la comunidad</button>
-                <button class="secondary-button" type="button" data-goto="cuenta">Mi cuenta</button>
+            <div class="panel-heading"><div><span class="panel-kicker">VALIDACIÓN</span><h2>¿Funcionan los modelos?</h2>
+            <p class="panel-description">Ejecuta todo el motor sobre activos de distintos mercados (acciones, índices, divisas, oro y criptomonedas) y muestra, sin maquillaje, dónde los modelos le ganan a una regla simple y dónde no. Cada activo se entrena y prueba con datos que el modelo no vio.</p></div>
+                <div class="tracking-actions">
+                    <select id="resultsHorizon" aria-label="Horizonte"><option value="1">1 sesión</option><option value="5" selected>5 sesiones</option><option value="20">20 sesiones</option></select>
+                    <button id="runResults" class="primary-button" type="button">Calcular resultados</button>
+                </div>
             </div>
-            <p class="panel-description" style="margin-top:16px">Las predicciones son estimaciones estadísticas y no constituyen asesoría financiera.</p>
+            <div id="resultsSummary"></div>
+            <div id="resultsContent"><div class="empty-state">Pulsa “Calcular resultados”. La primera vez tarda unos minutos (se entrenan decenas de modelos); después queda en caché 30 minutos.</div></div>
         </div>
     </section>
-
 
     <section id="tabCuenta" class="tab-panel">
         <div class="dashboard-panel">
             <div class="panel-heading">
-                <div><span class="panel-kicker">MI CUENTA</span><h2 id="accountTitle" tabindex="-1">Mi cuenta</h2>
-                <p class="panel-description">Tus predicciones y tu portafolio simulado quedan guardados en tu cuenta. Dinero virtual: no hay conexión con ningún bróker.</p></div>
+                <div><span class="panel-kicker">MÓDULO 4</span><h2 id="accountTitle" tabindex="-1">Mis predicciones</h2>
+                <p class="panel-description">Predicciones guardadas en tu cuenta. Las que provienen del módulo Predicciones se guardan exactamente como el sistema las emitió, sin recalcularlas. El portafolio simulado usa dinero virtual.</p></div>
                 <button id="logoutButton" class="secondary-button" type="button" hidden>Cerrar sesión</button>
             </div>
             <div id="accountLoggedOut" class="empty-state">Inicia sesión o crea una cuenta para guardar tus predicciones y operar en el simulador.<br><br><button id="accountLoginBtn" class="primary-button" type="button">Iniciar sesión / Registrarme</button></div>
@@ -296,7 +329,7 @@
                 <div class="vote-actions"><button id="evaluateBtn" class="secondary-button" type="button">Actualizar resultados</button></div>
                 <div id="predList" class="table-scroll"></div>
 
-                <h3 style="margin-top:28px">Mi portafolio simulado</h3>
+                <h3 style="margin-top:28px">Portafolio simulado (complementario)</h3>
                 <form id="pfCreateForm" class="account-form" autocomplete="off">
                     <label>Nombre<input name="name" maxlength="80" required placeholder="Principal"></label>
                     <label>Capital inicial (virtual)<input name="initial_cash" type="number" step="any" min="1" required value="10000"></label>
@@ -322,7 +355,7 @@
     </section>
 
     <section id="tabEmpresas" class="tab-panel" aria-labelledby="enterpriseTitle">
-        <div class="panel-heading"><div><span class="panel-kicker">ESPACIO PRIVADO</span><h2 id="enterpriseTitle">Empresas</h2></div></div>
+        <div class="panel-heading"><div><span class="panel-kicker">MÓDULO 5 · ESPACIO PRIVADO</span><h2 id="enterpriseTitle">Datos empresariales</h2><p class="panel-description">Cada organización ve solo sus datos. Para demostraciones usa datos sintéticos marcados DEMO, nunca información privada de empresas reales.</p></div></div>
         <div id="enterpriseSignIn" class="empty-state">Inicia sesión para administrar tus organizaciones.
             <button id="enterpriseLogin" type="button" class="secondary-button">Iniciar sesión</button>
         </div>
@@ -357,7 +390,7 @@
                     <button id="enterpriseMoreMembers" type="button" class="secondary-button" hidden>Cargar más miembros</button>
                 </section>
                 <section id="enterpriseDatasets" aria-labelledby="datasetsTitle" hidden>
-                    <h4 id="datasetsTitle">Datos empresariales</h4>
+                    <h4 id="datasetsTitle">Datasets</h4>
                     <p id="datasetMessage" role="status"></p>
                     <form id="datasetCreate" class="account-form">
                         <label>Nombre del dataset<input name="name" maxlength="100" required></label>
@@ -450,6 +483,15 @@
                 </section>
             </div>
         </div>
+    </section>
+
+    <section id="tabAdministracion" class="tab-panel" aria-labelledby="adminTitle">
+        <div class="module-intro">
+            <span class="panel-kicker">MÓDULO 6 · COMPLEMENTARIO</span>
+            <h2 id="adminTitle">Administración SaaS</h2>
+            <p class="panel-description">Vista operativa para administradores globales. Muestra solo metadatos: el administrador no accede a los datos privados de las empresas sin ser miembro de ellas.</p>
+        </div>
+        <div id="adminContent"><div class="empty-state">Inicia sesión con una cuenta administradora.</div></div>
     </section>
 
     <section id="tabOptions" class="tab-panel">
