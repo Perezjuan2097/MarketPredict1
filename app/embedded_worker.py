@@ -90,6 +90,11 @@ def run_job(repo, job, *, worker_id, timeout=120, renew_every=5.0, poll=1.0, com
     return outcome
 
 
+def _delayed_loop(concurrency, timeout, delay=3.0):
+    time.sleep(delay)  # deja terminar el arranque del servidor antes de tocar la base
+    _loop(concurrency, timeout)
+
+
 def new_worker_id():
     """Identificador del latido: cabe en enterprise_worker_heartbeats.id (40 caracteres)."""
     return "emb-" + uuid4().hex
@@ -121,6 +126,29 @@ def _loop(concurrency, timeout):
             time.sleep(5)
 
 
+def _warm_up(app):
+    """Carga en el hilo principal todo lo que el worker y las solicitudes usarán.
+
+    SQLAlchemy y la aplicación importan módulos de forma diferida; si el hilo del worker y la primera
+    solicitud los cargan a la vez, una importación puede quedar a medias (ImportError persistente en
+    producción). Por eso el repositorio, el ORM, la reflexión y las tareas se inicializan aquí, antes
+    de crear el hilo.
+    """
+    try:
+        import app.services.automation_tasks  # noqa: F401
+        import app.services.enterprise_forecast  # noqa: F401
+        from sqlalchemy import inspect
+        from sqlalchemy.orm import configure_mappers
+        from app.db import get_engine
+        from app.repositories.factory import get_repo
+        configure_mappers()
+        get_repo(app)
+        with get_engine().connect() as connection:
+            inspect(connection).get_table_names()
+    except Exception as exc:  # noqa: BLE001 - el arranque del servidor no debe depender de esto
+        log.warning("embedded_worker_warm_up_failed type=%s", type(exc).__name__)
+
+
 def start(app):
     """Inicia el hilo una sola vez por proceso, solo si está activado y hay base de datos SQL."""
     global _started
@@ -134,7 +162,8 @@ def start(app):
         if _started:
             return False
         _started = True
+    _warm_up(app)
     concurrency = int(os.getenv("ENTERPRISE_FORECAST_CONCURRENCY", "1"))
     timeout = int(os.getenv("ENTERPRISE_WORKER_WALL_SECONDS", "120"))
-    threading.Thread(target=_loop, args=(concurrency, timeout), name="embedded-enterprise-worker", daemon=True).start()
+    threading.Thread(target=_delayed_loop, args=(concurrency, timeout), name="embedded-enterprise-worker", daemon=True).start()
     return True
