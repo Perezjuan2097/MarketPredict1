@@ -1,6 +1,6 @@
 name: Production smoke
 
-# Se ejecuta al modificar este archivo. Comprobación de solo lectura de la instancia pública (sin secretos, sin crear cuentas ni datos).
+# Se ejecuta al modificar este archivo (última verificación: despliegue con warm-up). Comprobación de solo lectura de la instancia pública (sin secretos, sin crear cuentas ni datos).
 on:
   workflow_dispatch:
   push:
