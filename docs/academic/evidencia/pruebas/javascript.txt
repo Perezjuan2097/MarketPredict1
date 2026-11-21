@@ -2,121 +2,121 @@ TAP version 13
 # Subtest: the academic interface exposes exactly six numbered modules in order
 ok 1 - the academic interface exposes exactly six numbered modules in order
   ---
-  duration_ms: 1.612277
+  duration_ms: 1.634185
   type: 'test'
   ...
 # Subtest: every tab panel belongs to one module and every route opens an existing panel
 ok 2 - every tab panel belongs to one module and every route opens an existing panel
   ---
-  duration_ms: 0.972774
+  duration_ms: 0.948146
   type: 'test'
   ...
 # Subtest: statistical disclaimers are visible in Inicio and Predicciones
 ok 3 - statistical disclaimers are visible in Inicio and Predicciones
   ---
-  duration_ms: 0.199704
+  duration_ms: 0.209341
   type: 'test'
   ...
 # Subtest: the analyze request sends the CSRF header and does not spread an undeclared variable
 ok 4 - the analyze request sends the CSRF header and does not spread an undeclared variable
   ---
-  duration_ms: 1.232385
+  duration_ms: 0.980938
   type: 'test'
   ...
 # Subtest: the template uses native buttons and a hidden disclosure with an alert
 ok 5 - the template uses native buttons and a hidden disclosure with an alert
   ---
-  duration_ms: 2.3155
+  duration_ms: 3.377563
   type: 'test'
   ...
 # Subtest: responsive header reserves space for account controls without hiding them
 ok 6 - responsive header reserves space for account controls without hiding them
   ---
-  duration_ms: 0.525617
+  duration_ms: 0.90748
   type: 'test'
   ...
 # Subtest: the local Chart.js bundle keeps the runtime version and has no source map reference
 ok 7 - the local Chart.js bundle keeps the runtime version and has no source map reference
   ---
-  duration_ms: 11.65958
+  duration_ms: 20.421969
   type: 'test'
   ...
 # Subtest: authenticated disclosure toggles and closes with Escape, outside click and My account
 ok 8 - authenticated disclosure toggles and closes with Escape, outside click and My account
   ---
-  duration_ms: 8.685727
+  duration_ms: 17.539277
   type: 'test'
   ...
 # Subtest: logout posts CSRF, clears UI on success and preserves it on failure
 ok 9 - logout posts CSRF, clears UI on success and preserves it on failure
   ---
-  duration_ms: 2.228809
+  duration_ms: 3.745328
   type: 'test'
   ...
 # Subtest: broker deep link is fail-closed and anonymous account opens login
 ok 10 - broker deep link is fail-closed and anonymous account opens login
   ---
-  duration_ms: 4.008408
+  duration_ms: 10.209593
   type: 'test'
   ...
 # Subtest: only an account administrator sees the administration link
 ok 11 - only an account administrator sees the administration link
   ---
-  duration_ms: 2.610018
+  duration_ms: 6.201423
   type: 'test'
   ...
 # Subtest: model saving sends the displayed token and requires a matching horizon
 ok 12 - model saving sends the displayed token and requires a matching horizon
   ---
-  duration_ms: 2.197613
+  duration_ms: 4.43344
   type: 'test'
   ...
 # Subtest: enterprise deep link loads after authentication and opens the newly created organization
 ok 13 - enterprise deep link loads after authentication and opens the newly created organization
   ---
-  duration_ms: 3.006251
+  duration_ms: 6.244444
   type: 'test'
   ...
 # Subtest: the unauthenticated enterprise deep link shows sign-in without loading tenant data
 ok 14 - the unauthenticated enterprise deep link shows sign-in without loading tenant data
   ---
-  duration_ms: 1.267816
+  duration_ms: 3.665409
   type: 'test'
   ...
 # Subtest: commercial panel displays count and worker metadata without editing in recovery mode
 ok 15 - commercial panel displays count and worker metadata without editing in recovery mode
   ---
-  duration_ms: 4.615423
+  duration_ms: 8.892126
   type: 'test'
   ...
 # Subtest: monitor ignores late results from a previous organization and exposes private report URLs
 ok 16 - monitor ignores late results from a previous organization and exposes private report URLs
   ---
-  duration_ms: 5.246378
+  duration_ms: 8.528559
   type: 'test'
   ...
 # Subtest: dashboard loads actual metrics and records scoped to the selected version and tenant
 ok 17 - dashboard loads actual metrics and records scoped to the selected version and tenant
   ---
-  duration_ms: 3.367224
+  duration_ms: 8.540612
   type: 'test'
   ...
 # Subtest: a late response from the previous organization never replaces the active dataset list
 ok 18 - a late response from the previous organization never replaces the active dataset list
   ---
-  duration_ms: 1.392593
+  duration_ms: 2.118416
   type: 'test'
   ...
 # Subtest: forecasts submit a fixed dataset version and render real metrics separately from scenarios
 ok 19 - forecasts submit a fixed dataset version and render real metrics separately from scenarios
   ---
-  duration_ms: 462.911304
+  duration_ms: 34.625783
   type: 'test'
   ...
 # Subtest: viewers only read and stale tenant history is ignored
 ok 20 - viewers only read and stale tenant history is ignored
   ---
-  duration_ms: 0.781154
+  duration_ms: 0.951092
   type: 'test'
   ...
 1..20
@@ -127,4 +127,4 @@ ok 20 - viewers only read and stale tenant history is ignored
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 660.663135
+# duration_ms 242.704419

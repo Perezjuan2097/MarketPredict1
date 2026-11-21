@@ -1,28 +1,18 @@
-[2026-11-21 04:22:00 +0000] [4208] [INFO] Starting gunicorn 27.0.1
-[2026-11-21 04:22:00 +0000] [4208] [INFO] Listening at: http://127.0.0.1:8000 (4208)
-[2026-11-21 04:22:00 +0000] [4208] [INFO] Using worker: gthread
-[2026-11-21 04:22:00 +0000] [4213] [INFO] Booting worker with pid: 4213
-[2026-11-21 04:22:00 +0000] [4208] [INFO] Control socket listening at /run/user/1001/gunicorn.ctl
-{"time": "2026-11-21T04:22:01.652102+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "2c851a102e044d34bd80f1145542a859", "endpoint": "commercial.ready", "status": 200, "duration_ms": 82.05}
-{"time": "2026-11-21T04:22:02.013437+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "95bddf28f4d8411a889fc2bce4c12f4e", "endpoint": "main.index", "status": 200, "duration_ms": 6.19}
-{"time": "2026-11-21T04:22:02.028149+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "74a7be97b5aa4c9c9ceb20625b40e82b", "endpoint": "static", "status": 200, "duration_ms": 0.32}
-{"time": "2026-11-21T04:22:02.029227+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "39c7c1138d8f419ea54ac91f18c490dc", "endpoint": "static", "status": 200, "duration_ms": 0.89}
-{"time": "2026-11-21T04:22:02.030623+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "f8b553b497b244beab560082c9133ee3", "endpoint": "static", "status": 200, "duration_ms": 0.3}
-{"time": "2026-11-21T04:22:02.031266+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "b07faab733ca4fb880011b02f21cb043", "endpoint": "static", "status": 200, "duration_ms": 6.88}
-{"time": "2026-11-21T04:22:02.034918+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "ca6c530fb9634adaaf703b5c8615d1ed", "endpoint": "static", "status": 200, "duration_ms": 12.29}
-{"time": "2026-11-21T04:22:02.036035+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "106c8f9cab664926a28bc606ec254079", "endpoint": "static", "status": 200, "duration_ms": 0.19}
-{"time": "2026-11-21T04:22:02.319716+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "b247abde746d43d6abcf493206e8611c", "endpoint": "account.me", "status": 200, "duration_ms": 38.01}
-{"time": "2026-11-21T04:22:02.351518+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "60417d9b599e49cbbf77509aec7bca18", "endpoint": "main.health", "status": 200, "duration_ms": 22.78}
-/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
-See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
-  quotes.sort_index(inplace=True)
-/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
-See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
-  quotes.sort_index(inplace=True)
-/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
-See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
-  quotes.sort_index(inplace=True)
-{"time": "2026-11-21T04:22:02.904676+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "20ad1eb244c74c07a446eb68ec651d6b", "endpoint": "main.market_data", "status": 200, "duration_ms": 574.74}
+[2026-11-21 04:36:44 +0000] [4541] [INFO] Starting gunicorn 27.0.1
+[2026-11-21 04:36:44 +0000] [4541] [INFO] Listening at: http://127.0.0.1:8000 (4541)
+[2026-11-21 04:36:44 +0000] [4541] [INFO] Using worker: gthread
+[2026-11-21 04:36:44 +0000] [4546] [INFO] Booting worker with pid: 4546
+[2026-11-21 04:36:44 +0000] [4541] [INFO] Control socket listening at /run/user/1001/gunicorn.ctl
+{"time": "2026-11-21T04:36:46.459078+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "5ca5f90b95744cdabba0cbfa876f945d", "endpoint": "commercial.ready", "status": 200, "duration_ms": 110.0}
+{"time": "2026-11-21T04:36:46.962868+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "61e5b0ff953d486597c51c193e159808", "endpoint": "main.index", "status": 200, "duration_ms": 8.36}
+{"time": "2026-11-21T04:36:46.990390+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "83ad80b972084cf6ad9a1938157e9b2c", "endpoint": "static", "status": 200, "duration_ms": 16.74}
+{"time": "2026-11-21T04:36:46.992015+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "212d878090564a07bdff60abc145698e", "endpoint": "static", "status": 200, "duration_ms": 17.96}
+{"time": "2026-11-21T04:36:46.999628+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "b8cd4ef1d14441c0829211f27a31cf3d", "endpoint": "static", "status": 200, "duration_ms": 14.9}
+{"time": "2026-11-21T04:36:47.000979+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "92b5323f30844233a3b76494752cef86", "endpoint": "static", "status": 200, "duration_ms": 15.62}
+{"time": "2026-11-21T04:36:47.001532+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "5724d021cb4343dab4e38fef4fc14b88", "endpoint": "static", "status": 200, "duration_ms": 0.91}
+{"time": "2026-11-21T04:36:47.004313+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "e7d593f4b9224c06bd5e336758c91a14", "endpoint": "static", "status": 200, "duration_ms": 0.47}
+{"time": "2026-11-21T04:36:47.157202+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "5c455d57af64440e8553568e57297e8d", "endpoint": "account.me", "status": 200, "duration_ms": 63.66}
+{"time": "2026-11-21T04:36:47.190189+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "fec4f148116c46a2a160988fe6561331", "endpoint": "main.health", "status": 200, "duration_ms": 21.54}
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   quotes.sort_index(inplace=True)
@@ -35,6 +25,7 @@ See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace 
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   quotes.sort_index(inplace=True)
+{"time": "2026-11-21T04:36:51.384674+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "cf3aa1ce69ba40edaf15a18203e47f35", "endpoint": "main.market_data", "status": 200, "duration_ms": 4215.01}
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   quotes.sort_index(inplace=True)
@@ -44,27 +35,27 @@ See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace 
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   quotes.sort_index(inplace=True)
-{"time": "2026-11-21T04:22:03.701996+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "26a7d65f177947f890ab67e2623f3b22", "endpoint": "main.markets", "status": 200, "duration_ms": 1345.94}
-{"time": "2026-11-21T04:22:03.955966+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "aa77e37832a34098b6dfc3f4866a75ed", "endpoint": "main.health", "status": 200, "duration_ms": 9.85}
-{"time": "2026-11-21T04:22:04.114532+00:00", "level": "INFO", "logger": "marketpredict", "message": "security_event=account_registered endpoint=account.register actor_id=1 target_id=None", "request_id": "b4cd8b48649e4197b06ab7a707e96e00"}
-{"time": "2026-11-21T04:22:04.117170+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "b4cd8b48649e4197b06ab7a707e96e00", "endpoint": "account.register", "status": 201, "duration_ms": 87.33}
-{"time": "2026-11-21T04:22:04.135543+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "2ea18a4a948e4037aafd40ff278e4a42", "endpoint": "main.history", "status": 200, "duration_ms": 10.91}
-{"time": "2026-11-21T04:22:04.139250+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "eeb14b7746394ae4a3ae27701c969a13", "endpoint": "organizations.list_own", "status": 200, "duration_ms": 15.29}
-{"time": "2026-11-21T04:22:04.141058+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "a1f17ff89cb049c89b8444e455ccc0d5", "endpoint": "account.list_predictions", "status": 200, "duration_ms": 19.02}
-{"time": "2026-11-21T04:22:04.143555+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "c85458f8d81c4beba86194bab48760b6", "endpoint": "main.health", "status": 200, "duration_ms": 22.14}
-{"time": "2026-11-21T04:22:04.169924+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "786948a2add3413daacaa4215de2a5d0", "endpoint": "account.list_predictions", "status": 200, "duration_ms": 6.69}
-{"time": "2026-11-21T04:22:04.170485+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "de7e5898ba824381a6b930e85daa5400", "endpoint": "organizations.list_own", "status": 200, "duration_ms": 6.35}
-{"time": "2026-11-21T04:22:04.178260+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "e08f826356d64a03b9b6f068cedafda0", "endpoint": "main.health", "status": 200, "duration_ms": 13.5}
-{"time": "2026-11-21T04:22:05.448089+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "760d175e7fdc4572a25f1b6080ba9720", "endpoint": "main.search_assets", "status": 200, "duration_ms": 67.32}
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   quotes.sort_index(inplace=True)
-/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:585: Pandas4Warning: The inplace keyword in DataFrame.set_index is deprecated and will be removed in a future version (PDEP-8).
+/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
-  dividends.set_index("date", inplace=True)
-/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:587: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
+  quotes.sort_index(inplace=True)
+/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
-  dividends.sort_index(inplace=True)
+  quotes.sort_index(inplace=True)
+{"time": "2026-11-21T04:36:54.667804+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "0022c040db9344d9a17f7e8970948fba", "endpoint": "main.markets", "status": 200, "duration_ms": 7470.35}
+{"time": "2026-11-21T04:36:55.021993+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "e0835162a12e4ddebcc049371c2492d2", "endpoint": "main.health", "status": 200, "duration_ms": 13.35}
+{"time": "2026-11-21T04:36:55.243899+00:00", "level": "INFO", "logger": "marketpredict", "message": "security_event=account_registered endpoint=account.register actor_id=1 target_id=None", "request_id": "51507aeaac1c4270b448d1dba2980c9b"}
+{"time": "2026-11-21T04:36:55.247956+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "51507aeaac1c4270b448d1dba2980c9b", "endpoint": "account.register", "status": 201, "duration_ms": 131.91}
+{"time": "2026-11-21T04:36:55.272651+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "490d899abcaf416eb9969374fab3a41a", "endpoint": "account.list_predictions", "status": 200, "duration_ms": 18.87}
+{"time": "2026-11-21T04:36:55.278837+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "3e2402bf56f247a0a945db1cde06d859", "endpoint": "main.history", "status": 200, "duration_ms": 22.01}
+{"time": "2026-11-21T04:36:55.280529+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "e8caa57f80684abc80529c5bb20e7f5c", "endpoint": "organizations.list_own", "status": 200, "duration_ms": 26.0}
+{"time": "2026-11-21T04:36:55.286820+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "38bf01269d7a4c2880894fa318920838", "endpoint": "main.health", "status": 200, "duration_ms": 29.44}
+{"time": "2026-11-21T04:36:55.313255+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "5145d6fb9fc64e68ae46b8ea2f5dc4ac", "endpoint": "account.list_predictions", "status": 200, "duration_ms": 11.61}
+{"time": "2026-11-21T04:36:55.315352+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "36915d58257044c594ae22f5dd080778", "endpoint": "organizations.list_own", "status": 200, "duration_ms": 12.65}
+{"time": "2026-11-21T04:36:55.318330+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "280742ebc8b54435acbc71e15fdefdb8", "endpoint": "main.health", "status": 200, "duration_ms": 14.89}
+{"time": "2026-11-21T04:36:57.336752+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "c2227b373a6048cdaf141fc5b4b33277", "endpoint": "main.search_assets", "status": 200, "duration_ms": 783.18}
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   quotes.sort_index(inplace=True)
@@ -74,12 +65,6 @@ See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace 
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:587: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   dividends.sort_index(inplace=True)
-{"time": "2026-11-21T04:22:08.422761+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "58584583374240099826f0aa83708ebc", "endpoint": "main.analyze", "status": 200, "duration_ms": 1959.71}
-/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
-See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
-  quotes.sort_index(inplace=True)
-{"time": "2026-11-21T04:22:08.600321+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "7c6fff81181545bba46c7f95477a5f58", "endpoint": "main.market_data", "status": 200, "duration_ms": 173.73}
-{"time": "2026-11-21T04:22:08.619319+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "1c0035b39a33496e924404b323f22e5e", "endpoint": "main.history", "status": 200, "duration_ms": 5.18}
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   quotes.sort_index(inplace=True)
@@ -89,8 +74,12 @@ See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace 
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:587: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   dividends.sort_index(inplace=True)
-{"time": "2026-11-21T04:22:09.020090+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "f40503652b3f465090c4da7d839f81c6", "endpoint": "main.market_data", "status": 200, "duration_ms": 221.26}
-{"time": "2026-11-21T04:22:09.916812+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "d04a0137895d4b1ebe08b6aed10c7a51", "endpoint": "main.technical", "status": 200, "duration_ms": 131.92}
+{"time": "2026-11-21T04:37:01.986311+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "0db793fb9ff6455cbdf017878e1d25ab", "endpoint": "main.analyze", "status": 200, "duration_ms": 3804.58}
+/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
+See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
+  quotes.sort_index(inplace=True)
+{"time": "2026-11-21T04:37:03.503191+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "0e89b828b6b843d8991bfd488e01b22e", "endpoint": "main.market_data", "status": 200, "duration_ms": 1512.73}
+{"time": "2026-11-21T04:37:03.525377+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "f5dc8284d28046dcada9e2ec842e1fbf", "endpoint": "main.history", "status": 200, "duration_ms": 4.11}
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   quotes.sort_index(inplace=True)
@@ -100,142 +89,8 @@ See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace 
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:587: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   dividends.sort_index(inplace=True)
-/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:604: Pandas4Warning: The inplace keyword in DataFrame.set_index is deprecated and will be removed in a future version (PDEP-8).
-See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
-  splits.set_index("date", inplace=True)
-/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:606: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
-See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
-  splits.sort_index(inplace=True)
-{"time": "2026-11-21T04:22:10.276012+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "c636f6c986e94e709ba9f2ff01650315", "endpoint": "main.seasonal", "status": 200, "duration_ms": 146.26}
-{"time": "2026-11-21T04:22:10.648069+00:00", "level": "WARNING", "logger": "marketpredict", "message": "ticker.news falló para AAPL: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***"}
-{"time": "2026-11-21T04:22:10.741844+00:00", "level": "WARNING", "logger": "marketpredict", "message": "ticker.get_news falló para AAPL: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***"}
-{"time": "2026-11-21T04:22:10.879698+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "a2e9e02495014555a9b952b24a89642b", "endpoint": "main.news", "status": 200, "duration_ms": 414.68}
-{"time": "2026-11-21T04:22:11.429594+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "1944b3b7dbfb47cea30a604b04f579eb", "endpoint": "main.markets", "status": 200, "duration_ms": 0.18}
-{"time": "2026-11-21T04:22:12.014302+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "5eecc7b1678849b5b41c56fe9b42461a", "endpoint": "main.models", "status": 200, "duration_ms": 1.26}
-{"time": "2026-11-21T04:22:12.186931+00:00", "level": "WARNING", "logger": "marketpredict", "message": "ticker.news falló para AAPL: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***"}
-{"time": "2026-11-21T04:22:12.262371+00:00", "level": "WARNING", "logger": "marketpredict", "message": "ticker.get_news falló para AAPL: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***"}
-{"time": "2026-11-21T04:22:12.369877+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "5117e388c3e44df5bd971ce1dd1179ee", "endpoint": "main.news", "status": 200, "duration_ms": 354.71}
-/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
-See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
-  quotes.sort_index(inplace=True)
-/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:585: Pandas4Warning: The inplace keyword in DataFrame.set_index is deprecated and will be removed in a future version (PDEP-8).
-See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
-  dividends.set_index("date", inplace=True)
-/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:587: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
-See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
-  dividends.sort_index(inplace=True)
-{"time": "2026-11-21T04:22:12.605215+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "03479a79a306439795bb866312381425", "endpoint": "main.market_data", "status": 200, "duration_ms": 230.71}
-{"time": "2026-11-21T04:22:14.094868+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "3bbd50c9fc07407aa6353c2187414961", "endpoint": "account.save_from_models", "status": 201, "duration_ms": 15.63}
-{"time": "2026-11-21T04:22:15.604967+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "7b4c14c8351c4eec9504c92f2cc5f22e", "endpoint": "account.list_portfolios", "status": 200, "duration_ms": 6.91}
-{"time": "2026-11-21T04:22:15.606357+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "f67e3d16295b4563b081ac45606dbec8", "endpoint": "account.evaluate_predictions", "status": 200, "duration_ms": 9.21}
-{"time": "2026-11-21T04:22:15.612541+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "bea9f22b332e46568ba3cb87bd8a4256", "endpoint": "account.list_predictions", "status": 200, "duration_ms": 4.29}
-{"time": "2026-11-21T04:22:16.685449+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "d4e305d1de43440eb380a0c6adf9cb7e", "endpoint": "organizations.list_own", "status": 200, "duration_ms": 5.24}
-{"time": "2026-11-21T04:22:17.139857+00:00", "level": "INFO", "logger": "marketpredict", "message": "security_event=organization_created endpoint=organizations.create actor_id=1 target_id=1", "request_id": "b64bd30d304f4a238f589cf5a03815f0"}
-{"time": "2026-11-21T04:22:17.140037+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "b64bd30d304f4a238f589cf5a03815f0", "endpoint": "organizations.create", "status": 201, "duration_ms": 10.05}
-{"time": "2026-11-21T04:22:17.145883+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "3fdd088cf77a42a8ab8e60d75e9de539", "endpoint": "organizations.list_own", "status": 200, "duration_ms": 3.36}
-{"time": "2026-11-21T04:22:17.151886+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "10196eb0d4e74186a79cbc86b37588f3", "endpoint": "organizations.detail", "status": 200, "duration_ms": 3.63}
-{"time": "2026-11-21T04:22:17.160292+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "88ab21ca754c49399dff75bb781d7c3a", "endpoint": "organizations.members", "status": 200, "duration_ms": 5.96}
-{"time": "2026-11-21T04:22:17.161115+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "0914495b898849b4984036b67e418e28", "endpoint": "organizations.settings", "status": 200, "duration_ms": 7.26}
-{"time": "2026-11-21T04:22:17.167066+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "234daa22894a434fabba50447ef681e7", "endpoint": "datasets.list_datasets", "status": 200, "duration_ms": 3.52}
-{"time": "2026-11-21T04:22:17.255682+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "68d204ce99b346569233776f9a40450f", "endpoint": "datasets.create", "status": 201, "duration_ms": 10.51}
-{"time": "2026-11-21T04:22:17.261368+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "a9f65bd4c6014a738b275af258ac3f63", "endpoint": "datasets.list_datasets", "status": 200, "duration_ms": 3.88}
-{"time": "2026-11-21T04:22:17.268026+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "64d6c087c77c41d49169b0fa93fcfbc6", "endpoint": "datasets.history", "status": 200, "duration_ms": 4.42}
-{"time": "2026-11-21T04:22:17.273761+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "0eab2d4edd0e4d2e90a2817b619f690e", "endpoint": "datasets.summary", "status": 200, "duration_ms": 3.77}
-{"time": "2026-11-21T04:22:17.488644+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "8c42ddcd3f1e464795550dfeeeeab0c6", "endpoint": "datasets.preview", "status": 200, "duration_ms": 9.05}
-{"time": "2026-11-21T04:22:17.690000+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "7757488ae91046078db64f3d169ea8eb", "endpoint": "datasets.preview", "status": 200, "duration_ms": 10.56}
-{"time": "2026-11-21T04:22:17.915866+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "138d7d17c5d541a8855efd1a59c1a803", "endpoint": "datasets.confirm_import", "status": 201, "duration_ms": 36.58}
-{"time": "2026-11-21T04:22:17.923706+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "b37e48cfa5134b28bb50eb48071161fd", "endpoint": "datasets.history", "status": 200, "duration_ms": 5.46}
-{"time": "2026-11-21T04:22:17.943806+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "c4b660332f494adaaa00f983904a832b", "endpoint": "datasets.summary", "status": 200, "duration_ms": 16.07}
-{"time": "2026-11-21T04:22:17.959724+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "2edc1e3d81ef46549c9201a01f897b0f", "endpoint": "enterprise_forecasts.list_forecasts", "status": 200, "duration_ms": 12.09}
-{"time": "2026-11-21T04:22:17.962557+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "3b4ce0e9787144dc9b3dee4340ced8dd", "endpoint": "datasets.rows", "status": 200, "duration_ms": 13.91}
-{"time": "2026-11-21T04:22:17.973908+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "890d8ea8bd0f4e26a0c7d9d7b134e506", "endpoint": "enterprise_automation.dashboard", "status": 200, "duration_ms": 26.93}
-{"time": "2026-11-21T04:22:19.828021+00:00", "level": "INFO", "logger": "marketpredict", "message": "security_event=enterprise_job_requested endpoint=enterprise_forecasts.create_forecast actor_id=1 target_id=1", "request_id": "2a2c97d766af4cbaab06e5dee4b81663"}
-{"time": "2026-11-21T04:22:19.828207+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "2a2c97d766af4cbaab06e5dee4b81663", "endpoint": "enterprise_forecasts.create_forecast", "status": 202, "duration_ms": 13.49}
-{"time": "2026-11-21T04:22:19.840539+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "0052f16b01b34eaeb82d35951328e4d9", "endpoint": "enterprise_automation.dashboard", "status": 200, "duration_ms": 8.93}
-{"time": "2026-11-21T04:22:23.842943+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "73277483035d44cea522b23885ed4bd9", "endpoint": "enterprise_automation.get_job", "status": 200, "duration_ms": 10.11}
-{"time": "2026-11-21T04:22:23.852347+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "654016a80c324f608d99d13e5a3f4a20", "endpoint": "enterprise_forecasts.get_forecast", "status": 200, "duration_ms": 6.56}
-{"time": "2026-11-21T04:22:23.862014+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "aadd6fd58af14bc09ac826ac82ede10a", "endpoint": "enterprise_automation.dashboard", "status": 200, "duration_ms": 15.74}
-{"time": "2026-11-21T04:22:25.421643+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "0c1a872277df4a70af220e4239ddb5a3", "endpoint": "enterprise_automation.dashboard", "status": 200, "duration_ms": 9.63}
-{"time": "2026-11-21T04:22:27.120458+00:00", "level": "INFO", "logger": "marketpredict", "message": "security_event=admin_access_denied endpoint=commercial.overview actor_id=None target_id=None", "request_id": "a59316da75284aa381816a5a98de292b"}
-{"time": "2026-11-21T04:22:27.120667+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "a59316da75284aa381816a5a98de292b", "endpoint": "commercial.overview", "status": 403, "duration_ms": 2.58}
-{"time": "2026-11-21T04:22:27.149313+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "b5a3a14220a94c8d9c1d68fade202a4e", "endpoint": "main.index", "status": 200, "duration_ms": 0.28}
-{"time": "2026-11-21T04:22:27.157345+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "9feaea0513ca422e9ab64438a098d846", "endpoint": "static", "status": 200, "duration_ms": 0.71}
-{"time": "2026-11-21T04:22:27.158603+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "d3c88b6aad904d9fa955e2fdb0012178", "endpoint": "static", "status": 200, "duration_ms": 0.23}
-{"time": "2026-11-21T04:22:27.159517+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "62dae59cd81e43ad865aaf74890ff9af", "endpoint": "static", "status": 200, "duration_ms": 0.55}
-{"time": "2026-11-21T04:22:27.160271+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "2c11647b79814afc95b36ff7ac618351", "endpoint": "static", "status": 200, "duration_ms": 3.12}
-{"time": "2026-11-21T04:22:27.162100+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "49b5da7c341c457382c2f1d9ee3a1655", "endpoint": "static", "status": 200, "duration_ms": 0.26}
-{"time": "2026-11-21T04:22:27.163071+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "186471400df44bddb93d8288023b71a9", "endpoint": "static", "status": 200, "duration_ms": 0.25}
-{"time": "2026-11-21T04:22:27.206076+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "1c3e8fa060dc4192ac0822d98c7298b6", "endpoint": "account.me", "status": 200, "duration_ms": 0.16}
-{"time": "2026-11-21T04:22:27.224239+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "e7661974972b4a7db86466ee3f2bb776", "endpoint": "main.health", "status": 200, "duration_ms": 13.97}
-{"time": "2026-11-21T04:22:27.226964+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "2ac03f33817345d38a2e2625ce255a6a", "endpoint": "main.markets", "status": 200, "duration_ms": 0.12}
-/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
-See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
-  quotes.sort_index(inplace=True)
-{"time": "2026-11-21T04:22:27.385148+00:00", "level": "INFO", "logger": "marketpredict", "message": "security_event=account_registered endpoint=account.register actor_id=2 target_id=None", "request_id": "1ca576dffc71423a87577ac52961f8dd"}
-{"time": "2026-11-21T04:22:27.387131+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "1ca576dffc71423a87577ac52961f8dd", "endpoint": "account.register", "status": 201, "duration_ms": 75.06}
-{"time": "2026-11-21T04:22:27.400964+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "80bac5facbe3429abca94c1b5842fbd0", "endpoint": "account.list_predictions", "status": 200, "duration_ms": 9.65}
-{"time": "2026-11-21T04:22:27.402320+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "f9810586014944959986fa9acd655abe", "endpoint": "organizations.list_own", "status": 200, "duration_ms": 9.61}
-{"time": "2026-11-21T04:22:27.406541+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "88c683ef8cda454199f126230a53babd", "endpoint": "main.history", "status": 200, "duration_ms": 4.66}
-{"time": "2026-11-21T04:22:27.408399+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "461e3716e4964da698d26b54039a5581", "endpoint": "main.health", "status": 200, "duration_ms": 16.34}
-{"time": "2026-11-21T04:22:27.408959+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "11e13fbe6949483da64f721561bf195a", "endpoint": "organizations.detail", "status": 404, "duration_ms": 5.36}
-{"time": "2026-11-21T04:22:27.416117+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "877088180589411899a5feae31117c52", "endpoint": "main.market_data", "status": 200, "duration_ms": 204.82}
-{"time": "2026-11-21T04:22:27.444337+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "cb9721dde5b0420d8ad91a29d031cdfe", "endpoint": "main.index", "status": 200, "duration_ms": 0.31}
-{"time": "2026-11-21T04:22:27.453204+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "193468a7197140f69f3376fb4040c774", "endpoint": "static", "status": 200, "duration_ms": 0.22}
-{"time": "2026-11-21T04:22:27.454187+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "d7973a11b7f1429eb5637bbb3da52f19", "endpoint": "static", "status": 200, "duration_ms": 0.28}
-{"time": "2026-11-21T04:22:27.455100+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "43e5dae7d98d45efb15652c90f16c707", "endpoint": "static", "status": 200, "duration_ms": 0.26}
-{"time": "2026-11-21T04:22:27.456857+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "b968b4b0ca38464bb85c67137b7eddfd", "endpoint": "static", "status": 200, "duration_ms": 0.25}
-{"time": "2026-11-21T04:22:27.458101+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "81e7799a48f0477f9a0e9937db1949c2", "endpoint": "static", "status": 200, "duration_ms": 0.23}
-{"time": "2026-11-21T04:22:27.459880+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "addd9d1b9180475dab7847510ec3f30d", "endpoint": "static", "status": 200, "duration_ms": 0.23}
-{"time": "2026-11-21T04:22:27.480915+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "5579b2e171af497caa9c07b479aa7aa1", "endpoint": "account.me", "status": 200, "duration_ms": 0.13}
-{"time": "2026-11-21T04:22:27.518339+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "7dc08b9741494825953d3486c66cb6b1", "endpoint": "main.health", "status": 200, "duration_ms": 9.21}
-{"time": "2026-11-21T04:22:27.523162+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "fec3ddcf7e7249599d2bab2959bdac80", "endpoint": "main.markets", "status": 200, "duration_ms": 0.11}
-/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
-See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
-  quotes.sort_index(inplace=True)
-{"time": "2026-11-21T04:22:27.690721+00:00", "level": "INFO", "logger": "marketpredict", "message": "security_event=account_registered endpoint=account.register actor_id=3 target_id=None", "request_id": "34ef884c610e438eaef007525395d5d5"}
-{"time": "2026-11-21T04:22:27.692749+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "34ef884c610e438eaef007525395d5d5", "endpoint": "account.register", "status": 201, "duration_ms": 79.35}
-{"time": "2026-11-21T04:22:27.703254+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "af427d1f01ba48c5a170e146d3a9af7b", "endpoint": "account.list_predictions", "status": 200, "duration_ms": 5.0}
-{"time": "2026-11-21T04:22:27.703885+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "ae85896849154f33ad292f127b620199", "endpoint": "organizations.list_own", "status": 200, "duration_ms": 6.15}
-{"time": "2026-11-21T04:22:27.707313+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "fc0a9178098b414cadfb0d6191ad5a0f", "endpoint": "main.history", "status": 200, "duration_ms": 2.8}
-{"time": "2026-11-21T04:22:27.712040+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "d4a09ce8bee74f18a4df179b7f7e9643", "endpoint": "main.market_data", "status": 200, "duration_ms": 203.57}
-{"time": "2026-11-21T04:22:27.712904+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "8b52b7b64eeb4c308dbe0d8565418ae3", "endpoint": "main.health", "status": 200, "duration_ms": 15.03}
-{"time": "2026-11-21T04:22:28.242748+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "34f2d92e7fb3406a82e86f95f3a81770", "endpoint": "account.me", "status": 200, "duration_ms": 2.39}
-{"time": "2026-11-21T04:22:28.275859+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "8e9ec5ab5ba8476e95ec6ed9f08d6b96", "endpoint": "main.index", "status": 200, "duration_ms": 0.23}
-{"time": "2026-11-21T04:22:28.281731+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "a0fb336b74dd406b9acee766a939b3ef", "endpoint": "static", "status": 304, "duration_ms": 0.6}
-{"time": "2026-11-21T04:22:28.283042+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "b586f155fa93488681cfcab7bad79470", "endpoint": "static", "status": 304, "duration_ms": 0.66}
-{"time": "2026-11-21T04:22:28.285338+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "d436ebea471a4d33a122004ee77d3967", "endpoint": "static", "status": 304, "duration_ms": 1.49}
-{"time": "2026-11-21T04:22:28.286078+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "c63df8990de247deb1bb79c0c31bd93e", "endpoint": "static", "status": 304, "duration_ms": 0.99}
-{"time": "2026-11-21T04:22:28.286772+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "dc4a034a33c34090a209ce4cdeb83fb3", "endpoint": "static", "status": 304, "duration_ms": 2.55}
-{"time": "2026-11-21T04:22:28.287284+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "f95ecca0e78e42aab71a1caa2d5cefdd", "endpoint": "static", "status": 304, "duration_ms": 1.57}
-{"time": "2026-11-21T04:22:28.308406+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "81defcc7c5db495da37c013f8086ab64", "endpoint": "account.me", "status": 200, "duration_ms": 5.11}
-{"time": "2026-11-21T04:22:28.319199+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "28d7752dbaac4477b6036cf544b94f8f", "endpoint": "main.history", "status": 200, "duration_ms": 5.22}
-{"time": "2026-11-21T04:22:28.337085+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "a7b877b143ed455cbc86d28518dc6e33", "endpoint": "commercial.overview", "status": 200, "duration_ms": 25.2}
-/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
-See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
-  quotes.sort_index(inplace=True)
-{"time": "2026-11-21T04:22:28.572052+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "8e42a28d86344f2caf44af6b7d6d45ff", "endpoint": "main.market_data", "status": 200, "duration_ms": 250.05}
-{"time": "2026-11-21T04:22:29.019272+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "723e33d934e2413aa7604011702136ab", "endpoint": "main.index", "status": 200, "duration_ms": 0.22}
-{"time": "2026-11-21T04:22:29.026262+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "19c18a98959e483686a23c18c82a06c4", "endpoint": "static", "status": 200, "duration_ms": 0.56}
-{"time": "2026-11-21T04:22:29.028283+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "146a83ae372a4d33933c376c8cd3e41f", "endpoint": "static", "status": 200, "duration_ms": 0.94}
-{"time": "2026-11-21T04:22:29.028954+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "00ddb8443c38456aa6cfa7df21885ed8", "endpoint": "static", "status": 200, "duration_ms": 0.73}
-{"time": "2026-11-21T04:22:29.030201+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "8078c816884a4354a0b494b84e7e14db", "endpoint": "static", "status": 200, "duration_ms": 0.82}
-{"time": "2026-11-21T04:22:29.031428+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "0d79c86a81694cfb8ecaed47f7b0dc5e", "endpoint": "static", "status": 200, "duration_ms": 0.39}
-{"time": "2026-11-21T04:22:29.032420+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "919c49f958fd46819bf761f3fffe5868", "endpoint": "static", "status": 200, "duration_ms": 1.27}
-{"time": "2026-11-21T04:22:29.075800+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "3d4f560db809472eaaab92d7f90f3083", "endpoint": "account.me", "status": 200, "duration_ms": 0.15}
-{"time": "2026-11-21T04:22:29.208283+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "f7ec827e90cd4be3b1ecf88983ebe741", "endpoint": "main.index", "status": 200, "duration_ms": 0.19}
-{"time": "2026-11-21T04:22:29.216033+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "7f7784cfe4664e7488cb4a12e7cc4692", "endpoint": "static", "status": 200, "duration_ms": 0.33}
-{"time": "2026-11-21T04:22:29.216390+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "efadcf765cd54c93a8907ec55119268b", "endpoint": "static", "status": 200, "duration_ms": 1.26}
-{"time": "2026-11-21T04:22:29.218032+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "0ed92dd3f17d49c6aa691eb3afb412bb", "endpoint": "static", "status": 200, "duration_ms": 0.51}
-{"time": "2026-11-21T04:22:29.218795+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "32bf716c59d34f9faf972cb40b7a6e25", "endpoint": "static", "status": 200, "duration_ms": 1.8}
-{"time": "2026-11-21T04:22:29.220807+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "5f964790fd6047ae889a102c9725c2b8", "endpoint": "static", "status": 200, "duration_ms": 0.17}
-{"time": "2026-11-21T04:22:29.222061+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "c9615dd426e94774ae1b244f0d188b70", "endpoint": "static", "status": 200, "duration_ms": 0.76}
-{"time": "2026-11-21T04:22:29.241516+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "f1a45bb9c34d41adadea630fef214c71", "endpoint": "account.me", "status": 200, "duration_ms": 0.11}
-{"time": "2026-11-21T04:22:29.276518+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "34b2d9a263ac4057979e015513466a3c", "endpoint": "main.health", "status": 200, "duration_ms": 11.34}
-{"time": "2026-11-21T04:22:29.282533+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "bb634abefa6b4a17b0181002aaa5ac71", "endpoint": "main.markets", "status": 200, "duration_ms": 0.12}
-/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
-See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
-  quotes.sort_index(inplace=True)
-{"time": "2026-11-21T04:22:29.490469+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "a130580411654766aab5f810da817812", "endpoint": "main.market_data", "status": 200, "duration_ms": 224.71}
+{"time": "2026-11-21T04:37:05.811112+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "6b7918b3627f42118f5334e63c1ea6c6", "endpoint": "main.market_data", "status": 200, "duration_ms": 2076.16}
+{"time": "2026-11-21T04:37:07.687030+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "ae4b3c9cdff441beb8d6db54aeab644d", "endpoint": "main.technical", "status": 200, "duration_ms": 1067.81}
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   quotes.sort_index(inplace=True)
@@ -251,12 +106,136 @@ See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace 
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:606: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   splits.sort_index(inplace=True)
-{"time": "2026-11-21T04:22:33.070422+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "4a7efda83b614854a98f657b706cc99c", "endpoint": "main.seasonal", "status": 200, "duration_ms": 162.03}
-{"time": "2026-11-21T04:22:35.556001+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "4532d0aa156143bf85066b4bace5822a", "endpoint": "account.list_predictions", "status": 200, "duration_ms": 14.53}
-{"time": "2026-11-21T04:22:35.559452+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "c5ded73e9a6d41eb85d660d51c7e9d04", "endpoint": "organizations.list_own", "status": 200, "duration_ms": 14.4}
-{"time": "2026-11-21T04:22:35.565289+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "4cca3a0327214d7681ffb2992ea2def6", "endpoint": "main.health", "status": 200, "duration_ms": 19.37}
-{"time": "2026-11-21T04:22:35.617218+00:00", "level": "INFO", "logger": "marketpredict", "message": "security_event=logout endpoint=account.logout actor_id=1 target_id=None", "request_id": "61d9ac1cabbe44eba3714804ffd40dfa"}
-{"time": "2026-11-21T04:22:35.617389+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "61d9ac1cabbe44eba3714804ffd40dfa", "endpoint": "account.logout", "status": 200, "duration_ms": 2.68}
+{"time": "2026-11-21T04:37:08.998407+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "e16c3208054a4a178e579b771aabec83", "endpoint": "main.seasonal", "status": 200, "duration_ms": 867.11}
+{"time": "2026-11-21T04:37:12.060180+00:00", "level": "WARNING", "logger": "marketpredict", "message": "ticker.news falló para AAPL: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***"}
+{"time": "2026-11-21T04:37:13.130876+00:00", "level": "WARNING", "logger": "marketpredict", "message": "ticker.get_news falló para AAPL: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***"}
+{"time": "2026-11-21T04:37:14.040061+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "7c457d9b0b31471590c5d32494f543da", "endpoint": "main.news", "status": 200, "duration_ms": 4372.48}
+{"time": "2026-11-21T04:37:14.748037+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "edd902c84c2e4cf79cc886d3f34b4ed6", "endpoint": "main.markets", "status": 200, "duration_ms": 0.26}
+{"time": "2026-11-21T04:37:15.382232+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "389bc4dedf0a4f96a7b0d2b6faa97c15", "endpoint": "main.models", "status": 200, "duration_ms": 1.29}
+{"time": "2026-11-21T04:37:16.923451+00:00", "level": "WARNING", "logger": "marketpredict", "message": "ticker.news falló para AAPL: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***"}
+{"time": "2026-11-21T04:37:18.016465+00:00", "level": "WARNING", "logger": "marketpredict", "message": "ticker.get_news falló para AAPL: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***"}
+{"time": "2026-11-21T04:37:18.469141+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "fa83a761d5d84ce397485b4c98b63841", "endpoint": "main.news", "status": 200, "duration_ms": 3085.27}
+/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
+See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
+  quotes.sort_index(inplace=True)
+/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:585: Pandas4Warning: The inplace keyword in DataFrame.set_index is deprecated and will be removed in a future version (PDEP-8).
+See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
+  dividends.set_index("date", inplace=True)
+/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:587: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
+See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
+  dividends.sort_index(inplace=True)
+{"time": "2026-11-21T04:37:20.036939+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "36b3a90a49b9459a9f6637f51cc94bd2", "endpoint": "main.market_data", "status": 200, "duration_ms": 1562.26}
+{"time": "2026-11-21T04:37:21.969057+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "e049a1a421824b4f853f02b61bcfa225", "endpoint": "account.save_from_models", "status": 201, "duration_ms": 19.43}
+{"time": "2026-11-21T04:37:23.473432+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "0ceda9f9e07d487b8700b12776df7ebe", "endpoint": "account.list_portfolios", "status": 200, "duration_ms": 8.6}
+{"time": "2026-11-21T04:37:23.474799+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "0a26f3ff49e445cdba191131db31f90e", "endpoint": "account.evaluate_predictions", "status": 200, "duration_ms": 10.91}
+{"time": "2026-11-21T04:37:23.484971+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "a6fbc78f947844fcb3434ad30e121e1f", "endpoint": "account.list_predictions", "status": 200, "duration_ms": 6.4}
+{"time": "2026-11-21T04:37:24.601990+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "5af86200ed5f43839d21f1a27a6cd351", "endpoint": "organizations.list_own", "status": 200, "duration_ms": 5.04}
+{"time": "2026-11-21T04:37:25.057893+00:00", "level": "INFO", "logger": "marketpredict", "message": "security_event=organization_created endpoint=organizations.create actor_id=1 target_id=1", "request_id": "63531c33478744ce8bc0dcfa296d0cd7"}
+{"time": "2026-11-21T04:37:25.058090+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "63531c33478744ce8bc0dcfa296d0cd7", "endpoint": "organizations.create", "status": 201, "duration_ms": 11.3}
+{"time": "2026-11-21T04:37:25.065569+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "b2b7376557a443aab2bde91a4bde027b", "endpoint": "organizations.list_own", "status": 200, "duration_ms": 4.3}
+{"time": "2026-11-21T04:37:25.073229+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "66f8d5ed8f7747ba8d170283b3b0ddb6", "endpoint": "organizations.detail", "status": 200, "duration_ms": 4.64}
+{"time": "2026-11-21T04:37:25.086242+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "013e3342faf44b5581c365af9b2e2bb6", "endpoint": "organizations.members", "status": 200, "duration_ms": 7.38}
+{"time": "2026-11-21T04:37:25.086703+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "af349a9dd2eb4dee980105488c820dea", "endpoint": "organizations.settings", "status": 200, "duration_ms": 8.57}
+{"time": "2026-11-21T04:37:25.096950+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "7c1d562ebf2a4653a1ac9d3e95d2a015", "endpoint": "datasets.list_datasets", "status": 200, "duration_ms": 6.7}
+{"time": "2026-11-21T04:37:25.195444+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "c76cfa025080425fb49b3c3e2fa51d4c", "endpoint": "datasets.create", "status": 201, "duration_ms": 15.03}
+{"time": "2026-11-21T04:37:25.204065+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "3fd57fa0f4304009a2de08c0a7677c1e", "endpoint": "datasets.list_datasets", "status": 200, "duration_ms": 5.51}
+{"time": "2026-11-21T04:37:25.215540+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "95c97a579d5e480889771c78c7d10bac", "endpoint": "datasets.history", "status": 200, "duration_ms": 7.79}
+{"time": "2026-11-21T04:37:25.223452+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "854e1beeb8a449caa20cbb2dfd812914", "endpoint": "datasets.summary", "status": 200, "duration_ms": 4.99}
+{"time": "2026-11-21T04:37:25.475610+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "7addb12805954fb68bbb2757ca0d8ac7", "endpoint": "datasets.preview", "status": 200, "duration_ms": 10.88}
+{"time": "2026-11-21T04:37:25.762276+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "26816077674c46a9b2e76eb309a2b9ce", "endpoint": "datasets.preview", "status": 200, "duration_ms": 14.09}
+{"time": "2026-11-21T04:37:26.084980+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "41bbe5d284aa46bb9c81aefa1f6bb13a", "endpoint": "datasets.confirm_import", "status": 201, "duration_ms": 53.79}
+{"time": "2026-11-21T04:37:26.098632+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "3310a443e24a4aa0a8acdf1552295a4c", "endpoint": "datasets.history", "status": 200, "duration_ms": 10.52}
+{"time": "2026-11-21T04:37:26.112619+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "24a8c15dcd9c494ba0723d6b492a5a5d", "endpoint": "datasets.summary", "status": 200, "duration_ms": 10.64}
+{"time": "2026-11-21T04:37:26.134902+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "9d54b0737bfe4bf4894901111b23bef6", "endpoint": "enterprise_forecasts.list_forecasts", "status": 200, "duration_ms": 16.73}
+{"time": "2026-11-21T04:37:26.138634+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "c3e3972addde4ed0953f8774a4b04391", "endpoint": "datasets.rows", "status": 200, "duration_ms": 18.71}
+{"time": "2026-11-21T04:37:26.158672+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "8a6e25610b564ec8a6a21891004628fe", "endpoint": "enterprise_automation.dashboard", "status": 200, "duration_ms": 41.45}
+{"time": "2026-11-21T04:37:26.799938+00:00", "level": "INFO", "logger": "marketpredict", "message": "security_event=enterprise_job_requested endpoint=enterprise_forecasts.create_forecast actor_id=1 target_id=1", "request_id": "443381220626425c835b72dbfc1cd2a9"}
+{"time": "2026-11-21T04:37:26.800140+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "443381220626425c835b72dbfc1cd2a9", "endpoint": "enterprise_forecasts.create_forecast", "status": 202, "duration_ms": 18.47}
+{"time": "2026-11-21T04:37:26.817595+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "70b72b6fb18d449fa6d412c85b50d15a", "endpoint": "enterprise_automation.dashboard", "status": 200, "duration_ms": 14.24}
+{"time": "2026-11-21T04:37:30.810706+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "45e8282d8275434597ef9b385740cb4f", "endpoint": "enterprise_automation.get_job", "status": 200, "duration_ms": 6.54}
+{"time": "2026-11-21T04:37:30.825064+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "efa8de127f054c99a9ab9cf8e603727d", "endpoint": "enterprise_forecasts.get_forecast", "status": 200, "duration_ms": 9.13}
+{"time": "2026-11-21T04:37:30.832715+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "409d52a619e446a0a616a5e2351ab2e9", "endpoint": "enterprise_automation.dashboard", "status": 200, "duration_ms": 17.51}
+{"time": "2026-11-21T04:37:32.626342+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "cf0e59aadbb64168a8e5017023436388", "endpoint": "enterprise_automation.dashboard", "status": 200, "duration_ms": 12.58}
+{"time": "2026-11-21T04:37:34.364768+00:00", "level": "INFO", "logger": "marketpredict", "message": "security_event=admin_access_denied endpoint=commercial.overview actor_id=None target_id=None", "request_id": "624b99da4cd544dd901a94dc807a606c"}
+{"time": "2026-11-21T04:37:34.364943+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "624b99da4cd544dd901a94dc807a606c", "endpoint": "commercial.overview", "status": 403, "duration_ms": 2.96}
+{"time": "2026-11-21T04:37:34.408723+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "70fbdcd43d9842619d2455017ca8a61f", "endpoint": "main.index", "status": 200, "duration_ms": 0.47}
+{"time": "2026-11-21T04:37:34.416453+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "36b22aca17fe40a6b5dc5002af552533", "endpoint": "static", "status": 200, "duration_ms": 0.44}
+{"time": "2026-11-21T04:37:34.418894+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "0cf5116bd26542c596a1129c30adeaa8", "endpoint": "static", "status": 200, "duration_ms": 0.39}
+{"time": "2026-11-21T04:37:34.420031+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "d314accafd8f49fdaed001006b267b27", "endpoint": "static", "status": 200, "duration_ms": 0.39}
+{"time": "2026-11-21T04:37:34.420980+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "b90f83bce5654e169274a556b89e24a4", "endpoint": "static", "status": 200, "duration_ms": 3.49}
+{"time": "2026-11-21T04:37:34.422232+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "1a1c1db6c9fa4350a4fa656c8f0aad12", "endpoint": "static", "status": 200, "duration_ms": 0.33}
+{"time": "2026-11-21T04:37:34.424908+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "0985fb49fbab43b782368b84bed24ca1", "endpoint": "static", "status": 200, "duration_ms": 0.34}
+{"time": "2026-11-21T04:37:34.455886+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "0d097c99c4934c358f4e742d7da5f06d", "endpoint": "account.me", "status": 200, "duration_ms": 0.2}
+{"time": "2026-11-21T04:37:34.512254+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "cb2bccd4c38846b0a47f3ab9fa33c845", "endpoint": "main.health", "status": 200, "duration_ms": 17.27}
+{"time": "2026-11-21T04:37:34.522173+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "5c411a8be4f84840a3efac4f4ef1a82b", "endpoint": "main.markets", "status": 200, "duration_ms": 0.26}
+{"time": "2026-11-21T04:37:34.733992+00:00", "level": "INFO", "logger": "marketpredict", "message": "security_event=account_registered endpoint=account.register actor_id=2 target_id=None", "request_id": "5eaa50e150b1451984d58f17e5a59793"}
+{"time": "2026-11-21T04:37:34.736442+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "5eaa50e150b1451984d58f17e5a59793", "endpoint": "account.register", "status": 201, "duration_ms": 105.73}
+{"time": "2026-11-21T04:37:34.752194+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "1f594ab44621460389e38738405e2ddd", "endpoint": "organizations.list_own", "status": 200, "duration_ms": 9.29}
+{"time": "2026-11-21T04:37:34.752920+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "bae0e1476d954ff38b4bacd46eda8035", "endpoint": "account.list_predictions", "status": 200, "duration_ms": 10.83}
+{"time": "2026-11-21T04:37:34.760327+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "db8bdd5a3c8b457ca1f5358e75b196cd", "endpoint": "main.history", "status": 200, "duration_ms": 5.96}
+{"time": "2026-11-21T04:37:34.763936+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "b1d5ba05bf154b25b454b4b3e8cc933e", "endpoint": "main.health", "status": 200, "duration_ms": 20.43}
+{"time": "2026-11-21T04:37:34.764727+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "8425e8516bc34e9ebf53c9fcf66bd392", "endpoint": "organizations.detail", "status": 404, "duration_ms": 9.28}
+{"time": "2026-11-21T04:37:34.807331+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "2efea61392d64763a7377e17e0f57a19", "endpoint": "main.index", "status": 200, "duration_ms": 0.32}
+{"time": "2026-11-21T04:37:34.816393+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "d39c4d5b9f744083be889b42a0136363", "endpoint": "static", "status": 200, "duration_ms": 0.69}
+{"time": "2026-11-21T04:37:34.820336+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "5fb6b65ddc784c8b9fbdc112d51fab35", "endpoint": "static", "status": 200, "duration_ms": 0.96}
+{"time": "2026-11-21T04:37:34.821744+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "2ed8865ef61f462e9154a38c51160f30", "endpoint": "static", "status": 200, "duration_ms": 1.1}
+{"time": "2026-11-21T04:37:34.822266+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "507ca644a8ee4cee8fc148c7a33434ba", "endpoint": "static", "status": 200, "duration_ms": 1.06}
+{"time": "2026-11-21T04:37:34.825396+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "5a82252c47144ac58e3442a01004fc92", "endpoint": "static", "status": 200, "duration_ms": 1.99}
+{"time": "2026-11-21T04:37:34.826325+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "fbdd965557be4e87a8115330f02351db", "endpoint": "static", "status": 200, "duration_ms": 0.36}
+{"time": "2026-11-21T04:37:34.884090+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "901762cb37ab4641a1c12f9233806cd7", "endpoint": "account.me", "status": 200, "duration_ms": 0.24}
+{"time": "2026-11-21T04:37:34.907682+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "5b68e25985d44d33bcc4ca9772a1d864", "endpoint": "main.health", "status": 200, "duration_ms": 18.29}
+{"time": "2026-11-21T04:37:34.913406+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "de2129dd3e3146c49437b789a525711b", "endpoint": "main.markets", "status": 200, "duration_ms": 0.18}
+{"time": "2026-11-21T04:37:35.137551+00:00", "level": "INFO", "logger": "marketpredict", "message": "security_event=account_registered endpoint=account.register actor_id=3 target_id=None", "request_id": "a52889bb7839433987afe4679aae042d"}
+{"time": "2026-11-21T04:37:35.140312+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "a52889bb7839433987afe4679aae042d", "endpoint": "account.register", "status": 201, "duration_ms": 109.5}
+{"time": "2026-11-21T04:37:35.152865+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "cf506b50070741b987b0ec19c2b38a93", "endpoint": "account.list_predictions", "status": 200, "duration_ms": 7.15}
+{"time": "2026-11-21T04:37:35.153316+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "a7fa540c403b42a288c721ea60cc72a8", "endpoint": "organizations.list_own", "status": 200, "duration_ms": 6.76}
+{"time": "2026-11-21T04:37:35.158644+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "cc8d93aca2cc45a1b0c139caa4356ca1", "endpoint": "main.history", "status": 200, "duration_ms": 3.43}
+{"time": "2026-11-21T04:37:35.169097+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "f0c05f90dfa74d02a7aa311d89b545c5", "endpoint": "main.health", "status": 200, "duration_ms": 14.64}
+/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
+See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
+  quotes.sort_index(inplace=True)
+/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
+See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
+  quotes.sort_index(inplace=True)
+{"time": "2026-11-21T04:37:35.950642+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "67a60c3fe84a4c09bdb46769c1392d1d", "endpoint": "account.me", "status": 200, "duration_ms": 3.05}
+{"time": "2026-11-21T04:37:35.980113+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "12d05816137b4363801a68a27f08f5e2", "endpoint": "main.market_data", "status": 200, "duration_ms": 1484.28}
+{"time": "2026-11-21T04:37:36.003591+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "052dcd2694d54bd2a76fa1d010d78244", "endpoint": "main.index", "status": 200, "duration_ms": 0.28}
+{"time": "2026-11-21T04:37:36.012934+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "5b823e1cd2514ec1bfba0b85fa813d8c", "endpoint": "static", "status": 304, "duration_ms": 0.56}
+{"time": "2026-11-21T04:37:36.017470+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "393f44b0692d421088b545928bc992ca", "endpoint": "static", "status": 304, "duration_ms": 0.39}
+{"time": "2026-11-21T04:37:36.018150+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "63b16dcb78e344849471635976adbf68", "endpoint": "static", "status": 304, "duration_ms": 2.86}
+{"time": "2026-11-21T04:37:36.020328+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "33f885401e704d16a4896511d70a02e5", "endpoint": "static", "status": 304, "duration_ms": 1.18}
+{"time": "2026-11-21T04:37:36.020978+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "e4b4baf7f058490082790aa70aa8775d", "endpoint": "static", "status": 304, "duration_ms": 4.89}
+{"time": "2026-11-21T04:37:36.022673+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "01467f9494774eaa9daecaf84bae4cbe", "endpoint": "static", "status": 304, "duration_ms": 0.43}
+{"time": "2026-11-21T04:37:36.036820+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "6de739438b0743588adac7136cfc8560", "endpoint": "account.me", "status": 200, "duration_ms": 3.96}
+{"time": "2026-11-21T04:37:36.057760+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "b8b1617d872d4b53a9eb68d471822c49", "endpoint": "main.history", "status": 200, "duration_ms": 4.59}
+{"time": "2026-11-21T04:37:36.086170+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "4f322a4267754bc9b33993062edb187a", "endpoint": "commercial.overview", "status": 200, "duration_ms": 33.85}
+{"time": "2026-11-21T04:37:36.260938+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "3069093573174ebaad328a136cd31d3c", "endpoint": "main.market_data", "status": 200, "duration_ms": 1370.74}
+{"time": "2026-11-21T04:37:36.784558+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "2fabf6e7103b44b69da447f7aa0c8d1e", "endpoint": "main.index", "status": 200, "duration_ms": 0.24}
+{"time": "2026-11-21T04:37:36.794072+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "d5fe6999cb244029bdf2064d39cb6d9d", "endpoint": "static", "status": 200, "duration_ms": 0.61}
+{"time": "2026-11-21T04:37:36.797456+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "3608ac4f0c4a4835b527687a59ca6865", "endpoint": "static", "status": 200, "duration_ms": 2.12}
+{"time": "2026-11-21T04:37:36.798991+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "2600f79467644b9a8d17cd4956a6980d", "endpoint": "static", "status": 200, "duration_ms": 1.97}
+{"time": "2026-11-21T04:37:36.799557+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "d875e29c45234a209803b492731fd647", "endpoint": "static", "status": 200, "duration_ms": 3.19}
+{"time": "2026-11-21T04:37:36.803037+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "2be93eebe0ae417f8aaae7033586cbd9", "endpoint": "static", "status": 200, "duration_ms": 0.41}
+{"time": "2026-11-21T04:37:36.803356+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "aa4bbe5318f4460984fada9e731f56d5", "endpoint": "static", "status": 200, "duration_ms": 1.63}
+{"time": "2026-11-21T04:37:36.862330+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "e4488d12adee420483ae8ed5e8e24f6c", "endpoint": "account.me", "status": 200, "duration_ms": 0.22}
+/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
+See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
+  quotes.sort_index(inplace=True)
+{"time": "2026-11-21T04:37:37.090015+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "7f9ac7f8d2c44c1f8b4ace1b7899559c", "endpoint": "main.index", "status": 200, "duration_ms": 0.27}
+{"time": "2026-11-21T04:37:37.099596+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "e2eb87e962e54e2a947f106edac68fe4", "endpoint": "static", "status": 200, "duration_ms": 0.55}
+{"time": "2026-11-21T04:37:37.102522+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "870f0d927b464175855a1c3153963ea0", "endpoint": "static", "status": 200, "duration_ms": 0.34}
+{"time": "2026-11-21T04:37:37.103881+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "d0812969429c4778bec5ba5aa4304c12", "endpoint": "static", "status": 200, "duration_ms": 0.6}
+{"time": "2026-11-21T04:37:37.106319+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "815ba1e448f1448088573fafc7ca3890", "endpoint": "static", "status": 200, "duration_ms": 0.35}
+{"time": "2026-11-21T04:37:37.107106+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "d809b299880348f1ab80d440b1aab0d1", "endpoint": "static", "status": 200, "duration_ms": 2.5}
+{"time": "2026-11-21T04:37:37.109109+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "f6be52ee79874f63976cc6d317ce6b1f", "endpoint": "static", "status": 200, "duration_ms": 0.35}
+{"time": "2026-11-21T04:37:37.168385+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "e25d9650bba246bcb687701853aff6db", "endpoint": "account.me", "status": 200, "duration_ms": 0.25}
+{"time": "2026-11-21T04:37:37.194750+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "ac19751afae74dd598495dbc8f2224dd", "endpoint": "main.health", "status": 200, "duration_ms": 21.01}
+{"time": "2026-11-21T04:37:37.198058+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "f769777fef9a464a97ef99a86b7efbc2", "endpoint": "main.markets", "status": 200, "duration_ms": 0.21}
+{"time": "2026-11-21T04:37:37.452278+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "0bbdbd8891bc4fbca0463940e8a64dca", "endpoint": "main.market_data", "status": 200, "duration_ms": 1382.12}
+/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
+See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
+  quotes.sort_index(inplace=True)
+{"time": "2026-11-21T04:37:38.430440+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "5c899786c4eb4fd49a4244f60084a17e", "endpoint": "main.market_data", "status": 200, "duration_ms": 1255.77}
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   quotes.sort_index(inplace=True)
@@ -272,9 +251,14 @@ See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace 
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:606: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   splits.sort_index(inplace=True)
-{"time": "2026-11-21T04:22:35.644197+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "a4d080d21b984ebe8f15fd3ca449d09f", "endpoint": "main.seasonal", "status": 200, "duration_ms": 112.85}
-{"time": "2026-11-21T04:22:35.647198+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "b4044d7189c147fe8cb2ab193b640d7c", "endpoint": "main.models", "status": 200, "duration_ms": 0.96}
-{"time": "2026-11-21T04:22:35.651916+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "2b2ae5e5e6c2432c8ed8d0b60c1caca9", "endpoint": "main.health", "status": 200, "duration_ms": 31.08}
+{"time": "2026-11-21T04:37:41.888847+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "c10cfc06fdeb4a2e9bfa89167faa7b75", "endpoint": "main.seasonal", "status": 200, "duration_ms": 829.54}
+{"time": "2026-11-21T04:37:43.761054+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "b9925b7f975c41f4bebc509feffb4e51", "endpoint": "organizations.list_own", "status": 200, "duration_ms": 17.55}
+{"time": "2026-11-21T04:37:43.762978+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "bb5f98c3f75f400b8d9fec5134de22d0", "endpoint": "account.list_predictions", "status": 200, "duration_ms": 20.61}
+{"time": "2026-11-21T04:37:43.769913+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "23c64b447fc0489e88c733ee9eb303f6", "endpoint": "main.health", "status": 200, "duration_ms": 25.58}
+{"time": "2026-11-21T04:37:43.884593+00:00", "level": "INFO", "logger": "marketpredict", "message": "security_event=logout endpoint=account.logout actor_id=1 target_id=None", "request_id": "97891013b6aa40579cc366aa45b8e3a0"}
+{"time": "2026-11-21T04:37:43.884870+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "97891013b6aa40579cc366aa45b8e3a0", "endpoint": "account.logout", "status": 200, "duration_ms": 6.23}
+{"time": "2026-11-21T04:37:43.934471+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "12f8a2349ba446dc936c4b54cbbc122d", "endpoint": "main.models", "status": 200, "duration_ms": 4.04}
+{"time": "2026-11-21T04:37:43.935179+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "8810bf87c1af47deb6535e71fbeae7d7", "endpoint": "main.health", "status": 200, "duration_ms": 31.75}
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   quotes.sort_index(inplace=True)
@@ -284,12 +268,28 @@ See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace 
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:587: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   dividends.sort_index(inplace=True)
-{"time": "2026-11-21T04:22:37.529955+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "4c252b42ea7c4e0b82da9fa9496b13b7", "endpoint": "main.models", "status": 200, "duration_ms": 1871.64}
+/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:604: Pandas4Warning: The inplace keyword in DataFrame.set_index is deprecated and will be removed in a future version (PDEP-8).
+See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
+  splits.set_index("date", inplace=True)
+/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:606: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
+See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
+  splits.sort_index(inplace=True)
+{"time": "2026-11-21T04:37:44.426393+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "e1421a13942c4242a0a916c60d48f9b4", "endpoint": "main.seasonal", "status": 200, "duration_ms": 701.74}
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   quotes.sort_index(inplace=True)
-{"time": "2026-11-21T04:22:39.241488+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "566a1c749b9c43949e48271c2988ea91", "endpoint": "main.models", "status": 200, "duration_ms": 1701.73}
+/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:585: Pandas4Warning: The inplace keyword in DataFrame.set_index is deprecated and will be removed in a future version (PDEP-8).
+See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
+  dividends.set_index("date", inplace=True)
+/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:587: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
+See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
+  dividends.sort_index(inplace=True)
+{"time": "2026-11-21T04:37:48.112432+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "d5366162ee654846b6fee090b3e02523", "endpoint": "main.models", "status": 200, "duration_ms": 4160.95}
 /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   quotes.sort_index(inplace=True)
-{"time": "2026-11-21T04:22:39.428295+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "77c6cb3847f4498d805c42f9293bd2d1", "endpoint": "main.models", "status": 422, "duration_ms": 175.05}
+{"time": "2026-11-21T04:37:51.322855+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "2e8c6c1e70a847709dd7e4b9b0d37729", "endpoint": "main.models", "status": 200, "duration_ms": 3198.47}
+/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/yfinance/utils.py:568: Pandas4Warning: The inplace keyword in DataFrame.sort_index is deprecated and will be removed in a future version (PDEP-8).
+See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
+  quotes.sort_index(inplace=True)
+{"time": "2026-11-21T04:37:52.516839+00:00", "level": "INFO", "logger": "marketpredict.http", "message": "http_request", "request_id": "09ea4079c97d4ec4bf4a3810a2dce6ba", "endpoint": "main.models", "status": 422, "duration_ms": 1182.2}
