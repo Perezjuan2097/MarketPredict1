@@ -1,0 +1,22 @@
+name: Asset diagnostics
+
+# Diagnóstico de solo lectura con datos reales de Yahoo Finance (no toca producción ni la base de datos).
+on:
+  workflow_dispatch:
+  push:
+    branches: [diag/asset-errors]
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements.txt -r requirements-ml.txt
+      - run: python -m scripts.diagnose_assets
