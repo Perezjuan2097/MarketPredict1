@@ -42,6 +42,8 @@ jobs:
       OUT: /tmp/render-free
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
@@ -49,13 +51,33 @@ jobs:
         run: |
           python -m pip install -r requirements.txt -r requirements-ml.txt psycopg2-binary playwright==1.49.1
           python -m playwright install --with-deps chromium
+      - name: Rebuild the production database state (same as the migration rehearsal)
+        run: |
+          git worktree add /tmp/prod-5da6fe0 5da6fe037b90be4c06726fcb4d982dc56dd5dcbc
+          git worktree add /tmp/sprint4-a0d691b a0d691bad18765bc03c0b40d682f9e8fbf1085b0
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from sqlalchemy import create_engine
+          from scripts.migration_rehearsal import CREATE_TABLES, CREATE_USER, run, scalar
+          url = os.environ["DATABASE_URL"]
+          run(Path("/tmp/prod-5da6fe0"), url, code=CREATE_TABLES)
+          run(Path("/tmp/prod-5da6fe0"), url, "alembic", "upgrade", "20261117_auth_sessions")
+          run(Path("/tmp/prod-5da6fe0"), url, code=CREATE_USER)
+          run(Path("/tmp/sprint4-a0d691b"), url, code=CREATE_TABLES)
+          engine = create_engine(url)
+          with engine.begin() as conn:
+              conn.exec_driver_sql("ALTER TABLE alembic_version ENABLE ROW LEVEL SECURITY")
+          engine.dispose()
+          print("replica:", scalar(url, "SELECT version_num FROM alembic_version"))
+          PY
       - name: Start exactly like Render (migrate, then gunicorn with the embedded worker)
         run: |
           export SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
           echo "SECRET_KEY=$SECRET_KEY" >> "$GITHUB_ENV"
           nohup sh -c 'alembic upgrade head && exec python -m gunicorn "app:create_app()" --bind 127.0.0.1:8000 --workers 1 --threads 4 --timeout 180' > web.log 2>&1 &
           for i in $(seq 1 120); do curl -fs http://127.0.0.1:8000/api/ready && break; sleep 1; done
-          curl -fs http://127.0.0.1:8000/api/ready
+          curl -fs http://127.0.0.1:8000/api/ready || { cat web.log; exit 1; }
           psql -h 127.0.0.1 -U postgres -tAc "select version_num from alembic_version"
       - name: End-to-end walkthrough without a separate worker
         run: python -m scripts.academic_e2e --base http://127.0.0.1:8000 --out "$OUT"
