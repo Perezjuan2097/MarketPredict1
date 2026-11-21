@@ -56,6 +56,8 @@ class APIFinanciera(FuenteDatos):
         "inditex": "ITX.MC", "bbva": "BBVA.MC", "caixabank": "CABK.MC",
         "apple": "AAPL", "tesla": "TSLA", "microsoft": "MSFT", "amazon": "AMZN",
         "google": "GOOGL", "alphabet": "GOOGL", "nvidia": "NVDA", "meta": "META",
+        "solana": "SOL-USD", "netflix": "NFLX", "coca cola": "KO", "coca-cola": "KO",
+        "ecopetrol": "EC", "bancolombia": "CIB",
     }
 
     INDEX_COMPONENTS = {
@@ -182,6 +184,44 @@ class APIFinanciera(FuenteDatos):
 
         return self._market_summary(simbolo, period, interval, resolved, ticker, data)
 
+    def _fill_continuous_days(self, ticker, symbol, data, now=None):
+        """Completa días UTC cerrados que faltan en la serie diaria de un activo 24/7.
+
+        Cerca de la medianoche UTC Yahoo publica la vela parcial del día nuevo antes de la
+        vela cerrada del día anterior, y esta desaparece durante horas. El día ausente se
+        reconstruye con sus 24 velas horarias reales de Yahoo (apertura, máximo, mínimo,
+        cierre y volumen); si no están las 24 horas, no se inventa nada y la serie queda igual.
+        """
+        import pandas as pd
+
+        now = pd.Timestamp(now) if now is not None else pd.Timestamp.now(tz="UTC")
+        today = now.tz_convert("UTC").date()
+        have = {pd.Timestamp(row["fecha"]).tz_convert("UTC").date() for row in data}
+        try:
+            hourly = ticker.history(period="7d", interval="1h", auto_adjust=False,
+                                    actions=False, prepost=False)
+        except Exception as exc:
+            log.warning("Yahoo hourly history unavailable for %s (%s)", symbol, type(exc).__name__)
+            return data
+        if hourly is None or hourly.empty:
+            return data
+        index = hourly.index if hourly.index.tz is not None else hourly.index.tz_localize("UTC")
+        hourly = hourly.set_axis(index.tz_convert("UTC"))
+        added = []
+        for day, rows in hourly.groupby(hourly.index.date):
+            if day >= today or day in have or len(rows) < 24:
+                continue
+            rows_ = self._history_rows(pd.DataFrame({
+                "Open": [rows["Open"].iloc[0]], "High": [rows["High"].max()],
+                "Low": [rows["Low"].min()], "Close": [rows["Close"].iloc[-1]],
+                "Volume": [rows["Volume"].sum()],
+            }, index=pd.DatetimeIndex([pd.Timestamp(day, tz="UTC")])))
+            added.extend(rows_)
+        if not added:
+            return data
+        log.info("Filled %d closed UTC day(s) for %s from hourly bars", len(added), symbol)
+        return sorted(data + added, key=lambda row: pd.Timestamp(row["fecha"]))
+
     def _history_rows(self, frame):
         data = []
         for timestamp, row in frame.iterrows():
@@ -254,7 +294,7 @@ class APIFinanciera(FuenteDatos):
         }
 
     def _forecast_history(self, query, period, interval):
-        from ml_engine.calendar import market_calendar
+        from ml_engine.calendar import CONTINUOUS, market_calendar
 
         normalized = " ".join(query.strip().lower().split())
         requested = self.FALLBACK_TICKERS.get(normalized, normalized.upper())
@@ -320,6 +360,8 @@ class APIFinanciera(FuenteDatos):
         if not data:
             raise MarketDataError(f"Yahoo Finance no entregó cierres válidos para {symbol}.",
                                   "provider_unavailable", 503)
+        if calendar == CONTINUOUS and interval == "1d":
+            data = self._fill_continuous_days(ticker, symbol, data)
         return {"symbol": symbol, "name": listing[0] if listing else resolved["name"],
                 "currency": chart.get("currency"), "calendar": calendar, "data": data}
 
