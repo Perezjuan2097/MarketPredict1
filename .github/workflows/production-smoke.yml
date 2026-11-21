@@ -1,8 +1,11 @@
 name: Production smoke
 
-# Comprobación de solo lectura de la instancia pública (sin secretos, sin crear cuentas ni datos).
+# Se ejecuta al modificar este archivo. Comprobación de solo lectura de la instancia pública (sin secretos, sin crear cuentas ni datos).
 on:
   workflow_dispatch:
+  push:
+    branches: [feat/academic-marketpredict-demo]
+    paths: [.github/workflows/production-smoke.yml]
 
 permissions:
   contents: read
