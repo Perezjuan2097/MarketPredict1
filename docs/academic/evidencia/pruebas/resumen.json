@@ -1,11 +1,11 @@
 {
   "python": {
-    "tests": "239",
+    "tests": "244",
     "failures": "0",
     "errors": "0",
     "skipped": "5",
-    "time": "70.110",
-    "timestamp": "2026-11-18T16:11:47.436494+00:00"
+    "time": "64.272",
+    "timestamp": "2026-11-21T04:10:37.392230+00:00"
   },
   "python_por_archivo": {
     "test_account": {
@@ -20,6 +20,11 @@
     },
     "test_broker_news": {
       "aprobada": 8,
+      "fallida": 0,
+      "omitida": 0
+    },
+    "test_embedded_worker": {
+      "aprobada": 5,
       "fallida": 0,
       "omitida": 0
     },
@@ -99,6 +104,6 @@
     "pass": 20.0,
     "fail": 0.0,
     "skipped": 0.0,
-    "duration_ms": 229.673609
+    "duration_ms": 469.428896
   }
 }
