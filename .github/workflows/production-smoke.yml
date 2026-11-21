@@ -1,6 +1,6 @@
 name: Production smoke
 
-# Se ejecuta al modificar este archivo (última verificación: despliegue con warm-up). Comprobación de solo lectura de la instancia pública (sin secretos, sin crear cuentas ni datos).
+# Se ejecuta al modificar este archivo (última verificación: cripto y nombres colombianos). Comprobación de solo lectura de la instancia pública (sin secretos, sin crear cuentas ni datos).
 on:
   workflow_dispatch:
   push:
@@ -31,3 +31,8 @@ jobs:
           curl -sS -m 120 -c "$jar" -b "$jar" -H "Content-Type: application/json" -H "X-CSRF-Token: $csrf" \
                -d '{"symbol":"AAPL"}' "$BASE/api/analyze" | python -c 'import json,sys; d=json.load(sys.stdin); print("analyze:", d.get("symbol"), d.get("tendency"), (d.get("alert") or {}).get("nivel"), d.get("error"))'
           curl -sS -m 180 "$BASE/api/models/AAPL?horizon=5" | python -c 'import json,sys; d=json.load(sys.stdin); print("models:", d.get("error") or [(m["model_id"], m["status"]) for m in d.get("models", [])], (d.get("consensus") or {}).get("status"))'
+          for q in BTC-USD bitcoin ecopetrol; do
+            curl -sS -m 120 -c "$jar" -b "$jar" -H "Content-Type: application/json" -H "X-CSRF-Token: $csrf" \
+                 -d "{\"symbol\":\"$q\"}" "$BASE/api/analyze" | python -c 'import json,sys; d=json.load(sys.stdin); print("analyze '"$q"':", d.get("symbol"), d.get("tendency"), d.get("error"))'
+          done
+          curl -sS -m 180 "$BASE/api/models/BTC-USD?horizon=5" | python -c 'import json,sys; d=json.load(sys.stdin); print("models BTC:", d.get("error") or (d.get("consensus") or {}).get("status"))'
