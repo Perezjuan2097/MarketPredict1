@@ -38,4 +38,7 @@ def create_app(overrides=None):
     from app.controllers.broker_controller import broker_bp
     app.register_blueprint(broker_bp)
     app.extensions["runtime_config"] = {}
+    # Solo con ENTERPRISE_EMBEDDED_WORKER=true (despliegues de un único proceso web); ver app/embedded_worker.py.
+    from app.embedded_worker import start as start_embedded_worker
+    start_embedded_worker(app)
     return app

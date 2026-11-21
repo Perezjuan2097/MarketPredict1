@@ -1,0 +1,82 @@
+name: Render free rehearsal
+
+# Ensaya la configuración de publicación en Render (plan gratuito, un solo proceso web):
+# migración con Alembic al arrancar, gunicorn con el worker embebido (sin proceso worker aparte)
+# y el recorrido completo de extremo a extremo. Informa la memoria del proceso web al final.
+# No usa secretos ni se conecta a producción.
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/academic-marketpredict-demo]
+    paths:
+      - app/**
+      - scripts/**
+      - migrations/**
+      - requirements*.txt
+      - .github/workflows/render-free-rehearsal.yml
+
+permissions:
+  contents: read
+
+jobs:
+  rehearsal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg2://postgres@127.0.0.1:5432/postgres
+      APP_ENV: development
+      AUTO_CREATE_TABLES: "false"
+      ENTERPRISE_EMBEDDED_WORKER: "true"
+      OUT: /tmp/render-free
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies (same as Render) and the browser
+        run: |
+          python -m pip install -r requirements.txt -r requirements-ml.txt psycopg2-binary playwright==1.49.1
+          python -m playwright install --with-deps chromium
+      - name: Start exactly like Render (migrate, then gunicorn with the embedded worker)
+        run: |
+          export SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
+          echo "SECRET_KEY=$SECRET_KEY" >> "$GITHUB_ENV"
+          nohup sh -c 'alembic upgrade head && exec python -m gunicorn "app:create_app()" --bind 127.0.0.1:8000 --workers 1 --threads 4 --timeout 180' > web.log 2>&1 &
+          for i in $(seq 1 120); do curl -fs http://127.0.0.1:8000/api/ready && break; sleep 1; done
+          curl -fs http://127.0.0.1:8000/api/ready
+          psql -h 127.0.0.1 -U postgres -tAc "select version_num from alembic_version"
+      - name: End-to-end walkthrough without a separate worker
+        run: python -m scripts.academic_e2e --base http://127.0.0.1:8000 --out "$OUT"
+      - name: Results and memory of the web process
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os
+          path = os.environ["OUT"] + "/e2e_resultados.json"
+          if os.path.exists(path):
+              d = json.load(open(path))
+              print("E2E", d["meta"]["passed"], "aprobados,", d["meta"]["failed"], "fallidos")
+              for c in d["cases"]:
+                  if c["status"] != "aprobada":
+                      print("FALLA", c["id"], c.get("detail"), c.get("status_text"))
+          PY
+          echo "--- memoria (RSS, MiB) de los procesos de gunicorn"
+          ps -eo rss,args | grep '[g]unicorn' | awk '{printf "%.0f MiB  %s\n", $1/1024, substr($0, index($0,$2))}'
+          psql -h 127.0.0.1 -U postgres -tAc "select worker_id, state from enterprise_worker_heartbeats" || true
+          psql -h 127.0.0.1 -U postgres -tAc "select state, count(*) from enterprise_jobs group by state" || true
+          grep -E "embedded_worker|enterprise_job_attempt|Traceback|ERROR" web.log | tail -20 || true
+      - name: Fail if the walkthrough failed
+        run: |
+          python -c "import json,sys; d=json.load(open('$OUT/e2e_resultados.json')); sys.exit(1 if d['meta']['failed'] else 0)"
