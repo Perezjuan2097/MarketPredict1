@@ -29,6 +29,17 @@ def clean_symbol(value):
     return value
 
 
+def _raised_by_own_code(exc):
+    import os
+    import traceback
+    frames = traceback.extract_tb(exc.__traceback__)
+    if not frames or not str(exc).strip():
+        return False
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    origin = os.path.abspath(frames[-1].filename)
+    return any(origin.startswith(os.path.join(root, package) + os.sep) for package in ("app", "ml_engine"))
+
+
 def api_error(exc, status=422):
     """Devuelve el mensaje solo si es un error de validación/negocio; el resto se registra."""
     from app.services.data_service import MarketDataError
@@ -37,6 +48,11 @@ def api_error(exc, status=422):
     if isinstance(exc, InvalidInput):
         return jsonify(error=str(exc)), 400
     if isinstance(exc, ValueError):
+        if type(exc) is ValueError and _raised_by_own_code(exc):
+            # Mensajes de validación redactados por la aplicación o el motor (p. ej. «Datos
+            # insuficientes…»): explican al usuario por qué no hay resultado. Los ValueError de
+            # librerías externas siguen ocultos tras el mensaje genérico.
+            return jsonify(error=str(exc), code="analysis_unavailable"), status
         return jsonify(error="No se pudo completar la solicitud con los datos proporcionados."), status
     log.error("Error no controlado endpoint=%s type=%s", request.endpoint, type(exc).__name__)
     return jsonify(error="Error interno al procesar la solicitud."), 500
