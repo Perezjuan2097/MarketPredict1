@@ -1,0 +1,30 @@
+name: Production smoke
+
+# Comprobación de solo lectura de la instancia pública (sin secretos, sin crear cuentas ni datos).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      BASE: https://marketpredict1-1.onrender.com
+    steps:
+      - name: Wake up the free instance
+        run: for i in $(seq 1 20); do curl -fsS -m 60 "$BASE/api/live" && break; sleep 5; done
+      - name: Read-only checks
+        run: |
+          set -x
+          curl -sS -m 60 -w ' [%{http_code} %{time_total}s]\n' "$BASE/api/ready"
+          curl -sS -m 60 -w ' [%{http_code} %{time_total}s]\n' "$BASE/api/health"
+          curl -sS -m 90 -o /dev/null -w 'markets [%{http_code} %{time_total}s]\n' "$BASE/api/markets"
+          curl -sS -m 60 -o /dev/null -w 'index [%{http_code} %{time_total}s]\n' "$BASE/"
+          jar=$(mktemp)
+          csrf=$(curl -sS -c "$jar" -b "$jar" "$BASE/api/auth/me" | python -c 'import json,sys; print(json.load(sys.stdin)["csrf"])')
+          curl -sS -m 120 -c "$jar" -b "$jar" -H "Content-Type: application/json" -H "X-CSRF-Token: $csrf" \
+               -d '{"symbol":"AAPL"}' "$BASE/api/analyze" | python -c 'import json,sys; d=json.load(sys.stdin); print("analyze:", d.get("symbol"), d.get("tendency"), (d.get("alert") or {}).get("nivel"), d.get("error"))'
+          curl -sS -m 180 "$BASE/api/models/AAPL?horizon=5" | python -c 'import json,sys; d=json.load(sys.stdin); print("models:", d.get("error") or [(m["model_id"], m["status"]) for m in d.get("models", [])], (d.get("consensus") or {}).get("status"))'
