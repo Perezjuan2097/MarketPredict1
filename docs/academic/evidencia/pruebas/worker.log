@@ -1,1 +1,1 @@
-{"time": "2026-11-21T04:16:12.331831+00:00", "level": "INFO", "logger": "enterprise_worker", "message": "enterprise_job_attempt", "request_id": "91d211a077db404f9fff36e178812639", "duration_ms": 1162.55, "job_id": 1, "outcome": "completed", "worker_id": "9501ee19b57c4581af8cbc163e1fd935"}
+{"time": "2026-11-21T04:22:22.033843+00:00", "level": "INFO", "logger": "enterprise_worker", "message": "enterprise_job_attempt", "request_id": "2a2c97d766af4cbaab06e5dee4b81663", "duration_ms": 1178.08, "job_id": 1, "outcome": "completed", "worker_id": "27a72a3a045f43b7958bba4415839575"}
