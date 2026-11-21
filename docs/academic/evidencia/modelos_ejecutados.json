@@ -58,7 +58,7 @@
         "name": "Referencia: último precio",
         "predicted_log_return": 0.0,
         "reference_price": 342.559998,
-        "run_date": "2026-11-21T05:20:29.713222+00:00",
+        "run_date": "2026-11-21T05:27:20.690587+00:00",
         "status": "ok",
         "version": "1.0"
       },
@@ -117,7 +117,7 @@
         "name": "Referencia: retorno medio",
         "predicted_log_return": 0.004654516087357952,
         "reference_price": 342.559998,
-        "run_date": "2026-11-21T05:20:29.713222+00:00",
+        "run_date": "2026-11-21T05:27:20.690587+00:00",
         "status": "ok",
         "version": "1.0"
       }
@@ -242,7 +242,7 @@
         "name": "Regresión lineal (Ridge)",
         "predicted_log_return": 0.008906611788108566,
         "reference_price": 342.559998,
-        "run_date": "2026-11-21T05:20:29.713222+00:00",
+        "run_date": "2026-11-21T05:27:20.690587+00:00",
         "status": "ok",
         "version": "2.0"
       },
@@ -334,7 +334,7 @@
         "name": "Random Forest",
         "predicted_log_return": 0.014194976767701501,
         "reference_price": 342.559998,
-        "run_date": "2026-11-21T05:20:29.713222+00:00",
+        "run_date": "2026-11-21T05:27:20.690587+00:00",
         "status": "ok",
         "version": "1.0"
       },
@@ -426,7 +426,7 @@
         "name": "XGBoost",
         "predicted_log_return": 0.007289211265742779,
         "reference_price": 342.559998,
-        "run_date": "2026-11-21T05:20:29.713222+00:00",
+        "run_date": "2026-11-21T05:27:20.690587+00:00",
         "status": "ok",
         "version": "1.0"
       }
@@ -593,7 +593,7 @@
       ],
       "calendar": "NASDAQ",
       "contract_version": "daily-v1",
-      "cutoff_at": "2026-11-21T05:20:29.713222+00:00",
+      "cutoff_at": "2026-11-21T05:27:20.690587+00:00",
       "dataset_sha256": "ddeda4a9322c1f0af6b9cf9cab667dfe8ced6e61da586c812c1d630190e38767",
       "dependencies": {
         "exchange-calendars": "4.13.3",
@@ -802,7 +802,7 @@
         "name": "Referencia: último precio",
         "predicted_log_return": 0.0,
         "reference_price": 484.519989,
-        "run_date": "2026-11-21T05:21:02.150661+00:00",
+        "run_date": "2026-11-21T05:27:49.919302+00:00",
         "status": "ok",
         "version": "1.0"
       },
@@ -861,7 +861,7 @@
         "name": "Referencia: retorno medio",
         "predicted_log_return": 0.002217472590349161,
         "reference_price": 484.519989,
-        "run_date": "2026-11-21T05:21:02.150661+00:00",
+        "run_date": "2026-11-21T05:27:49.919302+00:00",
         "status": "ok",
         "version": "1.0"
       }
@@ -987,7 +987,7 @@
         "name": "Regresión lineal (Ridge)",
         "predicted_log_return": 0.02798932543367462,
         "reference_price": 484.519989,
-        "run_date": "2026-11-21T05:21:02.150661+00:00",
+        "run_date": "2026-11-21T05:27:49.919302+00:00",
         "status": "ok",
         "version": "2.0"
       },
@@ -1079,7 +1079,7 @@
         "name": "Random Forest",
         "predicted_log_return": 0.021536871842923078,
         "reference_price": 484.519989,
-        "run_date": "2026-11-21T05:21:02.150661+00:00",
+        "run_date": "2026-11-21T05:27:49.919302+00:00",
         "status": "ok",
         "version": "1.0"
       },
@@ -1171,7 +1171,7 @@
         "name": "XGBoost",
         "predicted_log_return": 0.02234211191534996,
         "reference_price": 484.519989,
-        "run_date": "2026-11-21T05:21:02.150661+00:00",
+        "run_date": "2026-11-21T05:27:49.919302+00:00",
         "status": "ok",
         "version": "1.0"
       }
@@ -1338,7 +1338,7 @@
       ],
       "calendar": "NASDAQ",
       "contract_version": "daily-v1",
-      "cutoff_at": "2026-11-21T05:21:02.150661+00:00",
+      "cutoff_at": "2026-11-21T05:27:49.919302+00:00",
       "dataset_sha256": "e4aa9974bad5cbabc238a519b24762c76936025c68a6ec7be8ea831b033b7867",
       "dependencies": {
         "exchange-calendars": "4.13.3",
@@ -1547,7 +1547,7 @@
         "name": "Referencia: último precio",
         "predicted_log_return": 0.0,
         "reference_price": 6910.390137,
-        "run_date": "2026-11-21T05:21:04.756497+00:00",
+        "run_date": "2026-11-21T05:27:51.805977+00:00",
         "status": "ok",
         "version": "1.0"
       },
@@ -1606,7 +1606,7 @@
         "name": "Referencia: retorno medio",
         "predicted_log_return": 0.0019742061395594656,
         "reference_price": 6910.390137,
-        "run_date": "2026-11-21T05:21:04.756497+00:00",
+        "run_date": "2026-11-21T05:27:51.805977+00:00",
         "status": "ok",
         "version": "1.0"
       }
@@ -1731,7 +1731,7 @@
         "name": "Regresión lineal (Ridge)",
         "predicted_log_return": 0.026604337712680986,
         "reference_price": 6910.390137,
-        "run_date": "2026-11-21T05:21:04.756497+00:00",
+        "run_date": "2026-11-21T05:27:51.805977+00:00",
         "status": "ok",
         "version": "2.0"
       },
@@ -1823,7 +1823,7 @@
         "name": "Random Forest",
         "predicted_log_return": -0.0010202292811831465,
         "reference_price": 6910.390137,
-        "run_date": "2026-11-21T05:21:04.756497+00:00",
+        "run_date": "2026-11-21T05:27:51.805977+00:00",
         "status": "ok",
         "version": "1.0"
       },
@@ -1915,7 +1915,7 @@
         "name": "XGBoost",
         "predicted_log_return": 0.017671970650553703,
         "reference_price": 6910.390137,
-        "run_date": "2026-11-21T05:21:04.756497+00:00",
+        "run_date": "2026-11-21T05:27:51.805977+00:00",
         "status": "ok",
         "version": "1.0"
       }
@@ -2070,7 +2070,7 @@
       ],
       "calendar": "XNYS",
       "contract_version": "daily-v1",
-      "cutoff_at": "2026-11-21T05:21:04.756497+00:00",
+      "cutoff_at": "2026-11-21T05:27:51.805977+00:00",
       "dataset_sha256": "4588a06e5fb6a5f12eca717b810c36131bbf5b417b5a20f086ea9cb8335fc89a",
       "dependencies": {
         "exchange-calendars": "4.13.3",
@@ -2279,7 +2279,7 @@
         "name": "Referencia: último precio",
         "predicted_log_return": 0.0,
         "reference_price": 58811.769531,
-        "run_date": "2026-11-21T05:21:07.074713+00:00",
+        "run_date": "2026-11-21T05:27:53.527174+00:00",
         "status": "ok",
         "version": "1.0"
       },
@@ -2338,7 +2338,7 @@
         "name": "Referencia: retorno medio",
         "predicted_log_return": -0.003012686903417703,
         "reference_price": 58811.769531,
-        "run_date": "2026-11-21T05:21:07.074713+00:00",
+        "run_date": "2026-11-21T05:27:53.527174+00:00",
         "status": "ok",
         "version": "1.0"
       }
@@ -2464,7 +2464,7 @@
         "name": "Regresión lineal (Ridge)",
         "predicted_log_return": -0.004664660632622761,
         "reference_price": 58811.769531,
-        "run_date": "2026-11-21T05:21:07.074713+00:00",
+        "run_date": "2026-11-21T05:27:53.527174+00:00",
         "status": "ok",
         "version": "2.0"
       },
@@ -2556,7 +2556,7 @@
         "name": "Random Forest",
         "predicted_log_return": -0.0003248097053621586,
         "reference_price": 58811.769531,
-        "run_date": "2026-11-21T05:21:07.074713+00:00",
+        "run_date": "2026-11-21T05:27:53.527174+00:00",
         "status": "ok",
         "version": "1.0"
       },
@@ -2648,7 +2648,7 @@
         "name": "XGBoost",
         "predicted_log_return": 0.0041915434412658215,
         "reference_price": 58811.769531,
-        "run_date": "2026-11-21T05:21:07.074713+00:00",
+        "run_date": "2026-11-21T05:27:53.527174+00:00",
         "status": "ok",
         "version": "1.0"
       }
@@ -2815,7 +2815,7 @@
       ],
       "calendar": "24/7",
       "contract_version": "daily-v1",
-      "cutoff_at": "2026-11-21T05:21:07.074713+00:00",
+      "cutoff_at": "2026-11-21T05:27:53.527174+00:00",
       "dataset_sha256": "df8c3767b4edc1f8071938ee3ee1b317a738e5b9614a395a347b5c809c1a4065",
       "dependencies": {
         "exchange-calendars": "4.13.3",
