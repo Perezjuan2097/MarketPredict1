@@ -1,6 +1,6 @@
 {
   "meta": {
-    "started_at": "2026-11-21T04:11:46.038720+00:00",
+    "started_at": "2026-11-21T04:15:52.065974+00:00",
     "base": "http://127.0.0.1:8000",
     "user": "estudiante_demo",
     "browser": "Chromium 131.0.6778.33",
@@ -13,7 +13,7 @@
       "height": 844
     },
     "console_errors": [],
-    "finished_at": "2026-11-21T04:12:26.436500+00:00",
+    "finished_at": "2026-11-21T04:16:29.316298+00:00",
     "passed": 26,
     "failed": 1
   },
@@ -24,7 +24,7 @@
       "title": "Inicio carga sin sesión, con 5 módulos visibles y administración oculta",
       "status": "aprobada",
       "detail": "MERCADO\tÚLTIMO CIERRE\tVARIACIÓN\tFECHA DEL DATO\nS&P 500 ^GSPC\t6910,39\t-3.70%\t20 de nov de 2026, 05:00 a. m.\nNasdaq Composite ^IXIC\t22.617,73\t-5.28%\t20 de nov de 2026, 05:00 a. m.\nDow Jones ^DJI\t48.147,",
-      "seconds": 1.68
+      "seconds": 1.29
     },
     {
       "id": "CP-UI-02",
@@ -32,7 +32,7 @@
       "title": "Registro e inicio de sesión desde Inicio",
       "status": "aprobada",
       "detail": "cuenta creada y sesión iniciada",
-      "seconds": 0.93
+      "seconds": 0.85
     },
     {
       "id": "CP-UI-03",
@@ -40,7 +40,7 @@
       "title": "Búsqueda de activos con sugerencias",
       "status": "aprobada",
       "detail": "7 sugerencias",
-      "seconds": 1.33
+      "seconds": 1.31
     },
     {
       "id": "CP-UI-04",
@@ -48,7 +48,7 @@
       "title": "Análisis de AAPL con indicadores, tendencia y gráfico",
       "status": "aprobada",
       "detail": "Análisis completado.",
-      "seconds": 3.31
+      "seconds": 2.82
     },
     {
       "id": "CP-UI-05",
@@ -56,7 +56,7 @@
       "title": "Cambio de periodo del gráfico histórico",
       "status": "aprobada",
       "detail": "periodo 1A",
-      "seconds": 1.08
+      "seconds": 0.99
     },
     {
       "id": "CP-UI-06",
@@ -64,7 +64,7 @@
       "title": "Pestaña technical carga datos o informa el error",
       "status": "aprobada",
       "detail": "technical",
-      "seconds": 0.45
+      "seconds": 0.33
     },
     {
       "id": "CP-UI-07",
@@ -72,7 +72,7 @@
       "title": "Pestaña seasonal carga datos o informa el error",
       "status": "aprobada",
       "detail": "seasonal",
-      "seconds": 0.37
+      "seconds": 0.33
     },
     {
       "id": "CP-UI-08",
@@ -80,7 +80,7 @@
       "title": "Pestaña news carga datos o informa el error",
       "status": "aprobada",
       "detail": "news",
-      "seconds": 0.99
+      "seconds": 0.96
     },
     {
       "id": "CP-UI-09",
@@ -88,7 +88,7 @@
       "title": "Pestaña mercados carga datos o informa el error",
       "status": "aprobada",
       "detail": "mercados",
-      "seconds": 0.19
+      "seconds": 0.16
     },
     {
       "id": "CP-UI-10",
@@ -96,7 +96,7 @@
       "title": "Ejecución de modelos, comparación, métricas y proyección",
       "status": "aprobada",
       "detail": "Datos al 2026-11-20 (Yahoo Finance) · 501 sesiones · objetivo 2026-11-30 · 90 orígenes en la evaluación final · contexto externo inactivo\n\nRESUMEN PARA TODOS\nSin ventaja clara en la dirección\nNingún m",
-      "seconds": 2.7
+      "seconds": 2.5
     },
     {
       "id": "CP-UI-11",
@@ -104,7 +104,7 @@
       "title": "Guardado de la emisión firmada y consulta del historial",
       "status": "aprobada",
       "detail": "3 filas guardadas",
-      "seconds": 2.08
+      "seconds": 2.06
     },
     {
       "id": "CP-UI-12",
@@ -112,7 +112,7 @@
       "title": "Panel de validación en varios activos accesible",
       "status": "aprobada",
       "detail": "panel de validación visible",
-      "seconds": 0.55
+      "seconds": 0.54
     },
     {
       "id": "CP-UI-13",
@@ -120,7 +120,7 @@
       "title": "Creación de organización y dataset",
       "status": "aprobada",
       "detail": "organización y dataset creados",
-      "seconds": 0.81
+      "seconds": 0.78
     },
     {
       "id": "CP-UI-14",
@@ -128,7 +128,7 @@
       "title": "Importación CSV con mapeo, validación y versión",
       "status": "aprobada",
       "detail": "Versión 1 disponible.",
-      "seconds": 1.08
+      "seconds": 0.9
     },
     {
       "id": "CP-UI-15",
@@ -136,7 +136,7 @@
       "title": "Pronóstico empresarial procesado por el worker",
       "status": "aprobada",
       "detail": "",
-      "seconds": 7.13
+      "seconds": 7.02
     },
     {
       "id": "CP-UI-16",
@@ -144,7 +144,7 @@
       "title": "Panel de monitoreo y automatizaciones",
       "status": "aprobada",
       "detail": "Último pronóstico: #1 (v1).",
-      "seconds": 1.63
+      "seconds": 1.62
     },
     {
       "id": "CP-SEC-01",
@@ -152,7 +152,7 @@
       "title": "Un usuario común no accede a la administración",
       "status": "aprobada",
       "detail": "interfaz restringida y API 403",
-      "seconds": 0.11
+      "seconds": 0.12
     },
     {
       "id": "CP-SEC-02",
@@ -160,7 +160,7 @@
       "title": "Otra cuenta no puede ver la organización de un tercero",
       "status": "aprobada",
       "detail": "organización ajena responde 404",
-      "seconds": 0.32
+      "seconds": 0.28
     },
     {
       "id": "CP-UI-17",
@@ -168,7 +168,7 @@
       "title": "Administrador global consulta organizaciones, cuotas y workers",
       "status": "aprobada",
       "detail": "Organizaciones\n1\nen esta página del listado\nTrabajos pendientes\n0\ncola al día\nTrabajos fallidos\n0\n0 organizaciones con la cola llena\nServicio web\nListo\ncomprobación de readiness",
-      "seconds": 1.69
+      "seconds": 1.53
     },
     {
       "id": "CP-UI-18",
@@ -176,7 +176,7 @@
       "title": "Fallo simulado de la fuente externa: se informa sin datos falsos",
       "status": "aprobada",
       "detail": "La fuente de datos de mercado no respondió.",
-      "seconds": 0.28
+      "seconds": 0.21
     },
     {
       "id": "CP-UI-19",
@@ -184,7 +184,7 @@
       "title": "Diseño responsive en 390 × 844",
       "status": "aprobada",
       "detail": "sin desbordamiento horizontal",
-      "seconds": 3.76
+      "seconds": 3.67
     },
     {
       "id": "CP-UI-20",
@@ -192,7 +192,7 @@
       "title": "Tema oscuro legible",
       "status": "aprobada",
       "detail": "tema oscuro",
-      "seconds": 2.8
+      "seconds": 2.7
     },
     {
       "id": "CP-UI-21",
@@ -200,7 +200,7 @@
       "title": "Cierre de sesión",
       "status": "aprobada",
       "detail": "sesión cerrada",
-      "seconds": 0.11
+      "seconds": 0.09
     },
     {
       "id": "CP-ML-AAPL",
@@ -208,7 +208,7 @@
       "title": "Motor predictivo sobre AAPL a 5 sesiones",
       "status": "aprobada",
       "detail": "3 modelos, consenso sin_valor_predictivo",
-      "seconds": 0.02
+      "seconds": 0.01
     },
     {
       "id": "CP-ML-MSFT",
@@ -216,7 +216,7 @@
       "title": "Motor predictivo sobre MSFT a 5 sesiones",
       "status": "aprobada",
       "detail": "3 modelos, consenso sin_valor_predictivo",
-      "seconds": 2.3
+      "seconds": 1.87
     },
     {
       "id": "CP-ML-^GSPC",
@@ -224,7 +224,7 @@
       "title": "Motor predictivo sobre ^GSPC a 5 sesiones",
       "status": "aprobada",
       "detail": "3 modelos, consenso sin_valor_predictivo",
-      "seconds": 2.06
+      "seconds": 1.69
     },
     {
       "id": "CP-ML-BTC-USD",
@@ -232,7 +232,7 @@
       "title": "Motor predictivo sobre BTC-USD a 5 sesiones",
       "status": "fallida",
       "detail": "RuntimeError: No se pudo completar la solicitud con los datos proporcionados.",
-      "seconds": 0.22
+      "seconds": 0.2
     }
   ]
 }
