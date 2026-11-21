@@ -67,3 +67,9 @@ def test_disabled_by_default(monkeypatch):
     assert embedded_worker.enabled() is False
     monkeypatch.setenv("ENTERPRISE_EMBEDDED_WORKER", "true")
     assert embedded_worker.enabled() is True
+
+
+def test_worker_id_fits_the_heartbeat_column():
+    from app.models.orm import EnterpriseWorkerHeartbeat
+    limit = EnterpriseWorkerHeartbeat.__table__.c.id.type.length
+    assert len(embedded_worker.new_worker_id()) <= limit

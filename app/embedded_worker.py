@@ -90,13 +90,18 @@ def run_job(repo, job, *, worker_id, timeout=120, renew_every=5.0, poll=1.0, com
     return outcome
 
 
+def new_worker_id():
+    """Identificador del latido: cabe en enterprise_worker_heartbeats.id (40 caracteres)."""
+    return "emb-" + uuid4().hex
+
+
 def _loop(concurrency, timeout):
     from sqlalchemy.exc import SQLAlchemyError
     from app.db import get_engine
     from app.repositories.sql import SQLRepository
 
     repo = SQLRepository(get_engine())
-    worker_id = "embedded-" + uuid4().hex
+    worker_id = new_worker_id()
     log.info("embedded_worker_started", extra={"worker_id": worker_id})
     while True:
         try:
@@ -109,7 +114,7 @@ def _loop(concurrency, timeout):
             else:
                 time.sleep(2)
         except (SQLAlchemyError, OSError) as exc:
-            log.warning("embedded_worker_cycle_error type=%s", type(exc).__name__)
+            log.warning("embedded_worker_cycle_error type=%s detail=%s", type(exc).__name__, str(exc).splitlines()[0][:200])
             time.sleep(5)
         except Exception:  # noqa: BLE001 - el hilo nunca debe morir en silencio
             log.exception("embedded_worker_unexpected_error")
